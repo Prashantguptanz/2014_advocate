@@ -1,0 +1,7 @@
+1. Issue with accessing mysqldb even after installing mysql-python connector. Error: "django.core.exceptions.ImproperlyConfigured: Error loading MySQLdb module: dlopen(/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/_mysql.so, 2): Library not loaded: libmysqlclient.18.
+dylib"
+
+Soln: mysql_so file was looking for the library at wrong place.
+Created a symbolic link to the actual file location. (sudo ln -s /usr/local/mysql/lib/libmysqlclient.18.dylib /usr/lib/libmysqlclient.18.dylib)
+Check more details at http://stackoverflow.com/questions/6383310/python-mysqldb-library-not-loaded-libmysqlclient-18-dylib
+

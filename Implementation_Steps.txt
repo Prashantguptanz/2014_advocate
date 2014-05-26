@@ -1,0 +1,7 @@
+1. Installed Scientific Python. https://wiki.auckland.ac.nz/pages/viewpage.action?pageId=52963865
+2. Installed MySQL database, preference pane from the script: bash <(curl -Ls http://git.io/eUx7rg)
+3. Installed MySQL workbench and created database 'advocate_schema'
+4. Installed Aptana plugin in eclipse. Check http://www.aptana.com/products/studio3/download
+5. Created Python-Django prject in Eclipse.
+5. Added python and django libraries in Interpretor-Python option in Eclipse preferences.
+6. Added git and github configurations. Egit is already installed with this version of Eclipse. Check the tutorial: https://www.youtube.com/watch?v=U1kXlahkwd4
