@@ -6,6 +6,7 @@ $(document).ready(function() {
 	$('.dropdown-toggle').dropdown();
 
 //	$("#trainingfile").click(function() {
+	
 	$('input[name="testoption"]').click(function() {
 		if ($('input[name="testoption"]:checked').attr("id")=="trainingfile") 
 			{

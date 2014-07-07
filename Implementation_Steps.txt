@@ -12,3 +12,4 @@
 8. Created the data model in MySQL workbench. Used forward engineer option to create the tables in the schema.
    Auto-generated the models from the existing data model in the database using the command:  python manage.py inspectdb 
 	
+9. Forgot about Emmet - (previously known as Zen coding) a web developer's toolkit that can greatly improve html and css workflow.
