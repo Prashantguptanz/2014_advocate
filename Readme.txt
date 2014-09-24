@@ -5,3 +5,8 @@ MySQL: 5.6.16
 Eclipse: Eclipse Java EE IDE for Web Developers (ver 4.3.2)
 
 
+Start Server:
+python manage.py runserver
+
+Creating tables in the database for Installed_Apps:
+python manage.py syncdb

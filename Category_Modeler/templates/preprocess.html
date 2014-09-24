@@ -1,29 +1,23 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %} 
+{% block content %}
 
 <form role="form" enctype="multipart/form-data" id="Form2" method="post" action="">
 	{% csrf_token %}
 
-
-
 	<div class="form-group">
 		<legend>Preprocess data</legend>
-		{% if filename %}
-		<input type="file" name="file" accept=".csv,.xls"
-			onchange="this.form.submit()" />
-		{% else %}
-		<input type="file" name="file" accept=".csv,.xls" value="{{ filename }}"
-			onchange="this.form.submit()" />
-		{% endif %}
+		<input type="file" id="filename" accept=".csv,.xls"
+			onchange= "populateTable()" />
 	</div>
 
 	<div class="form-group">
 		<div style="width: 25%; float: left">
 			<legend style="font-size: 18px">Current Dataset</legend>
 			<label for="tablename" style="font-weight: normal">Table: <span
-				id="tablename"> {{ filename }}</span></label> <br /> <label for="instances"
-				style="font-weight: normal">Instances: <span id="instances">
-					{{ csvfile|length }}</span></label> <label for="Attributes"
-				style="font-weight: normal; display: inline; float: right">Attributes:
+				id="tablename"> </span></label> <br /> 
+			<label for="instances" style="font-weight: normal">Instances: <span 
+				id="instances"> {{ csvfile|length }}</span></label> 
+			<label for="Attributes" style="font-weight: normal; display: inline; float: right">Attributes:
 				<span id="Attributes">{{ attributes|length }}</span>
 			</label>
 		</div>
