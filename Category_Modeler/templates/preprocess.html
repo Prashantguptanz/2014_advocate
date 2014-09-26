@@ -1,48 +1,46 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 {% block content %}
 
 <form role="form" enctype="multipart/form-data" id="Form2" method="post" action="">
 	{% csrf_token %}
 
 	<div class="form-group">
-		<legend>Preprocess data</legend>
-		<input type="file" id="filename" accept=".csv,.xls"
-			onchange= "populateTable()" />
-	</div>
-
-	<div class="form-group">
 		<div style="width: 25%; float: left">
-			<legend style="font-size: 18px">Current Dataset</legend>
-			<label for="tablename" style="font-weight: normal">Table: <span
-				id="tablename"> </span></label> <br /> 
-			<label for="instances" style="font-weight: normal">Instances: <span 
-				id="instances"> {{ csvfile|length }}</span></label> 
-			<label for="Attributes" style="font-weight: normal; display: inline; float: right">Attributes:
-				<span id="Attributes">{{ attributes|length }}</span>
-			</label>
+			<legend style="font-size: 18px">
+				Training Dataset
+			</legend>
+			<input type="file" id="filename" accept=".csv,.xls" />
+			<br />
+			<!--		<label for="tablename" style="font-weight: normal">Table: <span
+			id="tablename"> </span></label> <br /> -->
+			<label for="instances" style="font-weight: normal">Instances: <span
+				id="instances"> </span></label>
+			<br />
+			<label for="Attributes" style="font-weight: normal">Attributes: <span id="Attributes"></span> </label>
 		</div>
 
-
 		<div style="float: right; width: 70%">
-			<legend style="font-size: 18px"> Data-Table </legend>
+			<legend style="font-size: 18px">
+				Data-Table
+			</legend>
 			<div id= "dataTable" class="handsontable" style="overflow: auto; height: 450px">
-				<table  class="table table-bordered ">
-					<thead>
-						<tr>
-							{% for item in attributes %}
-							<th>{{ item }}</th> {% endfor %}
-						</tr>
+			<!--	<table  class="table table-bordered " id="contents">
+									<thead>
+					<tr>
+					{% for item in attributes %}
+					<th>{{ item }}</th> {% endfor %}
+					</tr>
 					</thead>
 					<tbody>
-						{% for item1 in csvfile %}
-						<tr>
-							{% for instancedata in item1 %}
-							<td>{{ instancedata }}</td> {% endfor %}
-						</tr>
-						{% endfor %}
-					</tbody>
+					{% for item1 in csvfile %}
+					<tr>
+					{% for instancedata in item1 %}
+					<td>{{ instancedata }}</td> {% endfor %}
+					</tr>
+					{% endfor %}
+					</tbody> 
 
-				</table>
+				</table>-->
 			</div>
 		</div>
 	</div>

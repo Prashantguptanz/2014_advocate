@@ -5,8 +5,6 @@ $(document).ready(function() {
 
 	$('.dropdown-toggle').dropdown();
 
-//	$("#trainingfile").click(function() {
-	
 	$('input[name="testoption"]').click(function() {
 		if ($('input[name="testoption"]:checked').attr("id")=="trainingfile") 
 			{
@@ -35,22 +33,68 @@ $(document).ready(function() {
 			}
 			;
 		
-	//	$("#inputtrainingfile").prop('disabled', false);
 	});
-	
-	$('#dataTable').handsontable({
-		data: csvfile,
-  		minSpareRows: 1,
- 		colHeaders: true,
-  		contextMenu: true
-		
-	});
-	
-	$('#dataTable table').addClass('table');
 
-$('.options input').on('change', function () {
-  var method = this.checked ? 'addClass' : 'removeClass';
-  $('#dataTable').find('table')[method](this.getAttribute('data-type'));
+
+$('#filename').change(function(){
+	var file = this.files[0];
+	var reader = new FileReader();
+    reader.readAsText(file);
+     reader.onload = function(event){
+      var csv = event.target.result;
+      var data = $.csv.toArrays(csv);
+     var $container = $('#dataTable');
+      $container.handsontable({
+    	  data: data
+      });
+ /*         var html = '';
+          var instances = 0
+          var attributes = 0
+         html +='<tr>\r\n';
+      for (var head in data[0]){
+    	  html += '<th>' + data[0][head] + '</th>\r\n';
+    	  attributes +=1;
+      }
+      html += '</tr>\r\n';
+      
+      for(var row =1; row < data.length; row++ ) {
+        html += '<tr>\r\n';
+        instances +=1;
+        for(var item in data[row]) {
+          html += '<td>' + data[row][item] + '</td>\r\n';
+        }
+        html += '</tr>\r\n';
+      }
+      $('#contents').html(html);
+      $('#instances').html( instances);
+      $('#Attributes').html( attributes);*/
+    }
+
+
+
+	
+/*	$.ajax({
+		type: "POST",
+		url: "http://127.0.0.1:8000/CategoryModeler/preprocess/",
+		dataType: "json",
+		async: true,
+		data: {
+			csrfmiddlewaretoken: '{{ csrf_token }}',
+			Filename: file
+			},
+		success: function(response) {
+			alert(response);
+		//	$('#tablename').text(json.filename);
+			
+		}
+	    
+				
+	});*/
+	
 });
+
+
+	
+
 
 });

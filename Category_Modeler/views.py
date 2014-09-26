@@ -15,6 +15,7 @@ def preprocess(request):
         handle_uploaded_file(request.POST.get('FileName'))
         name = request.POST.get('FileName')
        # name = request.FILES['file'].name
+        print(name)
         datafile = read_CSVFile(name)
         attributes = datafile[0]
         datafile.pop(0)
@@ -25,7 +26,8 @@ def preprocess(request):
         response_data['csvfile'] = datafile
         response_data['attributes'] = attributes
         #return render(request, 'preprocess.html', {'filename':name , 'csvfile': datafile, 'attributes':attributes})
-        return HttpResponse(json.dumps(response_data), content_type="application/json")
+    #    return HttpResponse(json.dumps(response_data), content_type="application/json")
+        return HttpResponse("it's gud")
     else:
         return render(request, 'preprocess.html')
 
