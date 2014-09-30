@@ -20,12 +20,12 @@ def preprocess(request):
         attributes = datafile[0]
         datafile.pop(0)
         
-        request.session['current_trainingfile'] = name          #storing the current training data in the current session
+        request.session['current_trainingfile'] = name  # storing the current training data in the current session
         response_data = {}
         response_data['filename'] = name
         response_data['csvfile'] = datafile
         response_data['attributes'] = attributes
-        #return render(request, 'preprocess.html', {'filename':name , 'csvfile': datafile, 'attributes':attributes})
+        # return render(request, 'preprocess.html', {'filename':name , 'csvfile': datafile, 'attributes':attributes})
     #    return HttpResponse(json.dumps(response_data), content_type="application/json")
         return HttpResponse("it's gud")
     else:
