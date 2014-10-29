@@ -151,7 +151,7 @@ $(document)
 													async : true,
 													processData : false, // Don't process the files
 													contentType : false,
-													data : "dsbfjdsf",
+													data : formdata,
 													success : function(response) {
 														alert(response);
 
