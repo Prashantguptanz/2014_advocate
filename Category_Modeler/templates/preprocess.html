@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<form role="form" enctype="multipart/form-data" id="Form2" method="post" action="">
+<form enctype="multipart/form-data" id="Form2" method="POST" action="">
 	{% csrf_token %}
 
 	<div class="form-group">
@@ -11,12 +11,11 @@
 			</legend>
 			<input type="file" id="trainingfile" accept=".csv,.xls" />
 			<br />
-			<!--		<label for="tablename" style="font-weight: normal">Table: <span
-			id="tablename"> </span></label> <br /> -->
+
 			<label for="instances" style="font-weight: normal">Instances: <span
 				id="instances"> </span></label>
 			<br />
-			<label for="Attributes" style="font-weight: normal">Attributes: <span id="Attributes"></span> </label>
+			<label for="Attributes" style="font-weight: normal">Attributes: <span id="Attributes"> </span> </label>
 		</div>
 
 		<div style="float: right; width: 70%">
@@ -24,24 +23,10 @@
 				Data-Table
 			</legend>
 			<div id= "dataTable" class="handsontable" style="overflow: scroll">
-			<!--	<table  class="table table-bordered " id="contents">
-									<thead>
-					<tr>
-					{% for item in attributes %}
-					<th>{{ item }}</th> {% endfor %}
-					</tr>
-					</thead>
-					<tbody>
-					{% for item1 in csvfile %}
-					<tr>
-					{% for instancedata in item1 %}
-					<td>{{ instancedata }}</td> {% endfor %}
-					</tr>
-					{% endfor %}
-					</tbody> 
 
-				</table>-->
 			</div>
+			<br />
+			<button id="saveChanges" style="float:right; display:none">Save changes </button>
 		</div>
 	</div>
 </form>

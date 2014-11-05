@@ -1,22 +1,17 @@
 $(document)
 		.ready(
 				function() {
-					
 
 					function getCookie(name) {
 						var cookieValue = null;
-						if (document.cookie
-								&& document.cookie != '') {
-							var cookies = document.cookie
-									.split(';');
+						if (document.cookie && document.cookie != '') {
+							var cookies = document.cookie.split(';');
 							for (var i = 0; i < cookies.length; i++) {
-								var cookie = jQuery
-										.trim(cookies[i]);
+								var cookie = jQuery.trim(cookies[i]);
 								// Does this cookie string
 								// begin with the name we
 								// want?
-								if (cookie.substring(0,
-										name.length + 1) == (name + '=')) {
+								if (cookie.substring(0, name.length + 1) == (name + '=')) {
 									cookieValue = decodeURIComponent(cookie
 											.substring(name.length + 1));
 									break;
@@ -26,30 +21,22 @@ $(document)
 						return cookieValue;
 					}
 
-
 					var csrftoken = getCookie('csrftoken');
 
 					function csrfSafeMethod(method) {
 						// these HTTP methods do not require
 						// CSRF protection
-						return (/^(GET|HEAD|OPTIONS|TRACE)$/
-								.test(method));
+						return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
 					}
 
-					
-					$
-							.ajaxSetup({
-								beforeSend : function(xhr,
-										settings) {
-									if (!csrfSafeMethod(settings.type)
-											&& !this.crossDomain) {
-										xhr
-												.setRequestHeader(
-														"X-CSRFToken",
-														csrftoken);
-									}
-								}
-							});
+					$.ajaxSetup({
+						beforeSend : function(xhr, settings) {
+							if (!csrfSafeMethod(settings.type)
+									&& !this.crossDomain) {
+								xhr.setRequestHeader("X-CSRFToken", csrftoken);
+							}
+						}
+					});
 
 					$('.dropdown-toggle').dropdown();
 
@@ -93,7 +80,8 @@ $(document)
 
 									});
 
-					//Function to set the height of training data table based on window size
+					// Function to set the height of training data table based
+					// on window size
 					function setHeight() {
 						var headerHeight = $('.container').outerHeight();
 						console.log(headerHeight);
@@ -104,60 +92,103 @@ $(document)
 						});
 					}
 
-					//call the setHeight function, everytime window is resized
+					// call the setHeight function, everytime window is resized
 					$(window).on('resize', function() {
 						setHeight();
 					});
-					//call it for the first time
+					// call it for the first time
 					setHeight();
 
-					//Script to deal with when the training file is uploaded 
-					$('#trainingfile').change(function() {
-									var file = this.files[0];
-								//	console.log(file);
-									var reader = new FileReader(); //FileReader Object reads the content of file as text string into memory
-									reader.readAsText(file);
-									reader.onload = function(event) {
-										var csv = event.target.result;
-										var data = $.csv.toArrays(csv);
-										//console.log(data);
-										var instances = 0
-										var attributes = 0
-										for ( var head in data[0]) {
-											attributes += 1;
-										}
-										for (var row = 1; row < data.length; row++) {
-											instances += 1;
-										}
-										$('#instances').html(instances);
-										$('#Attributes').html(attributes);
-	
-										var $container = $('#dataTable');
-										$container.handsontable({				//HandsonTable library to display interactive data table
-											data : data
-										});
-									};
+					// Script to deal with when the training file is uploaded
+					$('#trainingfile')
+							.change(
+									function() {
+										var file = this.files[0];
+										// FileReader Object reads the content
+										// of file as text string into memory
+										var reader = new FileReader();
+										reader.readAsText(file);
+										reader.onload = function(event) {
+											var csv = event.target.result;
+											var data = $.csv.toArrays(csv);
 
-						
+											var instances = 0
+											var attributes = 0
+											for ( var head in data[0]) {
+												attributes += 1;
+											}
+											for (var row = 1; row < data.length; row++) {
+												instances += 1;
+											}
+											$('#instances').html(instances);
+											$('#Attributes').html(attributes);
 
-				//Posting file to the server side using formdata						
+											$('#saveChanges').toggle();
+											$('#saveChanges').prop("disabled",
+													true);
+											var $container = $('#dataTable');
+											// HandsonTable library to display
+											// interactive data table
+											$container.handsontable({
+												data : data,
+
+											});
+										};
+
+										// Posting file to the server side using
+										// formdata
 										var formdata = new FormData();
 										formdata.append("trainingfile", file);
-										$.ajax({
+										$
+												.ajax({
 
 													type : "POST",
 													url : "http://127.0.0.1:8000/CategoryModeler/preprocess/",
 													dataType : "json",
 													async : true,
-													processData : false, // Don't process the files
+													processData : false, 
 													contentType : false,
 													data : formdata,
 													success : function(response) {
-														alert(response);
 
 													}
 												});
 
+										var $container = $('#dataTable');
+										$container.handsontable({
+											afterChange : function(change,
+													source) {
+												if (source === 'loadData') {
+													return;
+												} else {
+													$('#saveChanges').prop(
+															"disabled", false);
+												}
+
+											}
+
+										});
+
+									});
+
+					$('#saveChanges').click(
+									function() {
+										//So after the execution it doesn't refresh back
+										event.preventDefault();
+										var handsontable = $('#dataTable').data('handsontable');
+												$.ajax({
+													type : "POST",
+													url : "http://127.0.0.1:8000/CategoryModeler/preprocess/",
+													dataType : "json",
+													async : true,
+													processData : false,
+													contentType : false,
+													data : JSON.stringify(handsontable.getData()),
+													success : function(response) {
+
+													}
+
+												});
 									});
 
 				});
