@@ -16,3 +16,33 @@
 
 10. Set up git repositories on github and home laptop. http://wiki.eclipse.org/EGit/User_Guide
 
+11. Installed PostgreSQL as it supports SQL:2011
+    Downloaded the installer file from http://www.postgresql.org/download/macosx/
+	Postgresql database superuser: postgres (pswd: summer69), port:5432
+	Added relevant path for Postgres binaries to session variable: export PATH=$PATH:/Library/PostgreSQL/9.3/bin
+	
+	http://www.postgresql.org/docs/9.3/static/creating-cluster.html - What to do after installing PostgreSQL database
+	a) First create a directory with root user inside /Library/PostgreSQL/9.3/data_Advocate
+	b) Give rights to postgres for the directory -- chown postgres /Library/PostgreSQL/9.3/data_Advocate
+	c) initdb -D /Library/PostgreSQL/9.3/data_Advocate
+	d) To start the server, do the following:
+		(i) first add this path to the system variable for postgres user: export PATH=$PATH:/Library/PostgreSQL/9.3/bin
+		(ii) pg_ctl start -D /Library/PostgreSQl/9.3/data (or data_AdvoCate)
+	e) To kill the server
+	   run -- kill -INT `head -1 /Library/PostgreSQL/9.3/data/postmaster.pid`
+	f) To check the status of server
+	   pg_ctl -D /Library/PostgreSQL/9.3/data status (Dont use -D option if PGDATA environment variable is set)
+	f) To make PostgreSQL server running every time system starts, run the following commands (check http://www.executionunit.com/blog/2013/02/28/mac-osx-starting-postgres-on-boot/)
+	   cd /Library/StartupItems/
+	   mkdir PostgreSQL
+	   touch PostgreSQL/PostgreSQL
+	   touch PostgreSQL/StartupParameters.plist
+	   chmod +x PostgreSQL/PostgreSQL
+	   add "su postgres -c 'pg_ctl start -D /Library/PostgreSQL/9.3/data" to PostgreSQL file
+
+12. Installed psycopg2 - PostgreSQL adapter for Python. 
+	sudo pip install psycopg2
+	
+13. Installed database design tool - valentina studio - https://wiki.postgresql.org/wiki/GUI_Database_Design_Tools
+    Free serial: [username: pgupta82, pswd: summer69]
+    

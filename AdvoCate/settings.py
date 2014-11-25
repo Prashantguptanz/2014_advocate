@@ -58,12 +58,12 @@ WSGI_APPLICATION = 'AdvoCate.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'advocate_schema',
-        'USER': 'root',
-        'PASSWORD': 'sEDVhAGK',
-        'HOST': '',
-        'PORT': '3306'
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'advocate',
+        'USER': 'postgres',
+        'PASSWORD': 'summer69',
+        'HOST': 'localhost',
+        'PORT': '5432'
         
     }
 }
