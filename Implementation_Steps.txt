@@ -46,3 +46,171 @@
 13. Installed database design tool - valentina studio - https://wiki.postgresql.org/wiki/GUI_Database_Design_Tools
     Free serial: [username: pgupta82, pswd: summer69]
     
+14. First installed PostgreSQL using Enterprise DB install.. then uninstalled it (http://stackoverflow.com/questions/8037729/completely-uninstall-postgresql-9-0-4-from-mac-osx-lion)
+    Now installed it using Postgres.app - easier to install postgres and postgis
+    
+15. Creating the spatial database:
+	once created the database "advocate" - loaded the PostGIS spatial extension "CREATE extension postgis;" (needs to login as superuser to create this extension)
+	
+16. Installed QGIS (http://www2.qgis.org/en/site/forusers/download.html)
+	Also required GDAL Complete 1.11, Matplotlib and NumPy modules. QGIS uses system python and it cant use any other, so modules must be installed for the system python.
+	(http://www.kyngchaos.com/software/qgis)
+
+17. SQL to create schema
+
+	CREATE TABLE category
+	(
+	  category_id integer NOT NULL,
+	  category_ver integer NOT NULL,
+	  category_name character varying(100),
+	  startdate timestamp without time zone,
+	  enddate timestamp without time zone,
+	  description text,
+	  CONSTRAINT category_pkey PRIMARY KEY (category_id, category_ver)
+	);
+	
+	CREATE TABLE legend
+	(
+	  legend_id integer NOT NULL,
+	  legend_ver integer NOT NULL,
+	  legend_name character varying(100),
+	  startdate timestamp without time zone,
+	  enddate timestamp without time zone,
+	  description text,
+	  CONSTRAINT legend_pkey PRIMARY KEY (legend_id, legend_ver)
+	);
+	
+	create table concept
+	(
+	 concept_id bigserial primary key not null,
+	 concept_name varchar(100) not null,
+	 description text
+	);
+	
+	create type relationship_type as enum 
+	(
+	 'child-of', 'parent-of','sibling-of'
+	);
+	
+	create table relationship 
+	(
+	 relationship_id bigserial primary key not null,
+	 relationship_name relationship_type,
+	 expired boolean,
+	 category1_id integer not null,
+	 category1_ver integer not null,
+	 category2_id integer not null,
+	 category2_ver integer not null
+	);
+	
+	create table trainingset 
+	(
+	 trainingset_id integer not null,
+	 trainingset_ver integer not null,
+	 description text,
+	 startdate timestamp without time zone,
+	 enddate timestamp without time zone,
+	 trainingfile bytea,
+	 trainingstartperiod timestamp without time zone,
+	 trainingendperiod timestamp without time zone,
+	 PRIMARY KEY (trainingset_id, trainingset_ver)
+	);
+	
+	create table classificationmodel
+	(
+	 model_id serial primary key not null,
+	 accuracy float,
+	 confusionmatrix bytea
+	);
+	
+	create table classificationmodel_trianingsets 
+	(
+	 model_trainingsets_id serial primary key not null,
+	 trainingset_id integer not null,
+	 trainingset_ver integer not null,
+	 model_id integer not null
+	);
+	
+	create table classifier 
+	(
+	 classifier_id serial primary key not null,
+	 classifier_name varchar(100)
+	);
+	
+	
+	
+	Alter table category
+	 add column concept_id integer,
+	 add constraint categoryfk1 foreign key (concept_id) references concept(concept_id),
+	 add column legend_id integer not null,
+	 add column legend_ver integer not null,
+	 add constraint categoryfk2 foreign key (legend_id, legend_ver) references legend(legend_id, legend_ver) match full,
+	 add column trainingset_id integer,
+	 add column trainingset_ver integer,
+	 add constraint categoryfk3 foreign key (trainingset_id, trainingset_ver) references trainingset(trainingset_id, trainingset_ver) match full
+	
+	Alter table relationship
+	 add constraint relationshipfk1 foreign key (category1_id, category1_ver) references category(category_id, category_ver),
+	 add constraint relationshipfk2 foreign key (category2_id, category2_ver) references category(category_id, category_ver)
+	
+	
+	Alter table legend
+	 add column model_id integer not null,
+	 add constraint legendfk foreign key (model_id) references classificationmodel(model_id)
+	
+	
+	Alter table classificationmodel
+	 add column classifier_id integer not null,
+	 add constraint classificationmodelfk foreign key (classifier_id) references classifier(classifier_id)
+	
+	Create table change_training_set_activity 
+	(
+	 change_training_set_activity_id serial primary key not null,
+	 oldtrainingset_id integer not null,
+	 oldtrainingset_ver integer not null,
+	 newtrainingset_id integer not null,
+	 newtrainingset_ver integer not null,
+	 constraint change_training_set_activityfk1 foreign key (oldtrainingset_id, oldtrainingset_ver) references trainingset(trainingset_id, trainingset_ver) match full,
+	 constraint change_training_set_activityfk2 foreign key (newtrainingset_id, newtrainingset_ver) references trainingset(trainingset_id, trainingset_ver) match full
+	);
+	
+	Create table train_classifier_activity 
+	(
+	 train_classifier_activity_id serial primary key not null,
+	 classifier_id integer not null,
+	 model_id integer not null,
+	 constraint train_classifier_activityfk1 foreign key (classifier_id) references classifier (classifier_id),
+	 constraint train_classifier_activityfk2 foreign key (model_id) references classificationmodel (model_id)
+	);
+	
+	
+	create table testdata_classification_activity 
+	(
+	 testdata_classification_activity_id serial primary key not null,
+	 model_id integer not null,
+	 testdatafile bytea not null,
+	 constraint testdata_classification_activityfk foreign key (model_id) references classificationmodel(model_id)
+	);
+	
+	create type activity_type as enum 
+	(
+	 'change_training_set_activity', 'train_classifier_activity ','testdata_classification_activity '
+	);
+	
+	create table activity
+	(
+	 activity_id serial primary key not null,
+	 activity_name activity_type
+	);
+	
+	create table exploration_chain 
+	(
+	 exploration_chain_id integer not null,
+	 step integer not null,
+	 current_activity_id integer not null,
+	 current_activity_instance_id integer not null,
+	 constraint exploration_chainfk foreign key (current_activity_id) references activity (activity_id)
+	);
+
+
+	
