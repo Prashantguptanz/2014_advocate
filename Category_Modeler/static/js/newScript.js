@@ -1,6 +1,4 @@
-$(document)
-		.ready(
-				function() {
+$(function() {
 
 					function getCookie(name) {
 						var cookieValue = null;
@@ -40,17 +38,21 @@ $(document)
 
 					$('.dropdown-toggle').dropdown();
 
-					$('input[name="testoption"]')
-							.click(
-									function() {
-										if ($(
-												'input[name="testoption"]:checked')
-												.attr("id") == "trainingfile") {
-											$("#testfile").prop('disabled',
-													false);
-											$("#Fold").prop('disabled', true);
-											$("#Percentage").prop('disabled',
-													true);
+					$('input[name="testoption"]').on('click',function() {
+			//		$('#trainingoption').on('click', 'input[name="testoption"]', function(){  -- another way of doing it
+						var $this = $(this);
+						$this.removeAttr('disabled');
+						$this.siblings('input').children().attr('disabled');
+						
+					});
+										
+								/*		if (
+												checkedOption.removeAttr('disabled');
+												checkedOption.siblings('input').children().attr('disabled');
+												$(checkedOption.attr("id") == "trainingfile") {
+													testFileOption.prop('disabled',	false);
+													crossValidationFolds.prop('disabled', true);
+													percentageSplitForValidation.prop('disabled',true);
 										} else if ($(
 												'input[name="testoption"]:checked')
 												.attr("id") == "CrossValidation") {
@@ -75,29 +77,25 @@ $(document)
 											$("#Fold").prop('disabled', true);
 											$("#Percentage").prop('disabled',
 													true);
-										}
-										;
-
-									});
+										}*/
+										
 
 					// Function to set the height of training data table based
 					// on window size
-					function setHeight() {
+					(function setHeight() {
 						var headerHeight = $('.container').outerHeight();
-						console.log(headerHeight);
 						var totalHeight = $(window).height();
-						console.log(totalHeight);
 						$('#dataTable').css({
 							'height' : totalHeight - headerHeight - 10 + 'px'
 						});
-					}
+					})();
 
 					// call the setHeight function, everytime window is resized
 					$(window).on('resize', function() {
 						setHeight();
 					});
 					// call it for the first time
-					setHeight();
+				//	setHeight();
 
 					// Script to deal with when the training file is uploaded
 					$('#trainingfile')

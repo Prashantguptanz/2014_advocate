@@ -48,6 +48,6 @@ def read_CSVFile(f):
         datafile.close();    
     return samples
 
-def modeler(f):
-    return 
+def supervised(request):
+    return render (request, 'supervised.html')
 
