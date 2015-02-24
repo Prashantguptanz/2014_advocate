@@ -4,26 +4,37 @@
 <form enctype="multipart/form-data" id="Form2" method="POST" action="">
 	{% csrf_token %}
 
-	<div class="form-group">
-		<div style="width: 25%; float: left">
-			<legend style="font-size: 18px">
-				Training Dataset
-			</legend>
-			<input type="file" id="trainingfile" accept=".csv,.xls" />
-			<br />
-
-			<label for="instances" style="font-weight: normal">Instances: <span
-				id="instances"> </span></label>
-			<br />
-			<label for="Attributes" style="font-weight: normal">Attributes: <span id="Attributes"> </span> </label>
+	<div >
+		<div style="width: 30%; float: left">
+			<form class="form-group">
+				<legend style="font-size: 18px">Choose training dataset</legend>
+				<div class="form-group radio">		
+								
+					<input type="radio" name="choosetrainingfile" value="option1" id="existingtrainingset"/>Existing
+					<span style="float: right">
+						<select name="existingtrainingfiles" id="existingtrainingfiles"  disabled>
+	 					</select>
+					</span>
+					<br /><br />
+					
+					<input type="radio" name="choosetrainingfile" value="option2" id="newtrainingset"/>New
+					<span style="float: right">
+						<input type="file" id="trainingfile" accept=".csv,.xls" disabled/>
+					</span>
+					
+				</div>
+			</form>
 		</div>
 
-		<div style="float: right; width: 70%">
+		<div style="float: right; width: 68%">
 			<legend style="font-size: 18px">
 				Data-Table
 			</legend>
+			<label for="instances" style="font-weight: normal">Instances: <span	id="instances"> </span></label>
+			<br />
+			<label for="Attributes" style="font-weight: normal">Attributes: <span id="Attributes"> </span> </label>
+			
 			<div id= "dataTable" class="handsontable" style="overflow: scroll">
-
 			</div>
 			<br />
 			<button id="saveChanges" style="float:right; display:none">Save changes </button>
