@@ -41,6 +41,13 @@ $(function() {
 			$this.next().children().removeAttr('disabled');
 			$this.siblings('input').next().children().attr('disabled', 'disabled');
 			
+			if ($this.attr('value')=='option2'){
+				$('#newtrainingdatasetdetails').show();
+			}
+			else{
+				$('#newtrainingdatasetdetails').hide();
+			}
+			
 		});
 		
 		
@@ -50,7 +57,8 @@ $(function() {
 		
 		// Script to deal with when the training file is uploaded
 		$('#trainingfile').on('change', function() { 
-		
+			$('#instanceslabel').show();
+			$('#attributeslabel').show();
 			var file = this.files[0];
 			// FileReader Object reads the content
 			// of file as text string into memory
@@ -71,10 +79,9 @@ $(function() {
 				$('#instances').html(instances);
 				$('#Attributes').html(attributes);
 
-				$('#saveChanges').toggle();
-				$('#saveChanges').prop("disabled",
-						true);
-				var $container = $('#dataTable');
+				//$('#saveChanges').toggle();
+			//	$('#saveChanges').attr('disabled', 'disabled');
+				var $container = $('#trainingdataTable');
 				// HandsonTable library to display
 				// interactive data table
 				$container.handsontable({
@@ -102,15 +109,14 @@ $(function() {
 							}
 						});
 
-				var $container = $('#dataTable');
+				var $container = $('#trainingdataTable');
 				$container.handsontable({
 					afterChange : function(change,
 							source) {
 						if (source === 'loadData') {
 							return;
 						} else {
-							$('#saveChanges').prop(
-									"disabled", false);
+							$('#saveChanges').show();
 						}
 
 					}
@@ -123,7 +129,7 @@ $(function() {
 		(function setHeight() {
 			var headerHeight = $('.container').outerHeight();
 			var totalHeight = $(window).height();
-			$('#dataTable').css({'height' : totalHeight - headerHeight - 10 + 'px'});
+			$('#trainingdataTable').css({'height' : totalHeight - headerHeight - 10 + 'px'});
 		})();
 
 		// call the setHeight function, every time window is resized

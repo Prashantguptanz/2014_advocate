@@ -5,7 +5,7 @@
 	{% csrf_token %}
 
 	<div >
-		<div style="width: 30%; float: left">
+		<div style="width: 40%; float: left">
 			<form class="form-group">
 				<legend style="font-size: 18px">Choose training dataset</legend>
 				<div class="form-group radio">		
@@ -24,17 +24,43 @@
 					
 				</div>
 			</form>
+			<br /><br />
+			<form class="form-group" id="newtrainingdatasetdetails" style="display:none">
+				<legend style="font-size: 16px">Enter new training dataset details</legend>
+					<div class="form-group">
+						<label for="FieldResearcherName" style ="font-weight:normal">Field Researcher's Name</label><br />
+						<input type="text" name="" value="" id="FieldResearcherName" placeholder="Enter Name"/>
+					</div>
+					<div class="form-group">
+						<label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training Time Period - Start date</label><br />
+						<input type="date" name="" value="" id="TrainingTimePeriodStartDate"/>
+					</div>
+					<div class="form-group">
+						<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training Time Period - End date</label><br />
+						<input type="date" name="" value="" id="TrainingTimePeriodEndDate"/>
+					</div>
+					<div class="form-group">
+						<label for="Location" style ="font-weight:normal">Enter Training Location</label><br />
+						<input type="text" name="" value="" id="Location" placeholder="Enter Training Location"/>
+					</div>
+					<div class="form-group">
+						<label for="description" style ="font-weight:normal">Other details</label><br />
+						<textarea name="" rows="8" cols="40" id="description" placeholder="Enter any more relevant details"> </textarea>
+					</div>
+			</form>
 		</div>
 
-		<div style="float: right; width: 68%">
+		<div style="float: right; width: 55%">
 			<legend style="font-size: 18px">
 				Data-Table
 			</legend>
-			<label for="instances" style="font-weight: normal">Instances: <span	id="instances"> </span></label>
+			<div> 
+				<label for="instances" id = "instanceslabel" style="font-weight: normal; display:none">Instances: <span	id="instances"> </span></label>
+				&nbsp &nbsp &nbsp &nbsp
+				<label for="Attributes" id = "attributeslabel" style="font-weight: normal; display:none">Attributes: <span id="Attributes"> </span> </label>
+			</div>
 			<br />
-			<label for="Attributes" style="font-weight: normal">Attributes: <span id="Attributes"> </span> </label>
-			
-			<div id= "dataTable" class="handsontable" style="overflow: scroll">
+			<div id= "trainingdataTable" class="handsontable" style="overflow: scroll">
 			</div>
 			<br />
 			<button id="saveChanges" style="float:right; display:none">Save changes </button>
