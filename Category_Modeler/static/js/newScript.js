@@ -59,82 +59,80 @@ $(function() {
 		$('#trainingfile').on('change', function() { 
 			$('#instanceslabel').show();
 			$('#attributeslabel').show();
-			var file = this.files[0];
+			var newtrainingdataset = this.files[0];
+		
 			// FileReader Object reads the content
 			// of file as text string into memory
 			var reader = new FileReader();
-			reader.readAsText(file);
+			
 			reader.onload = function(event) {
-				var csv = event.target.result;
-				var data = $.csv.toArrays(csv);
+				var csv = reader.result;  // I can also write event.target.result
+				var trainingdata = $.csv.toArrays(csv);
+			
+				$('#instances').html(trainingdata.length-1);
+				$('#Attributes').html(trainingdata[0].length);
 
-				var instances = 0
-				var attributes = 0
-				for ( var head in data[0]) {
-					attributes += 1;
-				}
-				for (var row = 1; row < data.length; row++) {
-					instances += 1;
-				}
-				$('#instances').html(instances);
-				$('#Attributes').html(attributes);
-
-				//$('#saveChanges').toggle();
-			//	$('#saveChanges').attr('disabled', 'disabled');
 				var $container = $('#trainingdataTable');
-				// HandsonTable library to display
-				// interactive data table
+				// HandsonTable library to display interactive data table
 				$container.handsontable({
-					data : data,
+					data : trainingdata,
 
 				});
 			};
+			
+			reader.readAsText(newtrainingdataset);
 
-				// Posting file to the server side using
-				// formdata
-				var formdata = new FormData();
-				formdata.append("trainingfile", file);
-				$
-						.ajax({
+			// Posting file to the server side using formdata
+			var formdata = new FormData();
+			formdata.append("trainingfile", newtrainingdataset);
+			$.ajax({
+				type : "POST",
+				url : "http://127.0.0.1:8000/CategoryModeler/preprocess/",
+				dataType : "json",
+				async : true,
+				processData : false, 
+				contentType : false,
+				data : formdata,
+				success : function(response) {
 
-							type : "POST",
-							url : "http://127.0.0.1:8000/CategoryModeler/preprocess/",
-							dataType : "json",
-							async : true,
-							processData : false, 
-							contentType : false,
-							data : formdata,
-							success : function(response) {
+				}
+			});
 
-							}
-						});
-
-				var $container = $('#trainingdataTable');
-				$container.handsontable({
-					afterChange : function(change,
-							source) {
-						if (source === 'loadData') {
-							return;
-						} else {
-							$('#saveChanges').show();
-						}
-
+			var $container = $('#trainingdataTable');
+			$container.handsontable({
+				afterChange : function(change,
+						source) {
+					if (source === 'loadData') {
+						return;
+					} else {
+						$('#saveChanges').show();
 					}
 
-				});
+				}
 
 			});
+
+		});
 		
 		// Function to set the height of training data table based on window size
 		(function setHeight() {
 			var headerHeight = $('.container').outerHeight();
 			var totalHeight = $(window).height();
-			$('#trainingdataTable').css({'height' : totalHeight - headerHeight - 10 + 'px'});
+			$('#trainingdataTable').css({'height' : totalHeight - headerHeight + 'px'});
 		})();
 
 		// call the setHeight function, every time window is resized
 		$(window).on('resize', function() {
 			setHeight();
+		});
+		
+		$('#savetrainingdatadetails').on('click', function(e){
+			e.preventDefault();
+			var $this = $('#newtrainingdatasetdetails');
+			$.post("http://127.0.0.1:8000/CategoryModeler/savetrainingdatadetails/", $this.serialize(), function(response){
+				alert(response);
+			});
+			
 		});
 
 		$('#saveChanges').on('click', function() { 

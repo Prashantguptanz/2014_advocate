@@ -27,7 +27,11 @@ def preprocess(request):
     else:
         return render(request, 'preprocess.html')
 
-
+def savetrainingdatadetails(request):
+    if request.method=='POST':
+        data = request.POST['FieldResearcherName']
+    
+    return HttpResponse(data);
 
 # create a file with similar name as provided in the static folder and copy all the contents    
 def handle_uploaded_file(request, f):
