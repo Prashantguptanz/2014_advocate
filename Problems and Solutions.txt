@@ -15,3 +15,18 @@ $ sudo ln -fs /usr/lib/libcrypto.1.0.0.dylib /usr/lib/libcrypto.dylib
 $ sudo ln -fs /Library/PostgreSQL/9.4/lib/libcrypto.1.0.0.dylib /usr/lib/libcrypto.1.0.0.dylib
 
 
+
+		var $container = $('#trainingdataTable'),
+			trainingdatatablecontainer;
+		
+		trainingdatatablecontainer = new Handsontable($container, {
+			startRows : 8,
+			colHeaders : true,
+			afterChange: function(change, source){
+				if (source === 'loadData') {
+					return;
+				} 
+				
+				$('#saveChanges').show();
+			}
+		});

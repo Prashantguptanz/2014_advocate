@@ -13,8 +13,11 @@ def index(request):
 def preprocess(request):
     if request.method == 'POST':
         if request.is_ajax():
+            a = request.POST;
+            print a;
             if request.FILES:
                 trainingfile = request.FILES['trainingfile']
+                print trainingfile;
                 handle_uploaded_file(request, trainingfile);
             else:
                 data = json.loads(request.body)
@@ -27,12 +30,28 @@ def preprocess(request):
     else:
         return render(request, 'preprocess.html')
 
+
 def savetrainingdatadetails(request):
     if request.method=='POST':
-        data = request.POST['FieldResearcherName']
-    
-    return HttpResponse(data);
+        data = request.POST;
+        researcherName = data['FieldResearcherName'];
+        trainingstart = data['TrainingTimePeriodStartDate'];
+        trainingend = data['TrainingTimePeriodEndDate'];
+        location = data['TrainingLocation'];
+        otherDetails = data['OtherDeatils'];
+       # print data.values();
+    return HttpResponse("We got the data");
 
+def saveNewTrainingVersion(request):
+    if request.method=='POST':
+        data = json.loads(request.body)
+        f1 = open('Category_Modeler/static/js/training_ver.csv', 'w')
+        writer = csv.writer(f1)
+        for i in range(len(data)):
+            writer.writerow(data[i])
+        f1.close()
+    return HttpResponse("Changed dataset is saved as a new version");
+        
 # create a file with similar name as provided in the static folder and copy all the contents    
 def handle_uploaded_file(request, f):
     with BufferedWriter( FileIO( 'Category_Modeler/static/js/%s' % f, "wb" ) ) as dest:

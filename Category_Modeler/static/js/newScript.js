@@ -50,7 +50,35 @@ $(function() {
 			
 		});
 		
+		var trainingdatacontainer = document.getElementById('trainingdataTable'),
+			hot;
 		
+		function firstRowRenderer(instance, td, row, col, prop, value, cellProperties) {
+			  Handsontable.renderers.TextRenderer.apply(this, arguments);
+			  td.style.fontWeight = 'bold';
+			  td.style.background = 'gainsboro';
+			}
+		
+		var settings1 = {
+			contextMenu: true,
+			afterChange: function(change, source){
+				if (source === 'loadData') {
+					return;
+				} 
+				
+				$('#saveChanges').show();
+			},
+			cells: function(row, col, prop){
+				var cellProperties = {};
+				if (row==0){
+					cellProperties.readOnly = true;
+					cellProperties.renderer = firstRowRenderer;
+				}
+				return cellProperties;
+			}
+			
+		};
+		hot = new Handsontable(trainingdatacontainer, settings1);
 
 
 		
@@ -71,13 +99,10 @@ $(function() {
 			
 				$('#instances').html(trainingdata.length-1);
 				$('#Attributes').html(trainingdata[0].length);
+				
+				$('#trainingdataTable').show()
+				hot.loadData(trainingdata);
 
-				var $container = $('#trainingdataTable');
-				// HandsonTable library to display interactive data table
-				$container.handsontable({
-					data : trainingdata,
-
-				});
 			};
 			
 			reader.readAsText(newtrainingdataset);
@@ -88,7 +113,6 @@ $(function() {
 			$.ajax({
 				type : "POST",
 				url : "http://127.0.0.1:8000/CategoryModeler/preprocess/",
-				dataType : "json",
 				async : true,
 				processData : false, 
 				contentType : false,
@@ -96,20 +120,6 @@ $(function() {
 				success : function(response) {
 
 				}
-			});
-
-			var $container = $('#trainingdataTable');
-			$container.handsontable({
-				afterChange : function(change,
-						source) {
-					if (source === 'loadData') {
-						return;
-					} else {
-						$('#saveChanges').show();
-					}
-
-				}
-
 			});
 
 		});
@@ -126,6 +136,7 @@ $(function() {
 			setHeight();
 		});
 		
+		
 		$('#savetrainingdatadetails').on('click', function(e){
 			e.preventDefault();
 			var $this = $('#newtrainingdatasetdetails');
@@ -137,16 +148,15 @@ $(function() {
 
 		$('#saveChanges').on('click', function() { 
 			//So after the execution it doesn't refresh back
+			console.log(JSON.stringify(hot.getData()));
 			event.preventDefault();
-			var handsontable = $('#dataTable').data('handsontable');
 					$.ajax({
 						type : "POST",
-						url : "http://127.0.0.1:8000/CategoryModeler/preprocess/",
-						dataType : "json",
+						url : "http://127.0.0.1:8000/CategoryModeler/saveNewTrainingVersion/",
 						async : true,
 						processData : false,
 						contentType : false,
-						data : JSON.stringify(handsontable.getData()),
+						data : JSON.stringify(hot.getData()),
 						success : function(response) {
 
 						}
