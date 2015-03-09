@@ -213,4 +213,7 @@
 	);
 
 
-	
+18. Installed GDAL to read Raster and Shape files and to convert them to/from ASCII formats
+    To install check http://www.kyngchaos.com/software:frameworks
+    add it to the django python libraries in eclipse
+    

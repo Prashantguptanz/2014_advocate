@@ -13,4 +13,3 @@ $ sudo ln -fs /Library/PostgreSQL/9.4/lib/libssl.1.0.0.dylib /usr/lib/libssl.1.0
 $ sudo ln -fs /usr/lib/libssl.1.0.0.dylib /usr/lib/libssl.dylib 
 $ sudo ln -fs /usr/lib/libcrypto.1.0.0.dylib /usr/lib/libcrypto.dylib
 $ sudo ln -fs /Library/PostgreSQL/9.4/lib/libcrypto.1.0.0.dylib /usr/lib/libcrypto.1.0.0.dylib
-
