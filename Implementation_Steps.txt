@@ -39,6 +39,9 @@
 	   touch PostgreSQL/StartupParameters.plist
 	   chmod +x PostgreSQL/PostgreSQL
 	   add "su postgres -c 'pg_ctl start -D /Library/PostgreSQL/9.3/data" to PostgreSQL file
+	   
+Installed PostgreSQL 9.4 (http://coolestguidesontheplanet.com/installing-postgresql-database-os-x-10-9-mavericks-configure-phppgadmin/)
+    Use Stack Builder (part of the package) to install PhpPgAdmin
 
 12. Installed psycopg2 - PostgreSQL adapter for Python. 
 	sudo pip install psycopg2
