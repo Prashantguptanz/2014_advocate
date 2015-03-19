@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+
+	{% csrf_token %}
+
+	<div >
+		<div style="width: 43%; float: left; border-style: solid; border-width: 1px; border-color: #E5E5E5">
+			<form class="form-group" enctype="multipart/form-data" name="trainingFileWithName">
+				<legend style="font-size: 18px; background-color: gainsboro" align="center">Choose/Upload training dataset</legend>
+				<div class="form-group radio" style="margin-left: 5px; margin-right: 5px">		
+								
+					<input type="radio" name="choosetrainingfile" value="option1" id="existingtrainingset"/>Existing
+					<span style="float: right">
+						<select name="existingtrainingfiles" id="existingtrainingfiles"  disabled>
+	 					</select>
+					</span>
+					<br /><br />
+					
+					<input type="radio" name="choosetrainingfile" value="option2" id="newtrainingset"/>New
+					<span style="float: right">
+						<input type="file" id="trainingfile" accept=".csv,.xls" disabled/>
+					</span>
+					
+					
+				</div>
+			</form>
+			<br /><br />
+			<form  id="newtrainingdatasetdetails" style="display:none" enctype="multipart/form-data" action="#">
+				<legend style="font-size: 16px; background-color: gainsboro" align="center">Enter new training dataset details</legend>
+				<div style=" margin-left: 5px; margin-right: 5px" >
+				  
+					<div class="form-group">
+						<label for="FieldResearcherName" style ="font-weight:normal">Field Researcher's Name</label><br />
+						<input type="text" name="FieldResearcherName" value="" id="FieldResearcherName" placeholder="Enter Name"/>
+					</div>
+					<div class="form-group">
+						<label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training Time Period - Start date</label><br />
+						<input type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate"/>
+					</div>
+					<div class="form-group">
+						<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training Time Period - End date</label><br />
+						<input type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate"/>
+					</div>
+					<div class="form-group">
+						<label for="Location" style ="font-weight:normal">Enter Training Location</label><br />
+						<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location"/>
+					</div>
+					<div class="form-group">
+						<label for="description" style ="font-weight:normal">Other details</label><br />
+						<textarea name="OtherDeatils" rows="8" cols="40" id="description" placeholder="Enter any more relevant details"> </textarea>
+					</div>
+					<button id="savetrainingdatadetails">Save dataset details</button>
+				</div>
+			</form>
+		</div>
+
+		<div style="float: right; width: 55%; border-style: solid; border-width: 1px; border-color: #E5E5E5">
+			<legend style="font-size: 18px; background-color: gainsboro" align = "center">View/Edit training samples</legend>
+			<div style = "margin-left: 5px"> 
+				<label for="instances" id = "instanceslabel" style="font-weight: normal; display:none">Instances: <span	id="instances"> </span></label>
+				&nbsp &nbsp &nbsp &nbsp
+				<label for="Attributes" id = "attributeslabel" style="font-weight: normal; display:none">Attributes: <span id="Attributes"> </span> </label>
+			</div>
+			<br />
+			<div id= "trainingdataTable" class="handsontable" style="overflow: scroll; margin-left: 5px; display:none" >
+			</div>
+			<br />
+			<button id="saveChanges" style="display:none">Save changes </button>
+		</div>
+	</div>
+
+{% endblock content %}

@@ -5,3 +5,11 @@ Soln: mysql_so file was looking for the library at wrong place.
 Created a symbolic link to the actual file location. (sudo ln -s /usr/local/mysql/lib/libmysqlclient.18.dylib /usr/lib/libmysqlclient.18.dylib)
 Check more details at http://stackoverflow.com/questions/6383310/python-mysqldb-library-not-loaded-libmysqlclient-18-dylib
 
+2. Issue with accessing psycopg2 (PostgreSQL adaptor for Python)  after installing. Error: import psycopg2 Library not loaded: libssl.1.0.0.dylib
+
+Soln: the library libssl.dylib and libcrypto.dylib had wrong symlinks. To check their symlinks: "ls -l /usr/lib/libssl*"
+Updated the symlinks
+$ sudo ln -fs /Library/PostgreSQL/9.4/lib/libssl.1.0.0.dylib /usr/lib/libssl.1.0.0.dylib
+$ sudo ln -fs /usr/lib/libssl.1.0.0.dylib /usr/lib/libssl.dylib 
+$ sudo ln -fs /usr/lib/libcrypto.1.0.0.dylib /usr/lib/libcrypto.dylib
+$ sudo ln -fs /Library/PostgreSQL/9.4/lib/libcrypto.1.0.0.dylib /usr/lib/libcrypto.1.0.0.dylib

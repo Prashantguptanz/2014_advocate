@@ -1,5 +1,6 @@
 from django.shortcuts import render, HttpResponse
-import csv, json
+import csv, json, numpy, struct
+import gdal
 from io import FileIO, BufferedWriter
 
 
@@ -10,25 +11,50 @@ def index(request):
 
 
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
-def preprocess(request):
+def trainingsampleprocessing(request):
     if request.method == 'POST':
         if request.is_ajax():
             if request.FILES:
                 trainingfile = request.FILES['trainingfile']
                 handle_uploaded_file(request, trainingfile);
-            else:
-                data = json.loads(request.body)
-                f1 = open('Category_Modeler/static/js/training_ver.csv', 'w')
-                writer = csv.writer(f1)
-                for i in range(len(data)):
-                    writer.writerow(data[i])
-                f1.close()
+            dataset = gdal.Open('Category_Modeler/static/com74085cc1/hdr.adf')
+            cols = dataset.RasterXSize
+            rows = dataset.RasterYSize
+            print cols, rows
+            band = dataset.GetRasterBand(1)
+            print band
+            bandtype = gdal.GetDataTypeName(band.DataType)
+            print bandtype
+            scanline = band.ReadRaster(0, 0, band.XSize, 1, band.XSize, 1, band.DataType)
+            #print scanline
+            data = band.ReadAsArray(0,0,cols,rows)
+            print data
         return HttpResponse("")
     else:
-        return render(request, 'preprocess.html')
+        return render(request, 'trainingsample.html')
 
 
+def savetrainingdatadetails(request):
+    if request.method=='POST':
+        data = request.POST;
+        researcherName = data['FieldResearcherName'];
+        trainingstart = data['TrainingTimePeriodStartDate'];
+        trainingend = data['TrainingTimePeriodEndDate'];
+        location = data['TrainingLocation'];
+        otherDetails = data['OtherDeatils'];
+    return HttpResponse("We got the data");
 
+
+def saveNewTrainingVersion(request):
+    if request.method=='POST':
+        data = json.loads(request.body)
+        f1 = open('Category_Modeler/static/js/training_ver.csv', 'w')
+        writer = csv.writer(f1)
+        for i in range(len(data)):
+            writer.writerow(data[i])
+        f1.close()
+    return HttpResponse("Changed dataset is saved as a new version");
+        
 # create a file with similar name as provided in the static folder and copy all the contents    
 def handle_uploaded_file(request, f):
     with BufferedWriter( FileIO( 'Category_Modeler/static/js/%s' % f, "wb" ) ) as dest:
@@ -48,6 +74,10 @@ def read_CSVFile(f):
         datafile.close();    
     return samples
 
-def modeler(f):
-    return 
+def signaturefile(request):
+    return render (request, 'signaturefile.html')
+
+def supervised(request):
+    return render (request, 'supervised.html')
+
 
