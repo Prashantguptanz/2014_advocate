@@ -1,6 +1,7 @@
 from django.shortcuts import render, HttpResponse
 import csv, json, numpy, struct
 import gdal
+from gdalconst import *
 from io import FileIO, BufferedWriter
 
 
@@ -17,10 +18,15 @@ def trainingsampleprocessing(request):
             if request.FILES:
                 trainingfile = request.FILES['trainingfile']
                 handle_uploaded_file(request, trainingfile);
+                request.session['current_training_file'] = trainingfile.name
+                
+            #test code to check if GDAL can be used to read raster data    
             dataset = gdal.Open('Category_Modeler/static/com74085cc1/hdr.adf')
             cols = dataset.RasterXSize
             rows = dataset.RasterYSize
             print cols, rows
+            count = dataset.RasterCount
+            print count
             band = dataset.GetRasterBand(1)
             print band
             bandtype = gdal.GetDataTypeName(band.DataType)
@@ -75,6 +81,7 @@ def read_CSVFile(f):
     return samples
 
 def signaturefile(request):
+    
     return render (request, 'signaturefile.html')
 
 def supervised(request):

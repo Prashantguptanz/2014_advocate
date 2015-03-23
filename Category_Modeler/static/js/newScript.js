@@ -34,7 +34,7 @@ $(function() {
 		});
 
 
-// Script for 'Preprocess Data' page		
+// Script for 'Training Samples' page		
 		
 		$('input[name="choosetrainingfile"]').on('click', function(){
 			var $this = $(this);
@@ -112,7 +112,7 @@ $(function() {
 			formdata.append("trainingfile", newtrainingdataset);
 			$.ajax({
 				type : "POST",
-				url : "http://127.0.0.1:8000/CategoryModeler/preprocess/",
+				url : "http://127.0.0.1:8000/CategoryModeler/trainingsample/",
 				async : true,
 				processData : false, 
 				contentType : false,
@@ -165,15 +165,19 @@ $(function() {
 		});
 		
 		
-// Script for Category Modeling page		
+// Script for 'Signature file' page		
 
 		$('.dropdown-toggle').dropdown();
 		
-		$('input[name="testoption"]').on('click',function() {
+		$('input[name="trainingoption"]').on('click',function() {
 			var $this = $(this);
 			$this.next().children().removeAttr('disabled');
 			$this.siblings('input').next().children().attr('disabled', 'disabled');
 			
+		});
+		
+		$('#createsignaturefile').on('click', function(e){
+			e.preventDefault();
 		});
 
 	});
