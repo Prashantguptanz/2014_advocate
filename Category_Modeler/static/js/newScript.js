@@ -87,27 +87,33 @@ $(function() {
 		$('#trainingfile').on('change', function() { 
 			$('#instanceslabel').show();
 			$('#attributeslabel').show();
+			
+			var ext = this.value.match(/\.(.+)$/)[1];
 			var newtrainingdataset = this.files[0];
-		
-			// FileReader Object reads the content
-			// of file as text string into memory
-			var reader = new FileReader();
-			
-			reader.onload = function(event) {
-				var csv = reader.result;  // I can also write event.target.result
-				var trainingdata = $.csv.toArrays(csv);
-			
-				$('#instances').html(trainingdata.length-1);
-				$('#Attributes').html(trainingdata[0].length);
+			if (ext == 'csv'){
+				// FileReader Object reads the content
+				// of file as text string into memory
+				var reader = new FileReader();
 				
-				$('#trainingdataTable').show()
-				hot.loadData(trainingdata);
+				reader.onload = function(event) {
+					var csv = reader.result;  // I can also write event.target.result
+					var trainingdata = $.csv.toArrays(csv);
+				
+					$('#instances').html(trainingdata.length-1);
+					$('#Attributes').html(trainingdata[0].length);
+					
+					$('#trainingdataTable').show();
+					hot.loadData(trainingdata);
 
-			};
-			
-			reader.readAsText(newtrainingdataset);
-
-			// Posting file to the server side using formdata
+				};
+				reader.readAsText(newtrainingdataset);
+				
+			}
+			else{
+				console.log("not csv");
+			}
+					
+						// Posting file to the server side using formdata
 			var formdata = new FormData();
 			formdata.append("trainingfile", newtrainingdataset);
 			$.ajax({
@@ -179,5 +185,29 @@ $(function() {
 		$('#createsignaturefile').on('click', function(e){
 			e.preventDefault();
 		});
+		
+		
+//Script for visualization
+		
+		$('#creategraph').on('click', function(){
+			var G jsnx.Graph();
+			G.add_nodes_from([
+			                  [1, {color: 'red'}],
+			                  [2, {color: 'blue'}],
+			
+			]);
+			G.add_edges_from([[1,2]]);
+			
+			
+			
+			
+			jsnx.draw(G, {
+				element: '#networkGraph',
+				with_labels: true
+				});
+			
+		});
+		
+
 
 	});

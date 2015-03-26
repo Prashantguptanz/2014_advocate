@@ -124,4 +124,5 @@ def signaturefile(request):
 def supervised(request):
     return render (request, 'supervised.html')
 
-
+def visualization(request):
+    return render (request, 'visualization.html')

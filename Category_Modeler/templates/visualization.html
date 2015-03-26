@@ -1,0 +1,66 @@
+{% extends "base.html" %} {% block content %}
+
+{% csrf_token %}
+
+<div class="form-group" style="width: 28%; float: left">
+	<legend style="font-size: 16px; font-family:Serif">
+		Choose Options for Visualization
+	</legend>
+
+	<div class="form-group" style="width: 98%; overflow: hidden">
+		<div style="float: left; margin-left: 1%; font-size:14px; font-family:Calibri">
+			<label for="What to Visualize" style="font-weight:normal">Visualize</label>
+		</div>
+		<div style="float: right; margin-left: 1%; font-size:12px; font-family:Calibri">
+			<select class ="form-control" id="WhatToVisualize" name="WhatToVisualize" required >
+				<option value=""> visualize</option>
+				<option value="1">Evoluti Legend</option>
+				<option value="2">Current version</option>
+				<option value="5">Category Evolution</option>
+				<option value="6">Current version</option>
+			</select>
+		</div>
+	</div>
+
+	<div class="form-group" style="width: 98%; overflow: hidden">
+		<div style="float: left; margin-left: 1%; font-size:14px; font-family:Calibri">
+			<label for="WhichLegend" style="font-weight:normal">Select a legend</label>
+		</div>
+		<div style="float: right; margin-left: 1%; font-size:12px; font-family:Calibri">
+			<select class ="form-control" id="WhichLegend" name="WhichLegend" required >
+				<option value="">Select a legend</option>
+				<option value="1">New Zealand land cover</option>
+			</select>
+		</div>
+	</div>
+
+	<div class="form-group" style="width: 98%; overflow: hidden">
+		<div style="float: left; margin-left: 1%; font-size:14px; font-family:Calibri">
+			<label for="" style="font-weight:normal">Select a category</label>
+		</div>
+		<div style="float: right; margin-left: 1%; font-size:12px; font-family:Calibri">
+			<select class ="form-control" id="WhichCategory" name="WhichCategory" required >
+				<option value="">Select a category</option>
+				<option value="1">Built Space</option>
+			</select>
+		</div>
+	</div>
+	<br />
+	<button id = "creategraph" type="submit" class="btn btn-default" >
+		Submit
+	</button>
+	<br />
+</div>
+
+<div style="float: right; width: 70%">
+	<legend style="font-size: 16px; font-family:Sans">
+		Evolution of 'Built space' category in NZ land cover legend
+	</legend>
+
+	<div id="networkGraph">
+	  
+	</div>
+
+</div>
+
+{% endblock content %}
