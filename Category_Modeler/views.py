@@ -17,24 +17,45 @@ def trainingsampleprocessing(request):
         if request.is_ajax():
             if request.FILES:
                 trainingfile = request.FILES['trainingfile']
-                handle_uploaded_file(request, trainingfile);
                 request.session['current_training_file'] = trainingfile.name
                 
+                if trainingfile.name.split(".")[-1] == ".csv":
+                    handle_uploaded_file(request, trainingfile);
+                else:
+                    handle_raster_file(request, trainingfile)
+                    dataset = gdal.Open('Category_Modeler/static/data/akl.tif')
+                    cols = dataset.RasterXSize
+                    rows = dataset.RasterYSize
+                    noOfBands = dataset.RasterCount
+                    bands = {}
+                    
+                    for i in range(1, noOfBands):
+                        bands[i] = dataset.GetRasterBand(i).ReadAsArray(0,0,cols,rows)
+                    for j in range(rows):
+                        for k in range (cols):
+                            pixelValue = `j` + " " + `k` + ""
+                            for l in range(1, noOfBands):
+                                pixelValue = pixelValue + `bands[l][j][k]` + " "
+                            print pixelValue
+                    
+                     
+                
             #test code to check if GDAL can be used to read raster data    
-            dataset = gdal.Open('Category_Modeler/static/com74085cc1/hdr.adf')
-            cols = dataset.RasterXSize
-            rows = dataset.RasterYSize
-            print cols, rows
-            count = dataset.RasterCount
-            print count
-            band = dataset.GetRasterBand(1)
-            print band
-            bandtype = gdal.GetDataTypeName(band.DataType)
-            print bandtype
-            scanline = band.ReadRaster(0, 0, band.XSize, 1, band.XSize, 1, band.DataType)
+            #dataset = gdal.Open('Category_Modeler/static/com74085cc1/hdr.adf')
+            #dataset = gdal.Open('Category_Modeler/static/data/akl.tif')
+            #cols = dataset.RasterXSize
+            #rows = dataset.RasterYSize
+            #print cols, rows
+            #count = dataset.RasterCount
+            #print count
+            #band = dataset.GetRasterBand(2)
+            #print band
+            #bandtype = gdal.GetDataTypeName(band.DataType)
+            #print bandtype
+            #scanline = band.ReadRaster(0, 0, band.XSize, 1, band.XSize, 1, band.DataType)
             #print scanline
-            data = band.ReadAsArray(0,0,cols,rows)
-            print data
+            #data = band.ReadAsArray(0,0,cols,rows)
+            #print data
         return HttpResponse("")
     else:
         return render(request, 'trainingsample.html')
@@ -70,6 +91,22 @@ def handle_uploaded_file(request, f):
             foo = f.read(1024)
         dest.close();
 
+def handle_raster_file(request, f):
+    dataset = gdal.Open(f)
+    cols = dataset.RasterXSize
+    rows = dataset.RasterYSize
+    noOfBands = dataset.RasterCount
+    bands = {}
+    
+    for i in range(1, noOfBands):
+        bands[i] = dataset.GetRasterBand(i).ReadAsArray(0,0,cols,rows)
+    for j in range(rows):
+        for k in range (cols):
+            pixelValue = `j` + " " + `k` + ""
+            for l in range(1, noOfBands):
+                pixelValue = pixelValue + `bands[l][j][k]` + " "
+            print pixelValue
+    
 #
 def read_CSVFile(f):
     with open('Category_Modeler/static/uploaded_files/%s' % f, 'rU') as datafile:
