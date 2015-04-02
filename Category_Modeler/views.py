@@ -22,21 +22,30 @@ def trainingsampleprocessing(request):
                 if trainingfile.name.split(".")[-1] == ".csv":
                     handle_uploaded_file(request, trainingfile);
                 else:
-                    handle_raster_file(request, trainingfile)
+                    #handle_raster_file(request, trainingfile)
+                   # dataset = gdal.Open(trainingfile)
                     dataset = gdal.Open('Category_Modeler/static/data/akl.tif')
                     cols = dataset.RasterXSize
                     rows = dataset.RasterYSize
                     noOfBands = dataset.RasterCount
                     bands = {}
-                    
+                    a=0
+                    final_array = {}
                     for i in range(1, noOfBands):
                         bands[i] = dataset.GetRasterBand(i).ReadAsArray(0,0,cols,rows)
                     for j in range(rows):
                         for k in range (cols):
                             pixelValue = `j` + " " + `k` + ""
                             for l in range(1, noOfBands):
-                                pixelValue = pixelValue + `bands[l][j][k]` + " "
-                            print pixelValue
+                                
+                                final_array[a] = pixelValue + `bands[l][j][k]` + " "
+                                a= a+1
+                    
+                    with BufferedWriter( FileIO( 'Category_Modeler/static/js/newfile', "wb" ) ) as dest:
+                        for i in range(final_array.size):
+                            print (final_array[i])
+                            dest.write(final_array[i])
+                        dest.close();
                     
                      
                 

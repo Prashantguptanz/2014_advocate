@@ -78,6 +78,7 @@ $(function() {
 			}
 			
 		};
+		
 		hot = new Handsontable(trainingdatacontainer, settings1);
 
 
@@ -189,24 +190,30 @@ $(function() {
 		
 //Script for visualization
 		
-		$('#creategraph').on('click', function(){
-			var G jsnx.Graph();
+/*		$('#creategraph').on('click', function(){
+			var G = jsnx.Graph();
 			G.add_nodes_from([
-			                  [1, {color: 'red'}],
+			                  ['Built Space', {color: 'red'}, {count: 18}],
 			                  [2, {color: 'blue'}],
 			
 			]);
-			G.add_edges_from([[1,2]]);
+			G.add_edges_from([['Built Space',2]]);
 			
+			console.log(G.nodes(true));
 			
 			
 			
 			jsnx.draw(G, {
 				element: '#networkGraph',
-				with_labels: true
+				with_labels: true,
+				  node_style: {
+				      fill: function(d) {
+				          return d.data.color;
+				      }
+				  }
 				});
 			
-		});
+		});*/
 		
 
 
