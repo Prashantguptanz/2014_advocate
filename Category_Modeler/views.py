@@ -3,6 +3,7 @@ import csv, json, numpy, struct
 import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
+import os
 
 
 # Create your views here.
@@ -22,8 +23,12 @@ def trainingsampleprocessing(request):
                 if trainingfile.name.split(".")[-1] == ".csv":
                     handle_uploaded_file(request, trainingfile)
                 else:
+                    print "I am here"
                     handle_raster_file(request, trainingfile)
-                    
+                    fp = file("Category_Modeler/static/js/newfile.csv", 'rb')
+                    response = HttpResponse( fp, content_type='csv')
+                    response['Content-Disposition'] = 'attachment; filename="training File"'
+                    return response
         return HttpResponse("")
     else:
         return render(request, 'trainingsample.html')
