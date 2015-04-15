@@ -111,7 +111,7 @@ $(function() {
 				
 			}
 			else{
-				console.log("not csv");
+				
 			}
 					
 			// Posting file to the server side using formdata
@@ -128,7 +128,14 @@ $(function() {
 					//newfile = response['training File'];
 					//console.log(newfile);
 					//console.log(response);
+					console.log("i got d response");
 					var trainingdata = $.csv.toArrays(response);
+					console.log("response to arrays");
+					$('#instances').html(trainingdata.length-1);
+					$('#Attributes').html(trainingdata[0].length);
+					
+					$('#trainingdataTable').show();
+					hot.loadData(trainingdata);
 					hot.loadData(trainingdata);
 
 				}

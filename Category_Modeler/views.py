@@ -1,4 +1,5 @@
 from django.shortcuts import render, HttpResponse
+from django.core.servers.basehttp import FileWrapper
 import csv, json, numpy, struct
 import gdal
 from gdalconst import *
@@ -26,7 +27,8 @@ def trainingsampleprocessing(request):
                     print "I am here"
                     handle_raster_file(request, trainingfile)
                     fp = file("Category_Modeler/static/js/newfile.csv", 'rb')
-                    response = HttpResponse( fp, content_type='csv')
+                    wrapper = FileWrapper(fp)
+                    response = HttpResponse( wrapper, content_type='text/plain')
                     response['Content-Disposition'] = 'attachment; filename="training File"'
                     return response
         return HttpResponse("")
@@ -80,20 +82,22 @@ def handle_raster_file(request, f):
     print bands[2][1][2]
     for j in range(rows):
         for k in range (cols):
-            pixelValue = `j` + " " + `k` + " "
+            pixelValue = "\'"  + `j` + "\'" + ", " + "\'" + `k` + "\'" 
             for l in range(len(bands)):
-                pixelValue = pixelValue + `bands[l][j][k]` + " "
+                pixelValue = pixelValue +  ", " + "\'" + `bands[l][j][k]` + "\'"
             final_array.append(pixelValue)
             
     print final_array[0]
     print "I am at second place"
     
-    with BufferedWriter( FileIO( 'Category_Modeler/static/js/newfile.csv', "wb" ) ) as dest:
-        dest.write("x y band1 band2 band3 band4 band5 band6 band7\n")
-        for i in range(len(final_array)):
-            #print (final_array[i])
-            dest.write(final_array[i] + '\n')
-        dest.close();
+    with BufferedWriter( FileIO( 'Category_Modeler/static/js/newfile.csv', "wb" ) ) as csvfile:
+        spamwriter = csv.writer(csvfile, delimiter=',')
+        spamwriter.writerow(['X', 'Y', 'band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7'])
+        for i in range(1000):
+            print (final_array[i])
+            spamwriter.writerow(final_array[i])
+            #csvfile.write(final_array[i] + '\n')
+        csvfile.close();
         print "i am done"
         
 #
