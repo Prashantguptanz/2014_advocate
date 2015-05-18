@@ -27,8 +27,8 @@ def trainingsampleprocessing(request):
                     print "I am here"
                     handle_raster_file(request, trainingfile)
                     fp = file("Category_Modeler/static/js/newfile.csv", 'rb')
-                    wrapper = FileWrapper(fp)
-                    response = HttpResponse( wrapper, content_type='text/plain')
+                   # wrapper = FileWrapper(fp)
+                    response = HttpResponse( fp, content_type='text/csv')
                     response['Content-Disposition'] = 'attachment; filename="training File"'
                     return response
         return HttpResponse("")
@@ -70,35 +70,33 @@ def handle_raster_file(request, f):
     dataset = gdal.Open('Category_Modeler/static/data/%s' % f.name)
     cols = dataset.RasterXSize
     rows = dataset.RasterYSize
-    print cols, rows
     noOfBands = dataset.RasterCount
-    print noOfBands
     bands = []
     
     final_array = []
+    pixelValue=[]
     print "I am at first place"
     for i in range(1, noOfBands):
         bands.append(dataset.GetRasterBand(i).ReadAsArray(0,0,cols,rows))
     print bands[2][1][2]
+    
     for j in range(rows):
         for k in range (cols):
-            pixelValue = "\'"  + `j` + "\'" + ", " + "\'" + `k` + "\'" 
+            pixelValue.append(j)
+            pixelValue.append(k)
             for l in range(len(bands)):
-                pixelValue = pixelValue +  ", " + "\'" + `bands[l][j][k]` + "\'"
+                pixelValue.append(bands[l][j][k])
+                
             final_array.append(pixelValue)
-            
-    print final_array[0]
-    print "I am at second place"
+            pixelValue=[]
+
     
     with BufferedWriter( FileIO( 'Category_Modeler/static/js/newfile.csv', "wb" ) ) as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',')
         spamwriter.writerow(['X', 'Y', 'band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7'])
-        for i in range(1000):
-            print (final_array[i])
+        for i in range(5000):
             spamwriter.writerow(final_array[i])
-            #csvfile.write(final_array[i] + '\n')
         csvfile.close();
-        print "i am done"
         
 #
 def read_CSVFile(f):
