@@ -12,6 +12,9 @@
 					<input type="radio" name="choosetrainingfile" value="option1" id="existingtrainingset"/>Existing
 					<span style="float: right">
 						<select name="existingtrainingfiles" id="existingtrainingfiles"  disabled>
+							{% for train in training_set_list %}
+							<option value="">{{ train.trainingset_id }}</option>
+							{% endfor %}
 	 					</select>
 					</span>
 					<br /><br />

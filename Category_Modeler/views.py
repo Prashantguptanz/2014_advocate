@@ -4,6 +4,7 @@ import csv, json, numpy, struct
 import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
+from Category_Modeler.models import Trainingset
 import os
 
 
@@ -15,6 +16,7 @@ def index(request):
 
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
 def trainingsampleprocessing(request):
+    
     if request.method == 'POST':
         if request.is_ajax():
             if request.FILES:
@@ -27,13 +29,17 @@ def trainingsampleprocessing(request):
                     print "I am here"
                     handle_raster_file(request, trainingfile)
                     fp = file("Category_Modeler/static/js/newfile.csv", 'rb')
-                   # wrapper = FileWrapper(fp)
+                    # wrapper = FileWrapper(fp)
                     response = HttpResponse( fp, content_type='text/csv')
                     response['Content-Disposition'] = 'attachment; filename="training File"'
                     return response
         return HttpResponse("")
     else:
-        return render(request, 'trainingsample.html')
+        training_set_list = Trainingset.objects.all()  # @UndefinedVariable
+        print training_set_list
+       # for trainingset in training_set_list:
+            #print trainingset
+        return render(request, 'trainingsample.html', {'training_set_list':training_set_list})
 
 
 def savetrainingdatadetails(request):
