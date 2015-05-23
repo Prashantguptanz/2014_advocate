@@ -340,8 +340,11 @@ class SpatialRefSys(models.Model):
 class TestdataClassificationActivity(models.Model):
     testdata_classification_activity_id = models.IntegerField(primary_key=True)
     model = models.ForeignKey(Classificationmodel)
-    testdatafile = models.BinaryField()
+    testfilelocation = models.CharField(max_length=1024)
 
+    def __unicode__(self):
+        return self.testdata_classification_activity_id
+    
     class Meta:
         managed = False
         db_table = 'testdata_classification_activity'
@@ -351,6 +354,9 @@ class TrainClassifierActivity(models.Model):
     train_classifier_activity_id = models.IntegerField(primary_key=True)
     classifier = models.ForeignKey(Classifier)
     model = models.ForeignKey(Classificationmodel)
+    
+    def __unicode__(self):
+        return self.train_classifier_activity_id
 
     class Meta:
         managed = False
@@ -362,10 +368,13 @@ class Trainingset(models.Model):
     trainingset_ver = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=256)
     description = models.TextField(blank=True)
-    startdate = models.DateTimeField(blank=True, null=True)
-    enddate = models.DateTimeField(blank=True, null=True)
-    trainingfile = models.CharField(max_length=256)
+    startdate = models.DateTimeField()
+    enddate = models.DateTimeField()
+    location = models.CharField(max_length=1024)
 
+    def __unicode__(self):
+        return self.name
+    
     class Meta:
         managed = False
         db_table = 'trainingset'
