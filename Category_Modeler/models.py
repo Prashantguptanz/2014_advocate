@@ -90,17 +90,17 @@ class AuthUserUserPermissions(models.Model):
 
 
 class Category(models.Model):
-    category_id = models.IntegerField()
-    category_ver = models.IntegerField()
-    category_name = models.CharField(max_length=100, blank=True)
-    startdate = models.DateTimeField(blank=True, null=True)
-    enddate = models.DateTimeField(blank=True, null=True)
+    category_id = models.IntegerField(primary_key=True)
+    category_ver = models.IntegerField(primary_key=True)
+    category_name = models.CharField(max_length=100)
+    startdate = models.DateTimeField()
+    enddate = models.DateTimeField()
     description = models.TextField(blank=True)
     concept = models.ForeignKey('Concept', blank=True, null=True)
     legend = models.ForeignKey('Legend')
     legend_ver = models.IntegerField()
-    trainingset = models.ForeignKey('Trainingset', blank=True, null=True)
-    trainingset_ver = models.IntegerField(blank=True, null=True)
+    trainingset = models.ForeignKey('Trainingset')
+    trainingset_ver = models.IntegerField()
 
     class Meta:
         managed = False
@@ -121,8 +121,8 @@ class ChangeTrainingSetActivity(models.Model):
 
 class Classificationmodel(models.Model):
     model_id = models.IntegerField(primary_key=True)
-    accuracy = models.FloatField(blank=True, null=True)
-    confusionmatrix = models.BinaryField(blank=True, null=True)
+    accuracy = models.FloatField()
+    confusionmatrixlocation = models.CharField(max_length=256)
     classifier = models.ForeignKey('Classifier')
 
     class Meta:
@@ -130,15 +130,15 @@ class Classificationmodel(models.Model):
         db_table = 'classificationmodel'
 
 
-class ClassificationmodelTrianingsets(models.Model):
+class ClassificationmodelTrainingsets(models.Model):
     model_trainingsets_id = models.IntegerField(primary_key=True)
-    trainingset_id = models.IntegerField()
+    trainingset = models.ForeignKey('Trainingset')
     trainingset_ver = models.IntegerField()
-    model_id = models.IntegerField()
+    model = models.ForeignKey(Classificationmodel)
 
     class Meta:
         managed = False
-        db_table = 'classificationmodel_trianingsets'
+        db_table = 'classificationmodel_trainingsets'
 
 
 class Classifier(models.Model):
@@ -208,8 +208,8 @@ class DjangoSession(models.Model):
 
 
 class ExplorationChain(models.Model):
-    exploration_chain_id = models.IntegerField()
-    step = models.IntegerField()
+    exploration_chain_id = models.IntegerField(primary_key=True)
+    step = models.IntegerField(primary_key=True)
     current_activity = models.ForeignKey(Activity)
     current_activity_instance_id = models.IntegerField()
 
@@ -249,12 +249,15 @@ class GeometryColumns(models.Model):
 class Legend(models.Model):
     legend_id = models.IntegerField()
     legend_ver = models.IntegerField()
-    legend_name = models.CharField(max_length=100, blank=True)
-    startdate = models.DateTimeField(blank=True, null=True)
-    enddate = models.DateTimeField(blank=True, null=True)
-    description = models.TextField(blank=True)
+    legend_name = models.CharField(max_length=100)
+    startdate = models.DateTimeField()
+    enddate = models.DateTimeField()
+    description = models.TextField()
     model = models.ForeignKey(Classificationmodel)
 
+    def __unicode__(self):
+        return self.legend_name
+    
     class Meta:
         managed = False
         db_table = 'legend'
@@ -262,10 +265,13 @@ class Legend(models.Model):
 
 class NewTrainingsetCollectionActivity(models.Model):
     new_trainingset_collection_activity_id = models.IntegerField(primary_key=True)
-    trainingset = models.ForeignKey('Trainingset')
+    trainingset_id = models.ForeignKey('Trainingset')
     trainingset_ver = models.IntegerField()
-    startdate = models.DateTimeField(blank=True, null=True)
-    enddate = models.DateTimeField(blank=True, null=True)
+    startdate = models.DateTimeField()
+    enddate = models.DateTimeField()
+    
+    def __unicode__(self):
+        return self.new_trainingset_collection_activity_id
 
     class Meta:
         managed = False
@@ -314,7 +320,7 @@ class RasterOverviews(models.Model):
 class Relationship(models.Model):
     relationship_id = models.BigIntegerField(primary_key=True)
     relationship_name = models.TextField(blank=True)  # This field type is a guess.
-    expired = models.NullBooleanField()
+    expired = models.BooleanField(default=False)
     category1 = models.ForeignKey(Category, related_name='category1')
     category1_ver = models.IntegerField()
     category2 = models.ForeignKey(Category, related_name='category2')
