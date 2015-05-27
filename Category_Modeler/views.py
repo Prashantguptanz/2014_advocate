@@ -26,20 +26,25 @@ def trainingsampleprocessing(request):
                 if trainingfile.name.split(".")[-1] == ".csv":
                     handle_uploaded_file(request, trainingfile)
                 else:
-                    print "I am here"
                     handle_raster_file(request, trainingfile)
-                    fp = file("Category_Modeler/static/js/newfile.csv", 'rb')
-                    # wrapper = FileWrapper(fp)
+                    filename = trainingfile.name.split('.', 1)[0] + '.csv'
+                    fp = file("Category_Modeler/static/trainingfiles/%s" % filename, 'rb')
                     response = HttpResponse( fp, content_type='text/csv')
                     response['Content-Disposition'] = 'attachment; filename="training File"'
                     return response
+            else:
+                data = request.POST
+                trainingfilepkey = data['1']
+                trainingfilename = data['2']
+                print trainingfilepkey
+                print trainingfilename
         return HttpResponse("")
     else:
-        training_set_list = Trainingset.objects.all()  # @UndefinedVariable
-        print training_set_list
-       # for trainingset in training_set_list:
-            #print trainingset
-        return render(request, 'trainingsample.html', {'training_set_list':training_set_list})
+        if Trainingset.objects.exists(): # @UndefinedVariable
+            training_set_list = Trainingset.objects.all()  # @UndefinedVariable
+            return render(request, 'trainingsample.html', {'training_set_list':training_set_list})
+        else:
+            return render(request, 'trainingsample.html')
 
 
 def savetrainingdatadetails(request):
@@ -50,6 +55,7 @@ def savetrainingdatadetails(request):
         trainingend = data['TrainingTimePeriodEndDate'];
         location = data['TrainingLocation'];
         otherDetails = data['OtherDeatils'];
+        
     return HttpResponse("We got the data");
 
 
@@ -65,7 +71,7 @@ def saveNewTrainingVersion(request):
         
 # create a file with similar name as provided in the static folder and copy all the contents    
 def handle_uploaded_file(request, f):
-    with BufferedWriter( FileIO( 'Category_Modeler/static/js/%s' % f, "wb" ) ) as dest:
+    with BufferedWriter( FileIO( 'Category_Modeler/static/trainingfiles/%s' % f, "wb" ) ) as dest:
         foo = f.read(1024)  
         while foo:
             dest.write(foo)
@@ -81,10 +87,9 @@ def handle_raster_file(request, f):
     
     final_array = []
     pixelValue=[]
-    print "I am at first place"
+
     for i in range(1, noOfBands):
         bands.append(dataset.GetRasterBand(i).ReadAsArray(0,0,cols,rows))
-    print bands[2][1][2]
     
     for j in range(rows):
         for k in range (cols):
@@ -92,12 +97,12 @@ def handle_raster_file(request, f):
             pixelValue.append(k)
             for l in range(len(bands)):
                 pixelValue.append(bands[l][j][k])
-                
             final_array.append(pixelValue)
             pixelValue=[]
 
-    
-    with BufferedWriter( FileIO( 'Category_Modeler/static/js/newfile.csv', "wb" ) ) as csvfile:
+    head = f.name.split('.', 1)[0]
+    filename = head + '.csv'    
+    with BufferedWriter( FileIO( 'Category_Modeler/static/trainingfiles/%s' % filename, "wb" ) ) as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',')
         spamwriter.writerow(['X', 'Y', 'band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7'])
         for i in range(5000):

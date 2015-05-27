@@ -13,7 +13,7 @@
 					<span style="float: right">
 						<select name="existingtrainingfiles" id="existingtrainingfiles"  disabled>
 							{% for train in training_set_list %}
-							<option value="">{{ train.trainingset_id }}</option>
+							<option id="trainingset{{ forloop.counter }}" value="{{ train.trainingset_id }}+{{train.trainingset_ver}}">{{ train.name }}</option>
 							{% endfor %}
 	 					</select>
 					</span>

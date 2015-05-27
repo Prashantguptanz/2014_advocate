@@ -81,6 +81,30 @@ $(function() {
 		
 		hot = new Handsontable(trainingdatacontainer, settings1);
 
+		//Script to deal with when the existing training file is selected
+		$('#existingtrainingfiles').on('change', function(){
+			$('#instanceslabel').show();
+			$('#attributeslabel').show();
+			
+			
+			var filepkey = this.value;
+			var filename = $('#existingtrainingfiles>option:selected').text();
+			var data={};
+			data[1] = filepkey;
+			data[2] = filename;
+			$.post("http://127.0.0.1:8000/CategoryModeler/trainingsample/", data, function(response){
+				alert(response);
+				var trainingdata = $.csv.toArrays(response);
+				$('#instances').html(trainingdata.length-1);
+				$('#Attributes').html(trainingdata[0].length);
+				
+				$('#trainingdataTable').show();
+				hot.loadData(trainingdata);
+			});
+
+			
+			
+		});
 
 		
 		
