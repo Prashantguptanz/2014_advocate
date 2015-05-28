@@ -93,7 +93,6 @@ $(function() {
 			data[1] = filepkey;
 			data[2] = filename;
 			$.post("http://127.0.0.1:8000/CategoryModeler/trainingsample/", data, function(response){
-				alert(response);
 				var trainingdata = $.csv.toArrays(response);
 				$('#instances').html(trainingdata.length-1);
 				$('#Attributes').html(trainingdata[0].length);

@@ -6,7 +6,7 @@ from gdalconst import *
 from io import FileIO, BufferedWriter
 from Category_Modeler.models import Trainingset
 import os
-
+from models import Trainingset
 
 # Create your views here.
 
@@ -21,7 +21,7 @@ def trainingsampleprocessing(request):
         if request.is_ajax():
             if request.FILES:
                 trainingfile = request.FILES['trainingfile']
-                request.session['current_training_file'] = trainingfile.name
+                request.session['current_training_file_name'] = trainingfile.name
                 
                 if trainingfile.name.split(".")[-1] == ".csv":
                     handle_uploaded_file(request, trainingfile)
@@ -35,9 +35,14 @@ def trainingsampleprocessing(request):
             else:
                 data = request.POST
                 trainingfilepkey = data['1']
+                id, ver = trainingfilepkey.split('+')
                 trainingfilename = data['2']
-                print trainingfilepkey
-                print trainingfilename
+                trainingfilelocation = (Trainingset.objects.get(trainingset_id=id, trainingset_ver=ver)).location # @UndefinedVariable
+                print trainingfilelocation
+                fp = file (trainingfilelocation+trainingfilename, 'rb')
+                response = HttpResponse( fp, content_type='text/csv')
+                response['Content-Disposition'] = 'attachment; filename="training File"'
+                return response
         return HttpResponse("")
     else:
         if Trainingset.objects.exists(): # @UndefinedVariable
