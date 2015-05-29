@@ -4,7 +4,7 @@ import csv, json, numpy, struct
 import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity
+from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity
 import os
 from datetime import datetime
 
@@ -41,8 +41,6 @@ def trainingsampleprocessing(request):
                 trainingfilename = data['2']
                 request.session['current_training_file_name'] = trainingfilename
                 trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).location # @UndefinedVariable
-                print request.session['current_training_file_name']
-                print request.session['current_training_file_id']
                 fp = file (trainingfilelocation+trainingfilename, 'rb')
                 response = HttpResponse( fp, content_type='text/csv')
                 response['Content-Disposition'] = 'attachment; filename="training File"'
@@ -71,17 +69,31 @@ def savetrainingdatadetails(request):
         tr.save(force_insert=True)
         tr_activity = NewTrainingsetCollectionActivity( trainingset_id= int(latestid)+1, trainingset_ver =1, startdate = datetime.strptime(trainingstart, '%Y-%m-%d'), enddate= datetime.strptime(trainingend, '%Y-%m-%d'))
         tr_activity.save()
+        request.session['current_training_file_id'] = int(latestid)+1
+        request.session['current_training_file_ver'] = 1
     return HttpResponse("We got the data");
 
 
 def saveNewTrainingVersion(request):
     if request.method=='POST':
         data = json.loads(request.body)
-        f1 = open('Category_Modeler/static/js/training_ver.csv', 'w')
+        filename= request.session['current_training_file_name']
+        version = request.session['current_training_file_ver']
+        id= request.session['current_training_file_id']
+        newfilename = filename.split('.', 1)[0] + "_ver" + str(int(version)+1) + ".csv"
+        f1 = open('Category_Modeler/static/trainingfiles/%s' % newfilename, 'w')
         writer = csv.writer(f1)
         for i in range(len(data)):
             writer.writerow(data[i])
         f1.close()
+        
+        oldversion = Trainingset.objects.get(trainingset_id=int(id), trainingset_ver =int(version)) # @UndefinedVariable
+        oldversion.enddate = datetime.now()
+        oldversion.save()
+        tr = Trainingset(trainingset_id=id, trainingset_ver =version+1, name=newfilename, startdate=datetime.now(), enddate=datetime(9999, 9, 12), location="Category_Modeler/static/trainingfiles/")
+        tr.save(force_insert=True)
+        tr_activity = ChangeTrainingSetActivity( oldtrainingset_id= id, oldtrainingset_ver =version, newtrainingset_id=id, newtrainingset_ver=version+1)
+        tr_activity.save()
     return HttpResponse("Changed dataset is saved as a new version");
         
 # create a file with similar name as provided in the static folder and copy all the contents    
