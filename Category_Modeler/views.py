@@ -4,9 +4,9 @@ import csv, json, numpy, struct
 import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset
+from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity
 import os
-from models import Trainingset
+from datetime import datetime
 
 # Create your views here.
 
@@ -17,7 +17,7 @@ def index(request):
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
 def trainingsampleprocessing(request):
     
-    if request.method == 'POST':
+    if request.method == 'POST' and request.is_ajax():
         if request.is_ajax():
             if request.FILES:
                 trainingfile = request.FILES['trainingfile']
@@ -35,10 +35,14 @@ def trainingsampleprocessing(request):
             else:
                 data = request.POST
                 trainingfilepkey = data['1']
-                id, ver = trainingfilepkey.split('+')
+                trid, ver = trainingfilepkey.split('+')
+                request.session['current_training_file_id'] = trid
+                request.session['current_training_file_ver'] = ver
                 trainingfilename = data['2']
-                trainingfilelocation = (Trainingset.objects.get(trainingset_id=id, trainingset_ver=ver)).location # @UndefinedVariable
-                print trainingfilelocation
+                request.session['current_training_file_name'] = trainingfilename
+                trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).location # @UndefinedVariable
+                print request.session['current_training_file_name']
+                print request.session['current_training_file_id']
                 fp = file (trainingfilelocation+trainingfilename, 'rb')
                 response = HttpResponse( fp, content_type='text/csv')
                 response['Content-Disposition'] = 'attachment; filename="training File"'
@@ -61,6 +65,12 @@ def savetrainingdatadetails(request):
         location = data['TrainingLocation'];
         otherDetails = data['OtherDeatils'];
         
+        #add training dataset details in trainingset table and a collection activity in new_trainingset_collection_activity table
+        latestid = (Trainingset.objects.all().order_by("-trainingset_id")[0]).trainingset_id # @UndefinedVariable
+        tr = Trainingset(trainingset_id=int(latestid)+1, trainingset_ver =1, name=request.session['current_training_file_name'], description=otherDetails, startdate=datetime.now(), enddate=datetime(9999, 9, 12), location="Category_Modeler/static/trainingfiles/")
+        tr.save(force_insert=True)
+        tr_activity = NewTrainingsetCollectionActivity( trainingset_id= int(latestid)+1, trainingset_ver =1, startdate = datetime.strptime(trainingstart, '%Y-%m-%d'), enddate= datetime.strptime(trainingend, '%Y-%m-%d'))
+        tr_activity.save()
     return HttpResponse("We got the data");
 
 

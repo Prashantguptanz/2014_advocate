@@ -264,18 +264,15 @@ class Legend(models.Model):
 
 
 class NewTrainingsetCollectionActivity(models.Model):
-    new_trainingset_collection_activity_id = models.IntegerField(primary_key=True)
-    trainingset_id = models.ForeignKey('Trainingset')
+    trainingset_id = models.IntegerField()
     trainingset_ver = models.IntegerField()
     startdate = models.DateTimeField()
     enddate = models.DateTimeField()
     
-    def __unicode__(self):
-        return self.new_trainingset_collection_activity_id
-
     class Meta:
         managed = False
         db_table = 'new_trainingset_collection_activity'
+        unique_together = ("trainingset_id", "trainingset_ver")
 
 
 class RasterColumns(models.Model):
