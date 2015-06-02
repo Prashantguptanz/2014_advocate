@@ -1,7 +1,7 @@
 from django.shortcuts import render, HttpResponse
 from django.core.servers.basehttp import FileWrapper
 import csv, json, numpy, struct
-import gdal
+
 from gdalconst import *
 from io import FileIO, BufferedWriter
 from Category_Modeler.models import Trainingset
