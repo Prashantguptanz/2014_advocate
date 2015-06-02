@@ -108,16 +108,16 @@ class Category(models.Model):
 
 
 class ChangeTrainingSetActivity(models.Model):
-    change_training_set_activity_id = models.IntegerField(primary_key=True)
-    oldtrainingset = models.ForeignKey('Trainingset', related_name='oldtrainingset')
+    oldtrainingset_id = models.IntegerField()
     oldtrainingset_ver = models.IntegerField()
-    newtrainingset = models.ForeignKey('Trainingset', related_name='newtrainingset')
+    newtrainingset_id = models.IntegerField()
     newtrainingset_ver = models.IntegerField()
 
     class Meta:
         managed = False
         db_table = 'change_training_set_activity'
-
+        unique_together = ("oldtrainingset_id", "oldtrainingset_ver")
+        unique_together = ("newtrainingset_id", "newtrainingset_ver")
 
 class Classificationmodel(models.Model):
     model_id = models.IntegerField(primary_key=True)
@@ -264,18 +264,15 @@ class Legend(models.Model):
 
 
 class NewTrainingsetCollectionActivity(models.Model):
-    new_trainingset_collection_activity_id = models.IntegerField(primary_key=True)
-    trainingset_id = models.ForeignKey('Trainingset')
+    trainingset_id = models.IntegerField()
     trainingset_ver = models.IntegerField()
     startdate = models.DateTimeField()
     enddate = models.DateTimeField()
     
-    def __unicode__(self):
-        return self.new_trainingset_collection_activity_id
-
     class Meta:
         managed = False
         db_table = 'new_trainingset_collection_activity'
+        unique_together = ("trainingset_id", "trainingset_ver")
 
 
 class RasterColumns(models.Model):

@@ -3,6 +3,7 @@ from Category_Modeler.views import index, trainingsampleprocessing, supervised, 
 
 urlpatterns = patterns('',
         url(r'^$', index),
+        url(r'^home/$', index),
         url(r'^trainingsample/$', trainingsampleprocessing),
         url(r'^signaturefile/$', signaturefile),  
         url(r'^supervised/$', supervised),
