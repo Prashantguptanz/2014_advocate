@@ -32,9 +32,29 @@ $(function() {
 				}
 			}
 		});
+		
+// Script for navbar
+		
+		
+		$('#navbar').on('click', "li", function(){
+			var $this = $(this);
+			console.log($this);
+		});
+
+		
+	//	$("a").on('click', function(e){
+	//		var $this = $(this);
+	//		console.log($this);
+	//		$this.parent().siblings().removeClass('active');
+	//		console.log($this.parent().siblings());
+	//		$this.parent().addClass('active');
+			
+			
+	//	});
 
 
 // Script for 'Training Samples' page		
+		
 		
 		$('input[name="choosetrainingfile"]').on('click', function(){
 			var $this = $(this);
@@ -50,8 +70,7 @@ $(function() {
 			
 		});
 		
-		var trainingdatacontainer = document.getElementById('trainingdataTable'),
-			hot;
+
 		
 		function firstRowRenderer(instance, td, row, col, prop, value, cellProperties) {
 			  Handsontable.renderers.TextRenderer.apply(this, arguments);
@@ -79,7 +98,10 @@ $(function() {
 			
 		};
 		
-		hot = new Handsontable(trainingdatacontainer, settings1);
+		
+		var trainingdatacontainer = document.getElementById('trainingdataTable'),
+		hot;
+	//	hot = new Handsontable(trainingdatacontainer, settings1);
 
 		//Script to deal with when the existing training file is selected
 		$('#existingtrainingfiles').on('change', function(){
@@ -162,12 +184,13 @@ $(function() {
 		});
 		
 		// Function to set the height of training data table based on window size
-		(function setHeight() {
+		function setHeight() {
 			var headerHeight = $('.container').outerHeight();
 			var totalHeight = $(window).height();
 			$('#trainingdataTable').css({'height' : totalHeight - headerHeight + 'px'});
-		})();
+		};
 
+		setHeight();
 		// call the setHeight function, every time window is resized
 		$(window).on('resize', function() {
 			setHeight();
@@ -203,10 +226,12 @@ $(function() {
 		
 		
 // Script for 'Signature file' page		
+		
+
 
 		$('.dropdown-toggle').dropdown();
 		
-		$('input[name="trainingoption"]').on('click',function() {
+		$('input[name="validationoption"]').on('click',function() {
 			var $this = $(this);
 			$this.next().children().removeAttr('disabled');
 			$this.siblings('input').next().children().attr('disabled', 'disabled');
