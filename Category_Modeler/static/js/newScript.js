@@ -36,6 +36,7 @@ $(function() {
 // Script for navbar
 		
 		var loc = window.location.href;
+		
 		$('.nav.nav-pills.nav-justified > li').each(function(){
 			var $this = $(this)
 			if (loc.match('http://127.0.0.1:8000' + $this.children().attr('href'))){
@@ -47,176 +48,180 @@ $(function() {
 
 
 // Script for 'Training Samples' page		
-		
-		
-		$('input[name="choosetrainingfile"]').on('click', function(){
-			var $this = $(this);
-			$this.next().children().removeAttr('disabled');
-			$this.siblings('input').next().children().attr('disabled', 'disabled');
+		if (loc.match('http://127.0.0.1:8000/CategoryModeler/trainingsample/')){
 			
-			if ($this.attr('value')=='option2'){
-				$('#newtrainingdatasetdetails').show();
-			}
-			else{
-				$('#newtrainingdatasetdetails').hide();
-			}
-			
-		});
+			console.log(loc);
 		
-
 		
-		function firstRowRenderer(instance, td, row, col, prop, value, cellProperties) {
-			  Handsontable.renderers.TextRenderer.apply(this, arguments);
-			  td.style.fontWeight = 'bold';
-			  td.style.background = 'gainsboro';
-			}
-		
-		var settings1 = {
-			contextMenu: true,
-			afterChange: function(change, source){
-				if (source === 'loadData') {
-					return;
-				} 
+			$('input[name="choosetrainingfile"]').on('click', function(){
+				var $this = $(this);
+				$this.next().children().removeAttr('disabled');
+				$this.siblings('input').next().children().attr('disabled', 'disabled');
 				
-				$('#saveChanges').show();
-			},
-			cells: function(row, col, prop){
-				var cellProperties = {};
-				if (row==0){
-					cellProperties.readOnly = true;
-					cellProperties.renderer = firstRowRenderer;
+				if ($this.attr('value')=='option2'){
+					$('#newtrainingdatasetdetails').show();
 				}
-				return cellProperties;
-			}
-			
-		};
-		
-		
-		var trainingdatacontainer = document.getElementById('trainingdataTable'),
-		hot;
-		hot = new Handsontable(trainingdatacontainer, settings1);
-
-		//Script to deal with when the existing training file is selected
-		$('#existingtrainingfiles').on('change', function(){
-			$('#instanceslabel').show();
-			$('#attributeslabel').show();
-			
-			
-			var filepkey = this.value;
-			var filename = $('#existingtrainingfiles>option:selected').text();
-			var data={};
-			data[1] = filepkey;
-			data[2] = filename;
-			$.post("http://127.0.0.1:8000/CategoryModeler/trainingsample/", data, function(response){
-				var trainingdata = $.csv.toArrays(response);
-				$('#instances').html(trainingdata.length-1);
-				$('#Attributes').html(trainingdata[0].length);
+				else{
+					$('#newtrainingdatasetdetails').hide();
+				}
 				
-				$('#trainingdataTable').show();
-				hot.loadData(trainingdata);
 			});
-
 			
+	
 			
-		});
-
-		
-		
-		// Script to deal with when the training file is uploaded
-		$('#trainingfile').on('change', function() { 
-			$('#instanceslabel').show();
-			$('#attributeslabel').show();
+			function firstRowRenderer(instance, td, row, col, prop, value, cellProperties) {
+				  Handsontable.renderers.TextRenderer.apply(this, arguments);
+				  td.style.fontWeight = 'bold';
+				  td.style.background = 'gainsboro';
+				}
 			
-			var ext = this.value.match(/\.(.+)$/)[1];
-			var newtrainingdataset = this.files[0];
-			if (ext == 'csv'){
-				// FileReader Object reads the content
-				// of file as text string into memory
-				var reader = new FileReader();
-				
-				reader.onload = function(event) {
-					var csv = reader.result;  // I can also write event.target.result
-					var trainingdata = $.csv.toArrays(csv);
-				
-					$('#instances').html(trainingdata.length-1);
-					$('#Attributes').html(trainingdata[0].length);
+			var settings1 = {
+				contextMenu: true,
+				afterChange: function(change, source){
+					if (source === 'loadData') {
+						return;
+					} 
 					
-					$('#trainingdataTable').show();
-					hot.loadData(trainingdata);
-
-				};
-				reader.readAsText(newtrainingdataset);
+					$('#saveChanges').show();
+				},
+				cells: function(row, col, prop){
+					var cellProperties = {};
+					if (row==0){
+						cellProperties.readOnly = true;
+						cellProperties.renderer = firstRowRenderer;
+					}
+					return cellProperties;
+				}
 				
-			}
-			else{
+			};
+			
+			
+			var trainingdatacontainer = document.getElementById('trainingdataTable'),
+			hot;
+			hot = new Handsontable(trainingdatacontainer, settings1);
+	
+			//Script to deal with when the existing training file is selected
+			$('#existingtrainingfiles').on('change', function(){
+				$('#instanceslabel').show();
+				$('#attributeslabel').show();
 				
-			}
-					
-			// Posting file to the server side using formdata
-			var formdata = new FormData();
-			formdata.append("trainingfile", newtrainingdataset);
-			$.ajax({
-				type : "POST",
-				url : "http://127.0.0.1:8000/CategoryModeler/trainingsample/",
-				async : true,
-				processData : false, 
-				contentType : false,
-				data : formdata,
-				success : function(response) {
-					//newfile = response['training File'];
+				
+				var filepkey = this.value;
+				var filename = $('#existingtrainingfiles>option:selected').text();
+				var data={};
+				data[1] = filepkey;
+				data[2] = filename;
+				$.post("http://127.0.0.1:8000/CategoryModeler/trainingsample/", data, function(response){
 					var trainingdata = $.csv.toArrays(response);
 					$('#instances').html(trainingdata.length-1);
 					$('#Attributes').html(trainingdata[0].length);
 					
 					$('#trainingdataTable').show();
 					hot.loadData(trainingdata);
-
-				}
+				});
+	
+				
+				
 			});
-
-		});
-		
-		// Function to set the height of training data table based on window size
-		function setHeight() {
-			var headerHeight = $('.container').outerHeight();
-			var totalHeight = $(window).height();
-			$('#trainingdataTable').css({'height' : totalHeight - headerHeight + 'px'});
-		};
-
-		setHeight();
-		// call the setHeight function, every time window is resized
-		$(window).on('resize', function() {
-			setHeight();
-		});
-		
-		
-		$('#savetrainingdatadetails').on('click', function(e){
-			e.preventDefault();
-			var $this = $('#newtrainingdatasetdetails');
-			$.post("http://127.0.0.1:8000/CategoryModeler/savetrainingdatadetails/", $this.serialize(), function(response){
-				alert(response);
+	
+			
+			
+			// Script to deal with when the training file is uploaded
+			$('#trainingfile').on('change', function() { 
+				$('#instanceslabel').show();
+				$('#attributeslabel').show();
+				
+				var ext = this.value.match(/\.(.+)$/)[1];
+				var newtrainingdataset = this.files[0];
+				if (ext == 'csv'){
+					// FileReader Object reads the content
+					// of file as text string into memory
+					var reader = new FileReader();
+					
+					reader.onload = function(event) {
+						var csv = reader.result;  // I can also write event.target.result
+						var trainingdata = $.csv.toArrays(csv);
+					
+						$('#instances').html(trainingdata.length-1);
+						$('#Attributes').html(trainingdata[0].length);
+						
+						$('#trainingdataTable').show();
+						hot.loadData(trainingdata);
+	
+					};
+					reader.readAsText(newtrainingdataset);
+					
+				}
+				else{
+					
+				}
+						
+				// Posting file to the server side using formdata
+				var formdata = new FormData();
+				formdata.append("trainingfile", newtrainingdataset);
+				$.ajax({
+					type : "POST",
+					url : "http://127.0.0.1:8000/CategoryModeler/trainingsample/",
+					async : true,
+					processData : false, 
+					contentType : false,
+					data : formdata,
+					success : function(response) {
+						//newfile = response['training File'];
+						var trainingdata = $.csv.toArrays(response);
+						$('#instances').html(trainingdata.length-1);
+						$('#Attributes').html(trainingdata[0].length);
+						
+						$('#trainingdataTable').show();
+						hot.loadData(trainingdata);
+	
+					}
+				});
+	
 			});
 			
-		});
-
-		$('#saveChanges').on('click', function() { 
-			//So after the execution it doesn't refresh back
-			console.log(JSON.stringify(hot.getData()));
-			event.preventDefault();
-					$.ajax({
-						type : "POST",
-						url : "http://127.0.0.1:8000/CategoryModeler/saveNewTrainingVersion/",
-						async : true,
-						processData : false,
-						contentType : false,
-						data : JSON.stringify(hot.getData()),
-						success : function(response) {
-
-						}
-
-					});
-		});
+			// Function to set the height of training data table based on window size
+			function setHeight() {
+				var headerHeight = $('.container').outerHeight();
+				var totalHeight = $(window).height();
+				$('#trainingdataTable').css({'height' : totalHeight - headerHeight + 'px'});
+			};
+	
+			setHeight();
+			// call the setHeight function, every time window is resized
+			$(window).on('resize', function() {
+				setHeight();
+			});
+			
+			
+			$('#savetrainingdatadetails').on('click', function(e){
+				e.preventDefault();
+				var $this = $('#newtrainingdatasetdetails');
+				$.post("http://127.0.0.1:8000/CategoryModeler/savetrainingdatadetails/", $this.serialize(), function(response){
+					alert(response);
+				});
+				
+			});
+	
+			$('#saveChanges').on('click', function() { 
+				//So after the execution it doesn't refresh back
+				console.log(JSON.stringify(hot.getData()));
+				event.preventDefault();
+						$.ajax({
+							type : "POST",
+							url : "http://127.0.0.1:8000/CategoryModeler/saveNewTrainingVersion/",
+							async : true,
+							processData : false,
+							contentType : false,
+							data : JSON.stringify(hot.getData()),
+							success : function(response) {
+	
+							}
+	
+						});
+			});
 		
+		}
 		
 // Script for 'Signature file' page		
 		
@@ -233,6 +238,21 @@ $(function() {
 		
 		$('#createsignaturefile').on('click', function(e){
 			e.preventDefault();
+			var $this = $('#trainingoptions');
+			var formData = new FormData($this[0]);
+			$.ajax({
+				type : "POST",
+				url : "http://127.0.0.1:8000/CategoryModeler/signaturefile/",
+				async : true,
+				processData : false, 
+				contentType : false,
+				data : formData,
+				success : function(response) {
+
+
+				}
+
+		});
 		});
 		
 		
