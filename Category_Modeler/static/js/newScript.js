@@ -35,22 +35,15 @@ $(function() {
 		
 // Script for navbar
 		
-		
-		$('#navbar').on('click', "li", function(){
-			var $this = $(this);
-			console.log($this);
+		var loc = window.location.href;
+		$('.nav.nav-pills.nav-justified > li').each(function(){
+			var $this = $(this)
+			if (loc.match('http://127.0.0.1:8000' + $this.children().attr('href'))){
+				$this.addClass("active");
+				$this.siblings().removeClass("active");
+			}
 		});
 
-		
-	//	$("a").on('click', function(e){
-	//		var $this = $(this);
-	//		console.log($this);
-	//		$this.parent().siblings().removeClass('active');
-	//		console.log($this.parent().siblings());
-	//		$this.parent().addClass('active');
-			
-			
-	//	});
 
 
 // Script for 'Training Samples' page		
@@ -101,7 +94,7 @@ $(function() {
 		
 		var trainingdatacontainer = document.getElementById('trainingdataTable'),
 		hot;
-	//	hot = new Handsontable(trainingdatacontainer, settings1);
+		hot = new Handsontable(trainingdatacontainer, settings1);
 
 		//Script to deal with when the existing training file is selected
 		$('#existingtrainingfiles').on('change', function(){
