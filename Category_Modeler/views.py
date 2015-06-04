@@ -1,5 +1,9 @@
-from django.shortcuts import render, HttpResponse
+from django.shortcuts import render, HttpResponse, HttpResponseRedirect
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.core.servers.basehttp import FileWrapper
+from django.contrib import auth
 import csv, json, numpy, struct
 import gdal
 from gdalconst import *
@@ -7,14 +11,46 @@ from io import FileIO, BufferedWriter
 from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity
 import os
 from datetime import datetime
+from sklearn.naive_bayes import GaussianNB
 
 # Create your views here.
+
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            new_user = form.save()
+            return HttpResponseRedirect("/books/")
+    else:
+        form = UserCreationForm()
+    return render(request, "registration/register.html", {
+        'form': form,
+    })
+
+def login_request(request):
+    username = request.POST('username')
+    password = request.POST('password')
+    user = authenticate(username=username, password=password)
+    if user is not None and user.is_active:
+        # Correct password, and the user is marked "active"
+        login(request, user)
+        # Redirect to a success page.
+        return HttpResponseRedirect("/Category_Modeler/home/")
+    else:
+        # Show an error page
+        return HttpResponseRedirect("Invalid login")    
+
+def logout_request(request):
+    logout(request)
+    # Redirect to a success page.
+    return HttpResponseRedirect("/Category_Modeler/home/")
 
 def index(request):
     return render(request, 'base.html')
 
 
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
+@login_required
 def trainingsampleprocessing(request):
     
     if request.method == 'POST' and request.is_ajax():
@@ -61,7 +97,7 @@ def savetrainingdatadetails(request):
         trainingstart = data['TrainingTimePeriodStartDate'];
         trainingend = data['TrainingTimePeriodEndDate'];
         location = data['TrainingLocation'];
-        otherDetails = data['OtherDeatils'];
+        otherDetails = data['OtherDetails'];
         
         #add training dataset details in trainingset table and a collection activity in new_trainingset_collection_activity table
         latestid = (Trainingset.objects.all().order_by("-trainingset_id")[0]).trainingset_id # @UndefinedVariable
@@ -90,9 +126,9 @@ def saveNewTrainingVersion(request):
         oldversion = Trainingset.objects.get(trainingset_id=int(id), trainingset_ver =int(version)) # @UndefinedVariable
         oldversion.enddate = datetime.now()
         oldversion.save()
-        tr = Trainingset(trainingset_id=id, trainingset_ver =version+1, name=newfilename, startdate=datetime.now(), enddate=datetime(9999, 9, 12), location="Category_Modeler/static/trainingfiles/")
+        tr = Trainingset(trainingset_id=id, trainingset_ver =int(version)+1, name=newfilename, startdate=datetime.now(), enddate=datetime(9999, 9, 12), location="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
-        tr_activity = ChangeTrainingSetActivity( oldtrainingset_id= id, oldtrainingset_ver =version, newtrainingset_id=id, newtrainingset_ver=version+1)
+        tr_activity = ChangeTrainingSetActivity( oldtrainingset_id= id, oldtrainingset_ver =version, newtrainingset_id=id, newtrainingset_ver=int(version)+1)
         tr_activity.save()
     return HttpResponse("Changed dataset is saved as a new version");
         
@@ -137,8 +173,40 @@ def handle_raster_file(request, f):
         csvfile.close();
         
 #
+
+
+def signaturefile(request):
+    trainingfile = request.session['current_training_file_name']
+    labels = read_CSVFile(trainingfile)
+    attributes = labels[0]  
+    if request.method=='POST' and 'current_training_file_name' in request.session:
+        data = request.POST;
+        
+        classifiername = data['classifiertype']
+        targetattribute = data['targetattribute']
+        validationoption = data['validationoption']
+
+        if (validationoption=='2'):   
+            validationfile = request.FILES['validationfile']
+        elif(validationoption=='3'):
+            folds = data['fold']
+        elif(validationoption=='4'):
+            split = data['Percentage']
+        
+        classifier = chooseClassifier(classifiername)
+        targetAttributeIndex = attributes.index(targetattribute)
+
+        return render (request, 'signaturefile.html')
+        
+            
+        
+    elif 'current_training_file_name' in request.session:
+   
+        return render (request, 'signaturefile.html', {'attributes': attributes})
+
+
 def read_CSVFile(f):
-    with open('Category_Modeler/static/uploaded_files/%s' % f, 'rU') as datafile:
+    with open('Category_Modeler/static/trainingfiles/%s' % f, 'rU') as datafile:
         data = csv.reader(datafile, delimiter=',', quoting=csv.QUOTE_NONE)
         samples = []
         for eachinstance in data:
@@ -146,9 +214,10 @@ def read_CSVFile(f):
         datafile.close();    
     return samples
 
-def signaturefile(request):
-    
-    return render (request, 'signaturefile.html')
+def chooseClassifier(classifiername):
+    if classifiername=='NaiveBayes':
+        clf= GaussianNB()
+    return clf
 
 def supervised(request):
     return render (request, 'supervised.html')
