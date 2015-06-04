@@ -1,5 +1,9 @@
-from django.shortcuts import render, HttpResponse
+from django.shortcuts import render, HttpResponse, HttpResponseRedirect
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.core.servers.basehttp import FileWrapper
+from django.contrib import auth
 import csv, json, numpy, struct
 import gdal
 from gdalconst import *
@@ -11,11 +15,42 @@ from sklearn.naive_bayes import GaussianNB
 
 # Create your views here.
 
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            new_user = form.save()
+            return HttpResponseRedirect("/books/")
+    else:
+        form = UserCreationForm()
+    return render(request, "registration/register.html", {
+        'form': form,
+    })
+
+def login_request(request):
+    username = request.POST('username')
+    password = request.POST('password')
+    user = authenticate(username=username, password=password)
+    if user is not None and user.is_active:
+        # Correct password, and the user is marked "active"
+        login(request, user)
+        # Redirect to a success page.
+        return HttpResponseRedirect("/Category_Modeler/home/")
+    else:
+        # Show an error page
+        return HttpResponseRedirect("Invalid login")    
+
+def logout_request(request):
+    logout(request)
+    # Redirect to a success page.
+    return HttpResponseRedirect("/Category_Modeler/home/")
+
 def index(request):
     return render(request, 'base.html')
 
 
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
+@login_required
 def trainingsampleprocessing(request):
     
     if request.method == 'POST' and request.is_ajax():
@@ -141,6 +176,9 @@ def handle_raster_file(request, f):
 
 
 def signaturefile(request):
+    trainingfile = request.session['current_training_file_name']
+    labels = read_CSVFile(trainingfile)
+    attributes = labels[0]  
     if request.method=='POST' and 'current_training_file_name' in request.session:
         data = request.POST;
         
@@ -156,15 +194,14 @@ def signaturefile(request):
             split = data['Percentage']
         
         classifier = chooseClassifier(classifiername)
+        targetAttributeIndex = attributes.index(targetattribute)
 
         return render (request, 'signaturefile.html')
         
             
         
     elif 'current_training_file_name' in request.session:
-        trainingfile = request.session['current_training_file_name']
-        labels = read_CSVFile(trainingfile)
-        attributes = labels[0]     
+   
         return render (request, 'signaturefile.html', {'attributes': attributes})
 
 
@@ -178,7 +215,6 @@ def read_CSVFile(f):
     return samples
 
 def chooseClassifier(classifiername):
-
     if classifiername=='NaiveBayes':
         clf= GaussianNB()
     return clf

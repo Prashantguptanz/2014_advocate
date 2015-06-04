@@ -71,6 +71,10 @@ DATABASES = {
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
 
+LOGIN_URL = '/CategoryModeler/login/?next=/CategoryModeler/home/'
+
+LOGIN_REDIRECT_URL = '/CategoryModeler/home/'
+
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'NZ'
