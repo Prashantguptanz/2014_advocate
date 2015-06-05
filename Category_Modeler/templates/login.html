@@ -16,7 +16,7 @@
     <input type="password" name="password" value="" id="password">
 	<br /><br />
     <input type="submit" value="login" />
-    <input type="hidden" name="next" value="{{ next|escape }}" />
+    <input type="hidden" name="next" value="{{ redirect_field_name|escape }}" />
   </form>
 
 {% endblock %}

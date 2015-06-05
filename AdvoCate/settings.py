@@ -73,7 +73,7 @@ DATABASES = {
 
 LOGIN_URL = '/CategoryModeler/login/?next=/CategoryModeler/home/'
 
-LOGIN_REDIRECT_URL = '/CategoryModeler/home/'
+#LOGIN_REDIRECT_URL = '/CategoryModeler/home/'
 
 LANGUAGE_CODE = 'en-us'
 
