@@ -94,7 +94,7 @@ $(function() {
 				}
 				
 			};
-			
+
 			
 			var trainingdatacontainer = document.getElementById('trainingdataTable'),
 			hot;

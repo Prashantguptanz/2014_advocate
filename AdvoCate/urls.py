@@ -1,6 +1,7 @@
 from django.conf.urls import patterns, include, url
 
 from django.contrib import admin
+from Category_Modeler.views import login_view, auth_view, logout_view
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -9,5 +10,8 @@ urlpatterns = patterns('',
     # url(r'^blog/', include('blog.urls')),
 
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^(?i)CategoryModeler/', include('Category_Modeler.urls')),
+   # url(r'^(?i)CategoryModeler/', include('Category_Modeler.urls')),
+    url(r'^(?i)AdvoCate/', include('Category_Modeler.urls')),
+#    url(r'^(?i)AdvoCate/accounts/$', include('Accounts.urls')),
+
 )

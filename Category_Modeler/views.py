@@ -27,21 +27,24 @@ def register(request):
         'form': form,
     })
 
+
 def login_view(request):
-    
-    if request.method=='POST':
-        username = request.POST['username']
-        password = request.POST['password']
+    return render(request, 'login.html')
+
+def auth_view(request):
+    if request.method=='POST': 
+        username = request.POST.get('username', '')
+        password = request.POST.get('password', '')
         user = authenticate(username=username, password=password)
         if user is not None and user.is_active:
             # Correct password, and the user is marked "active"
             login(request, user)
             # Redirect to a success page.
-            return HttpResponseRedirect("/CategoryModeler/home/")
-        
+            return HttpResponseRedirect("/AdvoCate/home/")
+        else:
+            error = True
+            return render(request, 'login.html', {'error': error})
 
-        # Show an error page
-    return render(request, 'login.html')    
 
 def logout_view(request):
     logout(request)
