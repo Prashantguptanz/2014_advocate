@@ -45,7 +45,44 @@ $(function() {
 			}
 		});
 
+// Script for sign in and register tab
+		$('.active-links').click(function() {
+			// Conditional states allow the dropdown box appear and disappear
+			if ($('#signin-dropdown').is(":visible")) {
+				$('#signin-dropdown').hide();
+				$('#session').removeClass('active'); // When the dropdown is not
+				$('#register-dropdown')	.hide();									// visible removes the class
+														// "active"
+			} else {
+				$('#signin-dropdown').show()
+				$('#session').addClass('active'); // When the dropdown is visible
+													// add class "active"
+			}
+			return false;
+		});
+		
+		$('#register-link').on('click', function(e){
+			$('#register-dropdown').show();
+			$('#signin-dropdown').hide();
+		});
+		
+		$('#signin-link-bak').on('click', function(e){
+			$('#register-dropdown').hide();
+			$('#signin-dropdown').show();
+		});
 
+		// Allow to hide the dropdown box if you click anywhere on the document.
+		$('#signin-dropdown').click(function(e) {
+			e.stopPropagation();
+		});
+		$('#register-dropdown').click(function(e) {
+			e.stopPropagation();
+		});
+		$(document).click(function() {
+			$('#signin-dropdown').hide();
+			$('#session').removeClass('active');
+			$('#register-dropdown').hide();
+		});
 
 // Script for 'Training Samples' page		
 		if (loc.match('http://127.0.0.1:8000/CategoryModeler/trainingsample/')){

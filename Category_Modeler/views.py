@@ -15,7 +15,7 @@ from sklearn.naive_bayes import GaussianNB
 
 # Create your views here.
 
-def register(request):
+def register_view(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
@@ -43,7 +43,7 @@ def auth_view(request):
             return HttpResponseRedirect("/AdvoCate/home/")
         else:
             error = True
-            return render(request, 'login.html', {'error': error})
+            return render(request, 'base.html', {'error': error})
 
 
 def logout_view(request):

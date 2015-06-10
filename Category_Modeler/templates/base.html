@@ -1,6 +1,7 @@
 {% load staticfiles %}
 
 <!DOCTYPE html>
+
 <html lang="en">
 
 	<head>
@@ -17,46 +18,63 @@
 	</head>
 	<body>
 		<div id="top-stuff">
-		<div id="top-bar-out">
-		<div id="topcontainer">
-		<div id="topnav">
-		<div class="active-links">
-		    <div id="session">
-		    <a id="signin-link" href="#">
-		    <em>Have an account?</em>
-		    <strong>Sign in</strong>
-		    </a>
-		    </div>
-		        <div id="signin-dropdown">
-		    
-		        <form method="post" class="signin" action="#">
-		        <fieldset class="textbox">
-		        <label class="username">
-		        <span>Username or email</span>
-		        <input id="username" name="username" value="" type="text" autocomplete="on">
-		        </label>
-		        
-		        <label class="password">
-		        <span>Password</span>
-		        <input id="password" name="password" value="" type="password">
-		        </label>
-		        </fieldset>
+			<div id="top-bar-out">
+				<div id="topcontainer">
+					<div id="topnav">
+						<div class="active-links">
+							<div id="session">
+								<a id="signin-link" href="#"> <strong>Sign in</strong> </a>
+							</div>
+							<div id="signin-dropdown">
+								
+								<form method="post" class="signin" action="/AdvoCate/accounts/auth/">
+									{% csrf_token %}
+									<fieldset class="textbox">
+										{% if error %}
+    										<p class="error" style= "color: brown">Invalid username or password!</p>
+  										{% endif %}
+										<label class="username"> <span>Username or email</span>
+											<input id="username" name="username" value="" type="text" autocomplete="on" required>
+										</label>
 
-		        <button class="submit button" type="button">Sign in</button>
+										<label class="password"> <span>Password</span>
+											<input id="password" name="password" value="" type="password" required>
+										</label>
+									</fieldset>
+									<input type="submit" value="Sign in" class="submit button" />
+									
+									<a id="register-link" href="#"> <em>No account? Register</em> </a>
+								</form>
+							</div>
+							<div id="register-dropdown">
+								<form method="post" class="register" action="/AdvoCate/accounts/register/">
+							  		{% csrf_token %}
+							  		<fieldset class="textbox">
+							  			<label class="username"> <span> Username</span>
+											<input id="username" name="username" value="" type="text" required>
+										</label>
+										<label class="first-name"> <span> First Name</span>
+											<input id="first-name" name="first-name" value="" type="text" required>
+										</label>
+										<label class="last-name"> <span> Last Name</span>
+											<input id="last-name" name="last-name" value="" type="text"  required>
+										</label>
+							  			<label class="email"> <span> email</span>
+											<input id="email" name="email" value="" type="text"  required>
+										</label>
+										<label class="password"> <span>Password</span>
+											<input id="password" name="password" value="" type="password">
+										</label>
+							  		</fieldset>
+							  		<input type="submit" value="Register" class="submit button" />
+							  		<a id="signin-link-bak" href="#"> <em>Have an account?</em> </a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 
-		        </form>
-		    </div>
-		        </div>
-		     </div>
-		</div>
-		</div>
-		</div>
-
-	
-	
-	
-	
-	
 		<div class="container">
 			<div class="page_header" style="height: 120px">
 
@@ -69,7 +87,7 @@
 					<br />
 					<p style="font-size: 3.5em; font-family: 'normal Arial'; margin-top: 35px">
 						AdvoCate - Adventures of Categories
-											
+
 					</p>
 
 				</div>
@@ -109,20 +127,16 @@
 					</ul>
 				</div>
 			</nav>
-		</div>		
-			  {% block content %} {% endblock %}
-			
-			
-					
-			<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js" type="text/javascript"></script>
-			<script src="{% static 'js/handsontable.full.js' %}" ></script>
-			<script type="text/javascript" src="{% static 'js/newScript.js' %}"></script>
-			<script type="text/javascript" src="{% static 'js/topbar.js' %}"></script>
-			<script src="{% static 'js/bootstrap.min.js' %}"></script>
-			<script src="{% static 'js/jquery.csv-0.71.js' %}" type="text/javascript"></script>
-			<script src="{% static 'js/jsnetworkx-drawing.js' %}" type="text/javascript" charset="utf-8"></script>
-			<script src="http://d3js.org/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		</div>
+		{% block content %} {% endblock %}
 
-		
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js" type="text/javascript"></script>
+		<script src="{% static 'js/handsontable.full.js' %}" ></script>
+		<script type="text/javascript" src="{% static 'js/newScript.js' %}"></script>
+		<script src="{% static 'js/bootstrap.min.js' %}"></script>
+		<script src="{% static 'js/jquery.csv-0.71.js' %}" type="text/javascript"></script>
+		<script src="{% static 'js/jsnetworkx-drawing.js' %}" type="text/javascript" charset="utf-8"></script>
+		<script src="http://d3js.org/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+
 	</body>
 </html>

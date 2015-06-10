@@ -1,8 +1,3 @@
-a {
-    text-decoration: none;
-    color: #00c6ff;
-}
-
 
 #top-stuff {
     left: 0;
@@ -39,7 +34,7 @@ a {
 #session {
     cursor: pointer;
     display: inline-block;
-    height: 20px;
+    height: 40px;
     padding: 10px 12px;
     vertical-align: top;
     white-space: nowrap;
@@ -55,7 +50,8 @@ a#signin-link {
     position: relative;
 }
 
-a#signin-link em {
+a#register-link em, a#signin-link-bak em {
+	color: #bababa;
     font-size: 10px;
     font-style: normal;
     margin-right: 4px;
@@ -92,22 +88,49 @@ a#signin-link strong {
     width: 200px;
 }
 
-form.signin .textbox label {
+#register-dropdown {
+    background-color: #202020;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    box-shadow: 0 1px 2px #666666;
+    -webkit-box-shadow: 0 1px 2px #666666;
+    min-height: 350px;
+    min-width: 200px;
+    position: absolute;
+    right: 0;
+    display: none;
+}
+
+#register-dropdown form {
+    cursor: pointer;
+    padding: 10px;
+    text-align: left;
+}
+
+#register-dropdown .textbox span {
+    color: #BABABA;
+}
+
+#register-dropdown .textbox input {
+    width: 200px;
+}
+
+form.signin .textbox label, form.register .textbox label {
     display: block;
     padding-bottom: 7px;
 }
 
-form.signin .textbox span {
+form.signin .textbox span, form.register .textbox span {
     display: block;
 }
 
-form.signin p, form.signin span {
+form.signin p, form.signin span, form.register p, form.register span {
     color: #999;
     font-size: 11px;
     line-height: 18px;
 }
 
-form.signin .textbox input {
+form.signin .textbox input, form.register .textbox input {
     background: #666666;
     border-bottom: 1px solid #333;
     border-left: 1px solid #000;
@@ -120,17 +143,7 @@ form.signin .textbox input {
     padding: 6px 6px 4px;
 }
 
-form.signin .remb {
-    padding: 9px 0;
-    position: relative;
-    text-align: right;
-}
 
-form.signin .remb .remember {
-    text-align: left;
-    position: absolute;
-    left: 0;
-}
 
 .button {
     background: -moz-linear-gradient(center top, #f3f3f3, #dddddd);
