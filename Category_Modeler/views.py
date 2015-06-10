@@ -8,14 +8,14 @@ import csv, json, numpy, struct
 import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity
+from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity, AuthUser
 import os
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
 
 # Create your views here.
 
-def register(request):
+def register_view(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
@@ -27,25 +27,38 @@ def register(request):
         'form': form,
     })
 
-def login_request(request):
-    username = request.POST('username')
-    password = request.POST('password')
-    user = authenticate(username=username, password=password)
-    if user is not None and user.is_active:
-        # Correct password, and the user is marked "active"
-        login(request, user)
-        # Redirect to a success page.
-        return HttpResponseRedirect("/Category_Modeler/home/")
-    else:
-        # Show an error page
-        return HttpResponseRedirect("Invalid login")    
 
-def logout_request(request):
+def loginrequired(request):
+    loginerror=True
+    return render(request, 'base.html', {'loginerror':loginerror})
+
+def auth_view(request):
+    if request.method=='POST': 
+        username = request.POST.get('username', '')
+        password = request.POST.get('password', '')
+        user = authenticate(username=username, password=password)
+        if user is not None and user.is_active:
+            # Correct password, and the user is marked "active"
+            login(request, user)
+            # Redirect to a success page.
+            return HttpResponseRedirect("/AdvoCate/home/")
+        else:
+            error = True
+            return render(request, 'base.html', {'error': error})
+
+
+def logout_view(request):
     logout(request)
     # Redirect to a success page.
-    return HttpResponseRedirect("/Category_Modeler/home/")
+    return HttpResponseRedirect("/AdvoCate/")
+
+
 
 def index(request):
+    if '_auth_user_id' in request.session:
+        user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username  # @UndefinedVariable
+        print user_name
+        return render(request, 'base.html', {'user_name': user_name})
     return render(request, 'base.html')
 
 
