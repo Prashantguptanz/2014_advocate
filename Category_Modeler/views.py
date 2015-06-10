@@ -8,7 +8,7 @@ import csv, json, numpy, struct
 import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity
+from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity, AuthUser
 import os
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
@@ -28,8 +28,9 @@ def register_view(request):
     })
 
 
-def login_view(request):
-    return render(request, 'login.html')
+def loginrequired(request):
+    loginerror=True
+    return render(request, 'base.html', {'loginerror':loginerror})
 
 def auth_view(request):
     if request.method=='POST': 
@@ -49,12 +50,15 @@ def auth_view(request):
 def logout_view(request):
     logout(request)
     # Redirect to a success page.
-    return HttpResponseRedirect("/Category_Modeler/login/")
+    return HttpResponseRedirect("/AdvoCate/")
 
 
-@login_required
+
 def index(request):
-    print request.session['_auth_user_id']
+    if '_auth_user_id' in request.session:
+        user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username  # @UndefinedVariable
+        print user_name
+        return render(request, 'base.html', {'user_name': user_name})
     return render(request, 'base.html')
 
 

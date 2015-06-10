@@ -71,7 +71,7 @@ DATABASES = {
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
 
-LOGIN_URL = '/CategoryModeler/login/?next=/CategoryModeler/home/'
+LOGIN_URL = '/AdvoCate/accounts/loginrequired'
 
 #LOGIN_REDIRECT_URL = '/CategoryModeler/home/'
 

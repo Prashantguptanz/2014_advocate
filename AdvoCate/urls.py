@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, include, url
 
 from django.contrib import admin
-from Category_Modeler.views import login_view, auth_view, logout_view
+
 admin.autodiscover()
 
 urlpatterns = patterns('',

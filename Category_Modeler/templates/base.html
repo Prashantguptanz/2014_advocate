@@ -21,55 +21,74 @@
 			<div id="top-bar-out">
 				<div id="topcontainer">
 					<div id="topnav">
-						<div class="active-links">
-							<div id="session">
-								<a id="signin-link" href="#"> <strong>Sign in</strong> </a>
-							</div>
-							<div id="signin-dropdown">
-								
-								<form method="post" class="signin" action="/AdvoCate/accounts/auth/">
-									{% csrf_token %}
-									<fieldset class="textbox">
-										{% if error %}
-    										<p class="error" style= "color: brown">Invalid username or password!</p>
-  										{% endif %}
-										<label class="username"> <span>Username or email</span>
-											<input id="username" name="username" value="" type="text" autocomplete="on" required>
-										</label>
+						<div id="loginrequired">
 
-										<label class="password"> <span>Password</span>
-											<input id="password" name="password" value="" type="password" required>
-										</label>
-									</fieldset>
-									<input type="submit" value="Sign in" class="submit button" />
-									
-									<a id="register-link" href="#"> <em>No account? Register</em> </a>
-								</form>
-							</div>
-							<div id="register-dropdown">
-								<form method="post" class="register" action="/AdvoCate/accounts/register/">
-							  		{% csrf_token %}
-							  		<fieldset class="textbox">
-							  			<label class="username"> <span> Username</span>
-											<input id="username" name="username" value="" type="text" required>
-										</label>
-										<label class="first-name"> <span> First Name</span>
-											<input id="first-name" name="first-name" value="" type="text" required>
-										</label>
-										<label class="last-name"> <span> Last Name</span>
-											<input id="last-name" name="last-name" value="" type="text"  required>
-										</label>
-							  			<label class="email"> <span> email</span>
-											<input id="email" name="email" value="" type="text"  required>
-										</label>
-										<label class="password"> <span>Password</span>
-											<input id="password" name="password" value="" type="password">
-										</label>
-							  		</fieldset>
-							  		<input type="submit" value="Register" class="submit button" />
-							  		<a id="signin-link-bak" href="#"> <em>Have an account?</em> </a>
-							</div>
 						</div>
+						{% if user_name %}
+							<div id="logoutsession">
+								<strong>Welcome {{user_name}}</strong>
+							  	<a id="logout-link" href="/AdvoCate/accounts/logout/"> Sign out </a>
+							</div>
+						{% else %}
+							<div class="active-links">
+								<div id="session">
+																								{% if loginerror %}
+							<p class="error" style= "color: brown">
+												Sign in required!
+											</p>
+							{% endif %}
+
+									<a id="signin-link" href="#"> <strong>Sign in</strong> </a>
+								</div>
+								<div id="signin-dropdown">
+	
+									<form method="post" class="signin" action="/AdvoCate/accounts/auth/">
+										{% csrf_token %}
+										<fieldset class="textbox">
+											{% if error %}
+											<p class="error" style= "color: brown">
+												Invalid username or password!
+											</p>
+											{% endif %}
+											<label class="username"> <span>Username or email</span>
+												<input id="username" name="username" value="" type="text" autocomplete="on" required>
+											</label>
+	
+											<label class="password"> <span>Password</span>
+												<input id="password" name="password" value="" type="password" required>
+											</label>
+										</fieldset>
+										<input type="submit" value="Sign in" class="submit button" />
+	
+										<a id="register-link" href="#"> <em>No account? Register</em> </a>
+									</form>
+								</div>
+								<div id="register-dropdown">
+									<form method="post" class="register" action="/AdvoCate/accounts/register/">
+										{% csrf_token %}
+										<fieldset class="textbox">
+											<label class="user_name"> <span> Username</span>
+												<input id="user_name" name="user_name" value="" type="text" required>
+											</label>
+											<label class="first-name"> <span> First Name</span>
+												<input id="first-name" name="first-name" value="" type="text" required>
+											</label>
+											<label class="last-name"> <span> Last Name</span>
+												<input id="last-name" name="last-name" value="" type="text"  required>
+											</label>
+											<label class="email"> <span> email</span>
+												<input id="email" name="email" value="" type="text"  required>
+											</label>
+											<label class="register_password"> <span>Password</span>
+												<input id="register_password" name="register_password" value="" type="password">
+											</label>
+										</fieldset>
+										<input type="submit" value="Register" class="submit button" />
+										<a id="signin-link-bak" href="#"> <em>Have an account?</em> </a>
+									</form>
+								</div>
+							</div>
+						{% endif %}
 					</div>
 				</div>
 			</div>

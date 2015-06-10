@@ -46,7 +46,7 @@ $(function() {
 		});
 
 // Script for sign in and register tab
-		$('.active-links').click(function() {
+		$('#session').click(function() {
 			// Conditional states allow the dropdown box appear and disappear
 			if ($('#signin-dropdown').is(":visible")) {
 				$('#signin-dropdown').hide();
@@ -84,10 +84,11 @@ $(function() {
 			$('#register-dropdown').hide();
 		});
 
-// Script for 'Training Samples' page		
-		if (loc.match('http://127.0.0.1:8000/CategoryModeler/trainingsample/')){
+// Script for 'Training Samples' page	
+		
+		if (loc.match('http://127.0.0.1:8000/AdvoCate/trainingsample/')){
 			
-			console.log(loc);
+			
 		
 		
 			$('input[name="choosetrainingfile"]').on('click', function(){
