@@ -13,11 +13,21 @@ from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivit
 import os
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
 
 # Create your views here.
 
 def register_view(request):
     if request.method == 'POST':
+       # form = UserCreationForm(request.POST)
+       # print form
+      # if form.is_valid():
+      #      print "it's fine"
+      #      new_user = form.save()
+      #      return HttpResponseRedirect("/AdvoCate/")
+      #  print "it's not"
+      #  return HttpResponseRedirect("/AdvoCate/")
         data = request.POST;
         user_name = data['user_name'];
         firstname = data['first-name'];
@@ -63,13 +73,15 @@ def index(request):
         user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username  # @UndefinedVariable
         print user_name
         return render(request, 'base.html', {'user_name': user_name})
-    return render(request, 'base.html')
+    form = UserCreationForm()
+    return render(request, 'base.html', {'form': form})
 
 
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
 @login_required
 def trainingsampleprocessing(request):
-    
+    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username # @UndefinedVariable
+     
     if request.method == 'POST' and request.is_ajax():
         if request.is_ajax():
             if request.FILES:
@@ -102,9 +114,9 @@ def trainingsampleprocessing(request):
     else:
         if Trainingset.objects.exists(): # @UndefinedVariable
             training_set_list = Trainingset.objects.all()  # @UndefinedVariable
-            return render(request, 'trainingsample.html', {'training_set_list':training_set_list})
+            return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name})
         else:
-            return render(request, 'trainingsample.html')
+            return render(request, 'trainingsample.html', {'user_name': user_name})
 
 
 def savetrainingdatadetails(request):
@@ -193,6 +205,7 @@ def handle_raster_file(request, f):
 
 
 def signaturefile(request):
+    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username # @UndefinedVariable
     trainingfile = request.session['current_training_file_name']
     labels = read_CSVFile(trainingfile)
     attributes = labels[0]  
@@ -219,7 +232,7 @@ def signaturefile(request):
         
     elif 'current_training_file_name' in request.session:
    
-        return render (request, 'signaturefile.html', {'attributes': attributes})
+        return render (request, 'signaturefile.html', {'attributes': attributes, 'user_name':user_name})
 
 
 def read_CSVFile(f):

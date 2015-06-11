@@ -66,6 +66,7 @@
 									<form method="post" class="register" name="registerform" action="/AdvoCate/accounts/register/">
 										{% csrf_token %}
 										<fieldset class="textbox">
+										<!--	{{ form.as_p }}-->
 											<label class="user_name"> <span> Username</span>
 												<input id="user_name" name="user_name" value="" type="text" required>
 											</label>
@@ -81,6 +82,7 @@
 											<label class="register_password"> <span>Password</span>
 												<input id="register_password" name="register_password" value="" type="password"  required>
 											</label>
+
 										</fieldset>
 										<input type="submit" value="Register" class="submit button" />
 										<a id="signin-link-bak" href="#"> <em>Have an account?</em> </a>
@@ -99,7 +101,7 @@
 				<div style="width: 12%; float: left">
 					<br />
 					<img style="width: 100px; height: 100px;  margin-top: 30px"
-					src="{% static 'uploaded_files/onto.png' %}" alt="logo" />
+					src="{% static 'images/onto.png' %}" alt="logo" />
 				</div>
 				<div style="width: 80%; float: right">
 					<br />
