@@ -22,18 +22,13 @@ def register_view(request):
         user_name = data['user_name'];
         firstname = data['first-name'];
         lastname = data['last-name'];
-        email = data['email'];
+        emailid = data['email'];
         password = data['register_password'];
         
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            new_user = form.save()
-            return HttpResponseRedirect("/books/")
-    else:
-        form = UserCreationForm()
-    return render(request, "registration/register.html", {
-        'form': form,
-    })
+        new_user = AuthUser(username=user_name, first_name=firstname, last_name=lastname, email= emailid, password= password, date_joined=datetime.now())
+        new_user.save()
+
+        return render(request, "base.html")
 
 
 def loginrequired(request):
