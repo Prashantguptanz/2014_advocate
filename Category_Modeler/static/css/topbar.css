@@ -31,7 +31,7 @@
     text-align: right;
 }
 
-#session {
+#session, #logoutsession {
     cursor: pointer;
     display: inline-block;
     height: 40px;
@@ -40,7 +40,9 @@
     white-space: nowrap;
 }
 
-#session.active, #session:hover {
+
+
+#session.active, #session:hover, #logoutsession:hover {
     background: rgba(255,255,255,0.1);
     color: fff;
 }
@@ -57,7 +59,7 @@ a#register-link em, a#signin-link-bak em {
     margin-right: 4px;
 }
 
-a#signin-link strong {
+a#signin-link strong, #logoutsession strong {
     color: #fff;
 }
 
