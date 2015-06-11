@@ -85,7 +85,7 @@ $(function() {
 		});
 		
 		$('#Signin').on('click', function(e){
-			if ($('#username').value !=null && $('#password').value !=null){
+			if ($('#username').val() !="" && $('#password').val() !=""){
 				e.preventDefault();
 				var $this = $('#signindetails');
 				$.post("http://127.0.0.1:8000/AdvoCate/accounts/auth/", $this.serialize(), function(response){

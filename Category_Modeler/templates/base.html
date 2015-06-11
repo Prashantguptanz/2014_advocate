@@ -41,7 +41,7 @@
 								</div>
 								<div id="signin-dropdown">
 	
-									<form method="post" id="signindetails" class="signin" action="#">
+									<form method="post" id="signindetails" class="signin" name="signinform" action="#">
 										{% csrf_token %}
 										<fieldset class="textbox">
 											
@@ -63,7 +63,7 @@
 									</form>
 								</div>
 								<div id="register-dropdown">
-									<form method="post" class="register" action="/AdvoCate/accounts/register/">
+									<form method="post" class="register" name="registerform" action="/AdvoCate/accounts/register/">
 										{% csrf_token %}
 										<fieldset class="textbox">
 											<label class="user_name"> <span> Username</span>
