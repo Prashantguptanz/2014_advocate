@@ -4,15 +4,12 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.servers.basehttp import FileWrapper
 from django.contrib import auth
-import csv, json, numpy, struct
-import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
 from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity, AuthUser
-import os
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
-
+import csv, json, numpy, struct, os, gdal
 # Create your views here.
 
 def register_view(request):

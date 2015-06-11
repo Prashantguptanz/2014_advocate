@@ -32,12 +32,11 @@
 						{% else %}
 							<div class="active-links">
 								<div id="session">
-																								{% if loginerror %}
-							<p class="error" style= "color: brown">
-												Sign in required!
-											</p>
-							{% endif %}
-
+									{% if loginerror %}
+									<p class="error" style= "color: brown">
+										Sign in required!
+									</p>
+						{% endif %}
 									<a id="signin-link" href="#"> <strong>Sign in</strong> </a>
 								</div>
 								<div id="signin-dropdown">
