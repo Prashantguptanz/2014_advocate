@@ -28,7 +28,7 @@ def register_view(request):
         new_user = AuthUser(username=user_name, first_name=firstname, last_name=lastname, email= emailid, password= password, date_joined=datetime.now())
         new_user.save()
 
-        return render(request, "base.html")
+        return HttpResponseRedirect("/AdvoCate/")
 
 
 def loginrequired(request):

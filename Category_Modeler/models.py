@@ -53,7 +53,7 @@ class AuthPermission(models.Model):
 
 class AuthUser(models.Model):
     password = models.CharField(max_length=128)
-    last_login = models.DateTimeField()
+    last_login = models.DateTimeField(null=True)
     is_superuser = models.BooleanField(default=False)
     username = models.CharField(unique=True, max_length=30)
     first_name = models.CharField(max_length=30)
