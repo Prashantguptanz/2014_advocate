@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.servers.basehttp import FileWrapper
 from django.contrib import auth
+from django.http import JsonResponse
 import csv, json, numpy, struct
 import gdal
 from gdalconst import *
@@ -17,6 +18,13 @@ from sklearn.naive_bayes import GaussianNB
 
 def register_view(request):
     if request.method == 'POST':
+        data = request.POST;
+        user_name = data['user_name'];
+        firstname = data['first-name'];
+        lastname = data['last-name'];
+        email = data['email'];
+        password = data['register_password'];
+        
         form = UserCreationForm(request.POST)
         if form.is_valid():
             new_user = form.save()
@@ -41,10 +49,11 @@ def auth_view(request):
             # Correct password, and the user is marked "active"
             login(request, user)
             # Redirect to a success page.
-            return HttpResponseRedirect("/AdvoCate/home/")
+            user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username# @UndefinedVariable
+            return JsonResponse({'user_name':user_name})
         else:
-            error = True
-            return render(request, 'base.html', {'error': error})
+            error = "Invalid username or password!"
+            return JsonResponse({'error':error})
 
 
 def logout_view(request):

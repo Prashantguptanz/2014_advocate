@@ -41,14 +41,14 @@
 								</div>
 								<div id="signin-dropdown">
 	
-									<form method="post" class="signin" action="/AdvoCate/accounts/auth/">
+									<form method="post" id="signindetails" class="signin" action="#">
 										{% csrf_token %}
 										<fieldset class="textbox">
-											{% if error %}
-											<p class="error" style= "color: brown">
-												Invalid username or password!
+											
+											<p id="signinerror" class="error" style= "color: brown">
+												
 											</p>
-											{% endif %}
+											
 											<label class="username"> <span>Username or email</span>
 												<input id="username" name="username" value="" type="text" autocomplete="on" required>
 											</label>
@@ -57,7 +57,7 @@
 												<input id="password" name="password" value="" type="password" required>
 											</label>
 										</fieldset>
-										<input type="submit" value="Sign in" class="submit button" />
+										<input type="submit" id="Signin" value="Sign in" class="submit button" />
 	
 										<a id="register-link" href="#"> <em>No account? Register</em> </a>
 									</form>

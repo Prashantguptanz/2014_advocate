@@ -83,6 +83,23 @@ $(function() {
 			$('#session').removeClass('active');
 			$('#register-dropdown').hide();
 		});
+		
+		$('#Signin').on('click', function(e){
+			if ($('#username').value !=null && $('#password').value !=null){
+				e.preventDefault();
+				var $this = $('#signindetails');
+				$.post("http://127.0.0.1:8000/AdvoCate/accounts/auth/", $this.serialize(), function(response){
+					if ('error' in response){
+						$('p#signinerror').html(response['error']);					
+					}
+					else{
+						$('div#topnav').html("<div id=\"logoutsession\"><strong>Welcome "+response['user_name']+" &nbsp; &nbsp;</strong><a id=\"logout-link\" href=\"/AdvoCate/accounts/logout/\"> Sign out </a></div>");
+					}
+						
+				});			
+			}
+
+		});
 
 // Script for 'Training Samples' page	
 		
@@ -149,7 +166,7 @@ $(function() {
 				var data={};
 				data[1] = filepkey;
 				data[2] = filename;
-				$.post("http://127.0.0.1:8000/CategoryModeler/trainingsample/", data, function(response){
+				$.post("http://127.0.0.1:8000/AdvoCate/trainingsample/", data, function(response){
 					var trainingdata = $.csv.toArrays(response);
 					$('#instances').html(trainingdata.length-1);
 					$('#Attributes').html(trainingdata[0].length);
@@ -199,7 +216,7 @@ $(function() {
 				formdata.append("trainingfile", newtrainingdataset);
 				$.ajax({
 					type : "POST",
-					url : "http://127.0.0.1:8000/CategoryModeler/trainingsample/",
+					url : "http://127.0.0.1:8000/AdvoCate/trainingsample/",
 					async : true,
 					processData : false, 
 					contentType : false,
@@ -235,7 +252,7 @@ $(function() {
 			$('#savetrainingdatadetails').on('click', function(e){
 				e.preventDefault();
 				var $this = $('#newtrainingdatasetdetails');
-				$.post("http://127.0.0.1:8000/CategoryModeler/savetrainingdatadetails/", $this.serialize(), function(response){
+				$.post("http://127.0.0.1:8000/AdvoCate/savetrainingdatadetails/", $this.serialize(), function(response){
 					alert(response);
 				});
 				
@@ -247,7 +264,7 @@ $(function() {
 				event.preventDefault();
 						$.ajax({
 							type : "POST",
-							url : "http://127.0.0.1:8000/CategoryModeler/saveNewTrainingVersion/",
+							url : "http://127.0.0.1:8000/AdvoCate/saveNewTrainingVersion/",
 							async : true,
 							processData : false,
 							contentType : false,
@@ -280,7 +297,7 @@ $(function() {
 			var formData = new FormData($this[0]);
 			$.ajax({
 				type : "POST",
-				url : "http://127.0.0.1:8000/CategoryModeler/signaturefile/",
+				url : "http://127.0.0.1:8000/AdvoCate/signaturefile/",
 				async : true,
 				processData : false, 
 				contentType : false,
