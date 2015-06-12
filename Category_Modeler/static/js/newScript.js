@@ -237,9 +237,9 @@ $(function() {
 			
 			// Function to set the height of training data table based on window size
 			function setHeight() {
-				var headerHeight = $('.container').outerHeight();
+				var headerHeight = $('#top-part').outerHeight();
 				var totalHeight = $(window).height();
-				$('#trainingdataTable').css({'height' : totalHeight - headerHeight + 'px'});
+				$('#trainingdataTable').css({'height' : totalHeight - headerHeight -140 + 'px'});
 			};
 	
 			setHeight();
