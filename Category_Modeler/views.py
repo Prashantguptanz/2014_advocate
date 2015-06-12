@@ -13,6 +13,7 @@ from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivit
 import os
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
+from sklearn import tree, svm
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
@@ -20,14 +21,14 @@ from django.contrib.auth.forms import UserCreationForm
 
 def register_view(request):
     if request.method == 'POST':
-       # form = UserCreationForm(request.POST)
-       # print form
-      # if form.is_valid():
-      #      print "it's fine"
-      #      new_user = form.save()
-      #      return HttpResponseRedirect("/AdvoCate/")
-      #  print "it's not"
-      #  return HttpResponseRedirect("/AdvoCate/")
+    # form = UserCreationForm(request.POST)
+    # print form
+    # if form.is_valid():
+    #      print "it's fine"
+    #      new_user = form.save()
+    #      return HttpResponseRedirect("/AdvoCate/")
+    # print "it's not"
+    # return HttpResponseRedirect("/AdvoCate/")
         data = request.POST;
         user_name = data['user_name'];
         firstname = data['first-name'];
@@ -200,8 +201,6 @@ def handle_raster_file(request, f):
         for i in range(5000):
             spamwriter.writerow(final_array[i])
         csvfile.close();
-        
-#
 
 
 def signaturefile(request):
@@ -247,6 +246,10 @@ def read_CSVFile(f):
 def chooseClassifier(classifiername):
     if classifiername=='NaiveBayes':
         clf= GaussianNB()
+    elif classifiername=='C4.5':
+        clf=tree.DecisionTreeClassifier()
+    else:
+        clf = svm.SVC()
     return clf
 
 def supervised(request):
