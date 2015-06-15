@@ -26,6 +26,10 @@
 					<option value="{{ attr }}"> {{ attr }}
 						{% endfor %}
 				</select>
+				{% else %}
+				<p id="signinerror" class="error" style= "color: brown">
+					Select a training sample!
+				</p>
 				{% endif %}
 			</div>
 		</div>

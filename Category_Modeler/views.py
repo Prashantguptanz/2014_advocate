@@ -202,12 +202,17 @@ def handle_raster_file(request, f):
             spamwriter.writerow(final_array[i])
         csvfile.close();
 
-
+@login_required
 def signaturefile(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username # @UndefinedVariable
+
+    if 'current_training_file_name' not in request.session:
+        return render (request, 'signaturefile.html', {'user_name':user_name})
+    
     trainingfile = request.session['current_training_file_name']
-    labels = read_CSVFile(trainingfile)
-    attributes = labels[0]  
+    trainingFileAsArray = read_CSVFile(trainingfile)
+    features = trainingFileAsArray[0]  
+    
     if request.method=='POST' and 'current_training_file_name' in request.session:
         data = request.POST;
         
@@ -223,15 +228,12 @@ def signaturefile(request):
             split = data['Percentage']
         
         classifier = chooseClassifier(classifiername)
-        targetAttributeIndex = attributes.index(targetattribute)
+        targetAttributeIndex = features.index(targetattribute)
 
         return render (request, 'signaturefile.html')
         
-            
-        
-    elif 'current_training_file_name' in request.session:
-   
-        return render (request, 'signaturefile.html', {'attributes': attributes, 'user_name':user_name})
+    else:
+        return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name})
 
 
 def read_CSVFile(f):
