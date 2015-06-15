@@ -119,10 +119,10 @@ class ChangeTrainingSetActivity(models.Model):
         unique_together = ("newtrainingset_id", "newtrainingset_ver")
 
 class Classificationmodel(models.Model):
-    model_id = models.IntegerField(primary_key=True)
     accuracy = models.FloatField()
     confusionmatrixlocation = models.CharField(max_length=256)
     classifier = models.ForeignKey('Classifier')
+    location = models.CharField(max_length=1024)
 
     class Meta:
         managed = False

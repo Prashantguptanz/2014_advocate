@@ -10,10 +10,11 @@ import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
 from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity, AuthUser
-import os
+import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
 from sklearn import tree, svm
+from sklearn.externals import joblib
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
@@ -229,7 +230,17 @@ def signaturefile(request):
         
         classifier = chooseClassifier(classifiername)
         targetAttributeIndex = features.index(targetattribute)
-
+        
+        trainingSampleDataWithTargetValues = createSampleArray(trainingFileAsArray, targetAttributeIndex)
+        data_array=numpy.asarray(trainingSampleDataWithTargetValues[0], dtype=numpy.float)
+        target_array=numpy.asarray(trainingSampleDataWithTargetValues[1], dtype=numpy.float)
+        classifier.fit(data_array, target_array)
+        
+     #   model = Classificationmodel()
+        
+        joblib.dump(classifier, 'Category_Modeler/static/signaturefile/model2')
+        request.session['current_signature_file']='model2'
+        
         return render (request, 'signaturefile.html')
         
     else:
@@ -253,6 +264,19 @@ def chooseClassifier(classifiername):
     else:
         clf = svm.SVC()
     return clf
+
+def createSampleArray(trainingsample, targetAttributeIndex):
+    trainingsample.pop(0)
+    trainingSampleArray = []
+    targetValueArray = []
+    newArray=[]
+    for sample in trainingsample:
+        targetValueArray.append(sample[targetAttributeIndex])
+        sample.pop(targetAttributeIndex)
+        trainingSampleArray.append(sample)
+    newArray.append(trainingSampleArray)
+    newArray.append(targetValueArray)
+    return newArray
 
 def supervised(request):
     return render (request, 'supervised.html')
