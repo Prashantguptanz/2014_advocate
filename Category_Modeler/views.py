@@ -13,7 +13,7 @@ from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivit
 import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
-from sklearn import tree, svm, cross_validation
+from sklearn import tree, svm, cross_validation, metrics
 from sklearn.externals import joblib
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
@@ -226,7 +226,8 @@ def signaturefile(request):
         elif(validationoption=='3'):
             folds = data['fold']
         elif(validationoption=='4'):
-            split = data['Percentage']
+            percentsplit = float(data['Percentage'])
+            
         
         classifier = chooseClassifier(classifiername)
         targetAttributeIndex = features.index(targetattribute)
@@ -241,9 +242,21 @@ def signaturefile(request):
         joblib.dump(classifier, 'Category_Modeler/static/signaturefile/%s'%modelname)
         request.session['current_signature_file']= modelname
         clf = joblib.load('Category_Modeler/static/signaturefile/%s' % (request.session['current_signature_file']))
-        scores=cross_validation.cross_val_score(clf, data_array, target_array, cv=int(folds))
-        print scores
-        print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+        
+        if (validationoption=='1'):
+            y_pred= clf.predict(data_array)
+            print metrics.accuracy_score(target_array, y_pred)
+        elif (validationoption=='2'):
+            print "test"
+        elif (validationoption=='3'):
+            scores=cross_validation.cross_val_score(clf, data_array, target_array, cv=int(folds))
+            print scores
+            print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+        else:
+            x_train, x_test, y_train, y_test = cross_validation.train_test_split(data_array, target_array, test_size=percentsplit/100.0)
+            clf.fit(x_train, y_train)
+            score = clf.score(x_test, y_test)
+            print score
         return render (request, 'signaturefile.html')
         
     else:
