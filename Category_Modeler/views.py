@@ -236,7 +236,12 @@ def signaturefile(request):
         data_array=numpy.asarray(trainingSampleDataWithTargetValues[0], dtype=numpy.float)
         target_array=numpy.asarray(trainingSampleDataWithTargetValues[1], dtype=numpy.float)
         classifier.fit(data_array, target_array)
-        
+        print len(classifier.classes_)
+        print len(classifier.theta_)
+        print len(classifier.theta_[1])
+        print len(classifier.sigma_)
+        print len(classifier.sigma_[1])
+        print classifier.sigma_[1]
        # model = Classificationmodel()
         modelname = "model_" + str(datetime.now())
         joblib.dump(classifier, 'Category_Modeler/static/signaturefile/%s'%modelname)
@@ -275,6 +280,7 @@ def read_CSVFile(f):
 def chooseClassifier(classifiername):
     if classifiername=='NaiveBayes':
         clf= GaussianNB()
+        
     elif classifiername=='C4.5':
         clf=tree.DecisionTreeClassifier()
     else:
