@@ -13,7 +13,7 @@ from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivit
 import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
-from sklearn import tree, svm
+from sklearn import tree, svm, cross_validation
 from sklearn.externals import joblib
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
@@ -236,11 +236,14 @@ def signaturefile(request):
         target_array=numpy.asarray(trainingSampleDataWithTargetValues[1], dtype=numpy.float)
         classifier.fit(data_array, target_array)
         
-     #   model = Classificationmodel()
-        
-        joblib.dump(classifier, 'Category_Modeler/static/signaturefile/model2')
-        request.session['current_signature_file']='model2'
-        
+       # model = Classificationmodel()
+        modelname = "model_" + str(datetime.now())
+        joblib.dump(classifier, 'Category_Modeler/static/signaturefile/%s'%modelname)
+        request.session['current_signature_file']= modelname
+        clf = joblib.load('Category_Modeler/static/signaturefile/%s' % (request.session['current_signature_file']))
+        scores=cross_validation.cross_val_score(clf, data_array, target_array, cv=int(folds))
+        print scores
+        print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
         return render (request, 'signaturefile.html')
         
     else:
