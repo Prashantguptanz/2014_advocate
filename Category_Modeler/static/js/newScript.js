@@ -33,6 +33,18 @@ $(function() {
 			}
 		});
 		
+		// Function to set the height of training data table based on window size
+		function setTrainingSamplesTableHeight() {
+			var headerHeight = $('#top-part').outerHeight();
+			var totalHeight = $(window).height();
+			$('#trainingdataTable').css({'height' : totalHeight - headerHeight -140 + 'px'});
+		};
+		
+		function setSignatureFileDetailsHeight() {
+			var headerHeight = $('#top-part').outerHeight();
+			var totalHeight = $(window).height();
+			$('#signaturefiledetails').css({'height' : totalHeight - headerHeight -140 + 'px'});
+		};
 // Script for navbar
 		
 		var loc = window.location.href;
@@ -235,17 +247,12 @@ $(function() {
 	
 			});
 			
-			// Function to set the height of training data table based on window size
-			function setHeight() {
-				var headerHeight = $('#top-part').outerHeight();
-				var totalHeight = $(window).height();
-				$('#trainingdataTable').css({'height' : totalHeight - headerHeight -140 + 'px'});
-			};
+
 	
-			setHeight();
+			setTrainingSamplesTableHeight();
 			// call the setHeight function, every time window is resized
 			$(window).on('resize', function() {
-				setHeight();
+				setTrainingSamplesTableHeight();
 			});
 			
 			
@@ -280,35 +287,44 @@ $(function() {
 		
 // Script for 'Signature file' page		
 		
-
-
-		$('.dropdown-toggle').dropdown();
-		
-		$('input[name="validationoption"]').on('click',function() {
-			var $this = $(this);
-			$this.next().children().removeAttr('disabled');
-			$this.siblings('input').next().children().attr('disabled', 'disabled');
+		if (loc.match('http://127.0.0.1:8000/AdvoCate/signaturefile/')){
 			
-		});
-		
-		$('#createsignaturefile').on('click', function(e){
-			e.preventDefault();
-			var $this = $('#trainingoptions');
-			var formData = new FormData($this[0]);
-			$.ajax({
-				type : "POST",
-				url : "http://127.0.0.1:8000/AdvoCate/signaturefile/",
-				async : true,
-				processData : false, 
-				contentType : false,
-				data : formData,
-				success : function(response) {
-
-
-				}
-
-		});
-		});
+			setSignatureFileDetailsHeight();
+			
+			$(window).on('resize', function() {
+				setSignatureFileDetailsHeight();
+			});
+			
+			$('.dropdown-toggle').dropdown();
+			
+			$('input[name="validationoption"]').on('click',function() {
+				var $this = $(this);
+				$this.next().children().removeAttr('disabled');
+				$this.siblings('input').next().children().attr('disabled', 'disabled');
+				
+			});
+			
+			$('#createsignaturefile').on('click', function(e){
+				e.preventDefault();
+				var $this = $('#trainingoptions');
+				var formData = new FormData($this[0]);
+				$.ajax({
+					type : "POST",
+					url : "http://127.0.0.1:8000/AdvoCate/signaturefile/",
+					async : true,
+					processData : false, 
+					contentType : false,
+					data : formData,
+					success : function(response) {
+						$('p#score').html(response['score']);
+						$('p#classes').html(response['listofclasses']);
+						$('p#meanvectors').html(response['meanvectors']);
+	
+					}
+	
+				});
+			});
+		}
 		
 		
 //Script for visualization
