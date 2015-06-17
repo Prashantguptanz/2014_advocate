@@ -14,9 +14,9 @@ import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
 from sklearn import tree, svm, cross_validation, metrics
+from sklearn.metrics import confusion_matrix
 from sklearn.externals import joblib
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
+import matplotlib.pyplot as plt
 
 # Create your views here.
 
@@ -250,23 +250,37 @@ def signaturefile(request):
         
         if (validationoption=='1'):
             y_pred= clf.predict(data_array)
-            print metrics.accuracy_score(target_array, y_pred)
+            score= metrics.accuracy_score(target_array, y_pred)
+            cm = confusion_matrix(target_array, y_pred)
+            numpy.set_printoptions(precision=2)
+            print('Confusion matrix')
+            print(cm)
+            plt.figure()
+            plot_confusion_matrix(cm)
         elif (validationoption=='2'):
             print "test"
         elif (validationoption=='3'):
             scores=cross_validation.cross_val_score(clf, data_array, target_array, cv=int(folds))
-            print scores
+            score = scores.mean()
             print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
         else:
             x_train, x_test, y_train, y_test = cross_validation.train_test_split(data_array, target_array, test_size=percentsplit/100.0)
             clf.fit(x_train, y_train)
             score = clf.score(x_test, y_test)
             print score
-        return render (request, 'signaturefile.html')
+        return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': json.dumps(clf.classes_.tolist()), 'meanvectors':json.dumps(clf.theta_.tolist())})
         
     else:
         return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name})
 
+def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
 
 def read_CSVFile(f):
     with open('Category_Modeler/static/trainingfiles/%s' % f, 'rU') as datafile:
