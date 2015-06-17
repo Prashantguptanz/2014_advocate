@@ -67,64 +67,11 @@
 		<legend style="font-size: 18px">
 			Signature file details
 		</legend>
-		<div class="form-group"
-		style="height: 400px; border-style: solid; border-width: 1px; overflow: auto; border-color: #E5E5E5; margin-left: 1%; margin-right: 1%">
-
-			{% if classifierName %}
-			<table style="width: 100%; margin-top: 5px; margin-left: 5px">
-				<tr>
-					<td>Correctly classified instances:</td>
-					<td>{{ clbp }}</td>
-					<td>{{ mean_accuracy }} %</td>
-				</tr>
-				<tr>
-					<td>Incorrectly classified instances:</td>
-					<td>{{ mlbp }}</td>
-					<td>{{ misclassified_accuracy }} %</td>
-				</tr>
-				<tr>
-					<td>Kappa statistic:</td>
-					<td>{{ kp }}</td>
-				</tr>
-			</table>
-
-			<br />
-
-			<label for="ConfusionMatrix" style="margin-left: 10px">Confusion Matrix:</label>
-			<table class="table table-bordered" style="width: auto; margin-left: 20px">
-				<tr>
-					<th></th>
-					{% for i in numerical_classes %}
-					<th>{{ i }}</th>
-					{% endfor %}
-				</tr>
-				{% for row in cm %}
-				<tr>
-					{% for class in numerical_classes%}
-					{% ifequal forloop.counter forloop.parentloop.counter %}
-					<td><strong>{{ class }}</strong></td>
-					{% endifequal %}
-					{% endfor %}
-
-					{% for data in row %}
-					<td>{{ data }}</td>
-					{% endfor %}
-					{% for sum in rowsum%}
-					{% ifequal forloop.counter forloop.parentloop.counter %}
-					<td> {{ sum }} </td>
-					{% endifequal %}
-					{% endfor %}
-				</tr>
-
-				{% endfor %}
-				<tr>
-					<td></td>
-					{% for sum in columnsum %}
-					<td>{{ sum }} </td>
-					{% endfor %}
-					<td> {{ totalsum }}</td>
-				</tr>
-				{% endif %}
+		<div class="form-group" id="signaturefiledetails" style="border-style: solid; border-width: 1px; overflow: auto; border-color: #E5E5E5; margin-left: 1%; margin-right: 1%">
+			
+			<p id="score">{{ score }}</p>
+			<p id="classes">{{ listofclasses }}</p>
+			<p id="meanvectors">{{ meanvectors }}</p>
 		</div>
 	</div>
 
