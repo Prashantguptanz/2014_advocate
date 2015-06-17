@@ -7,10 +7,8 @@ from django.contrib import auth
 from django.http import JsonResponse
 import csv, json, numpy, struct
 import gdal
-from gdalconst import *
 from io import FileIO, BufferedWriter
 from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity, AuthUser
-import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
 from sklearn import tree, svm, cross_validation, metrics
@@ -299,6 +297,9 @@ def createSampleArray(trainingsample, targetAttributeIndex):
     newArray.append(trainingSampleArray)
     newArray.append(targetValueArray)
     return newArray
+
+def dendrogram(meanVectorArray, varianceArray):
+    return ""
 
 def supervised(request):
     return render (request, 'supervised.html')
