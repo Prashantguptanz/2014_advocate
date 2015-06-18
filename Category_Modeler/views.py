@@ -253,10 +253,10 @@ def signaturefile(request):
             score= metrics.accuracy_score(target_array, y_pred)
             cm = confusion_matrix(target_array, y_pred)
             numpy.set_printoptions(precision=2)
-            print('Confusion matrix')
-            print(cm)
             plt.figure()
             plot_confusion_matrix(cm)
+            plt.savefig("Category_Modeler/static/images/cm1.png")
+            
         elif (validationoption=='2'):
             print "test"
         elif (validationoption=='3'):
@@ -267,8 +267,8 @@ def signaturefile(request):
             x_train, x_test, y_train, y_test = cross_validation.train_test_split(data_array, target_array, test_size=percentsplit/100.0)
             clf.fit(x_train, y_train)
             score = clf.score(x_test, y_test)
-            print score
-        return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': json.dumps(clf.classes_.tolist()), 'meanvectors':json.dumps(clf.theta_.tolist())})
+            y_pred = clf.predict(x_test)
+        return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist()})
         
     else:
         return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name})
@@ -276,8 +276,7 @@ def signaturefile(request):
 def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
-    plt.colorbar()
-    
+    plt.colorbar()   
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')

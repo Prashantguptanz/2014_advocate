@@ -305,24 +305,72 @@ $(function() {
 			});
 			
 			$('#createsignaturefile').on('click', function(e){
-				e.preventDefault();
-				var $this = $('#trainingoptions');
-				var formData = new FormData($this[0]);
-				$.ajax({
-					type : "POST",
-					url : "http://127.0.0.1:8000/AdvoCate/signaturefile/",
-					async : true,
-					processData : false, 
-					contentType : false,
-					data : formData,
-					success : function(response) {
-						$('p#score').html(response['score']);
-						$('p#classes').html(response['listofclasses']);
-						$('p#meanvectors').html(response['meanvectors']);
-	
-					}
-	
-				});
+				if ($('#classifiertype').val() !="" && $('#targetattribute').val() !=undefined && $('input[name=validationoption]:checked').val() !=null){
+					e.preventDefault();
+					var $this = $('#trainingoptions');
+					var formData = new FormData($this[0]);
+					$.ajax({
+						type : "POST",
+						url : "http://127.0.0.1:8000/AdvoCate/signaturefile/",
+						async : true,
+						processData : false, 
+						contentType : false,
+						data : formData,
+						success : function(response) {
+							
+							$('#validationscore').html("<b>Validation score:  </b>" + response['score']);
+							
+							$('#signaturefiledetailsoptions').show();
+							var a =	"<table style=\"width:100%\" ><tr><th> Class </th><th> Mean Vector </th></tr>"
+							for (var i=0; i<response['listofclasses'].length; i++){
+								a = a+ "<tr><td>" +  	response['listofclasses'][i] + "</td><td>" + 	response['meanvectors'][i] + "</td></tr>";						
+							} 
+							a = a+	"</table>";	
+							$('#meanvectors').html(a);
+							
+							var b = "<table style=\"width:100%\" ><tr><th> Class </th><th> Variance </th></tr>"
+							for (var i=0; i<response['listofclasses'].length; i++){
+								b = b + "<tr><td>" + response['listofclasses'][i] + "</td><td>" + response['variance'][i] + "</td></tr>";						
+							} 
+							b = b +	"</table>";	
+							$('#variance').html(b);
+							
+							$('#meanvectors').hide();
+							$('#variance').hide();
+		
+						}
+		
+					});
+				}
+
+			});
+			
+			$('input[name="signaturefiledetailsoptions"]').on('click', function(e){
+				
+				var detailsoption = $('input[name="signaturefiledetailsoptions"]:checked').val();
+				console.log(detailsoption);
+				if (detailsoption=='1'){
+					$('#meanvectors').show();
+					$('#variance').hide();
+					$('#confusionmatrix').hide();					
+				}					
+				else if (detailsoption=='2'){
+					console.log(detailsoption);
+					$('#meanvectors').hide();
+					$('#variance').show();
+					$('#confusionmatrix').hide();
+				}
+				else if (detailsoption=='3'){
+					$('#meanvectors').hide();
+					$('#variance').hide();
+					$('#confusionmatrix').show();
+				}
+				else {
+					$('#meanvectors').hide();
+					$('#variance').hide();
+					$('#confusionmatrix').hide();
+					
+				}
 			});
 		}
 		

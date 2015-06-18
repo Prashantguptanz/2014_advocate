@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% block content %}
 
 {% csrf_token %}
-
+{% load staticfiles%}
 <div class="container">
 	<form class="form-group" id="trainingoptions" name="trainingoptions" style="width: 38%; float: left">
 		<legend style="font-size: 18px">Choose options to create signature file
@@ -44,22 +44,19 @@
 					<input type="file" id="validationfile" name="validationfile" accept=".csv,.xls,.tif,.png,.adf" disabled/>
 				</span> 
 			<br/><br/>
-			<input type="radio" name="validationoption" id="CrossValidation" value="3">Cross-validation 
+			<input type="radio" name="validationoption" id="CrossValidation" value="3" required>Cross-validation 
 				<span style="float: right"> 
 					<label style="font-weight: normal"> Folds &nbsp; &nbsp; </label>
 					<input id="fold" name = "fold" disabled="disabled" type="text" size="25" value="10" required />
 				</span>
 			<br/><br/>
-			<input type="radio" name="validationoption" id="PercentageSplit" value="4">Train/test % split 
+			<input type="radio" name="validationoption" id="PercentageSplit" value="4" required>Train/test % split 
 				<span style="float: right">
 					<label style="font-weight: normal"> % &nbsp; &nbsp; &nbsp; &nbsp; </label>
 					<input id="Percentage" name="Percentage" disabled="disabled" type="text" size="25" value="66" required />
 				</span>
 			<br/><br/>
-
-			<button id = "createsignaturefile" class="btn btn-default" >
-				Submit
-			</button>
+			<input type="submit" id="createsignaturefile" value="Submit" class="submit button" />
 		</div>
 	</form>
 	
@@ -69,9 +66,24 @@
 		</legend>
 		<div class="form-group" id="signaturefiledetails" style="border-style: solid; border-width: 1px; overflow: auto; border-color: #E5E5E5; margin-left: 1%; margin-right: 1%">
 			
-			<p id="score">{{ score }}</p>
-			<p id="classes">{{ listofclasses }}</p>
-			<p id="meanvectors">{{ meanvectors }}</p>
+			<label for="score" id = "validationscore" style="font-weight: normal"> </label>
+			<div id="signaturefiledetailsoptions" style="display:none">
+				&nbsp; &nbsp;
+				<input type="radio" name="signaturefiledetailsoptions" value="1" style="vertical-align: middle; margin: 0px;"/> Mean vectors &nbsp; &nbsp;  &nbsp; 
+				<input type="radio" name="signaturefiledetailsoptions" value="2" style="vertical-align: middle; margin: 0px;"/> Variances &nbsp; &nbsp;  &nbsp; 
+				<input type="radio" name="signaturefiledetailsoptions" value="3" style="vertical-align: middle; margin: 0px;"/> Confusion matrix &nbsp; &nbsp;  &nbsp; 
+				<input type="radio" name="signaturefiledetailsoptions" value="4" style="vertical-align: middle; margin: 0px;"/> Dendrogram &nbsp; &nbsp;  &nbsp; 
+			</div>
+			<br /><br />
+
+			  <div id="meanvectors">
+			  </div>
+			  <div id="variance" >
+			  </div>
+			  <div id="confusionmatrix" style="display:none">
+				<img style="" src="{% static 'images/cm1.png' %}" />
+			  </div>
+
 		</div>
 	</div>
 
