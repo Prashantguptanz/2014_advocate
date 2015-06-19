@@ -308,10 +308,10 @@ def createSampleArray(trainingsample, targetAttributeIndex):
     newArray.append(targetValueArray)
     return newArray
 
-<<<<<<< HEAD
+
 def dendrogram(meanVectorArray, varianceArray):
     return ""
-=======
+
 def calculateSumOfRows(confusionMatrix):
     sumRows = []
     for i, row in enumerate(confusionMatrix):
@@ -356,7 +356,6 @@ def calculateKappa(confusionMatrix):
     else:
         return 1
 
->>>>>>> refs/remotes/origin/master
 
 def supervised(request):
     return render (request, 'supervised.html')
