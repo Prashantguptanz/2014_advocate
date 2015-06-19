@@ -251,7 +251,7 @@ def signaturefile(request):
             numpy.set_printoptions(precision=2)
             plt.figure()
             plot_confusion_matrix(cm)
-            plt.savefig("Category_Modeler/static/images/cm1.png")
+            plt.savefig("Category_Modeler/static/images/%s.png"%"cm1",  bbox_inches='tight')
             
         elif (validationoption=='2'):
             print "test"
