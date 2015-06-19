@@ -317,18 +317,18 @@ $(function() {
 						contentType : false,
 						data : formData,
 						success : function(response) {
-							
+							console.log(response['kappa']);
 							$('#validationscore').html("<b>Validation score:  </b>" + response['score']);
-							
+							$('#kappa').html("<b>Kappa:  </b>" + response['kappa']);
 							$('#signaturefiledetailsoptions').show();
-							var a =	"<table style=\"width:100%\" ><tr><th> Class </th><th> Mean Vector </th></tr>"
+							var a =	"<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Mean Vector </th></tr>"
 							for (var i=0; i<response['listofclasses'].length; i++){
 								a = a+ "<tr><td>" +  	response['listofclasses'][i] + "</td><td>" + 	response['meanvectors'][i] + "</td></tr>";						
 							} 
 							a = a+	"</table>";	
 							$('#meanvectors').html(a);
 							
-							var b = "<table style=\"width:100%\" ><tr><th> Class </th><th> Variance </th></tr>"
+							var b = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Variance </th></tr>"
 							for (var i=0; i<response['listofclasses'].length; i++){
 								b = b + "<tr><td>" + response['listofclasses'][i] + "</td><td>" + response['variance'][i] + "</td></tr>";						
 							} 

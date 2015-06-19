@@ -236,12 +236,7 @@ def signaturefile(request):
         data_array=numpy.asarray(trainingSampleDataWithTargetValues[0], dtype=numpy.float)
         target_array=numpy.asarray(trainingSampleDataWithTargetValues[1], dtype=numpy.float)
         classifier.fit(data_array, target_array)
-        print len(classifier.classes_)
-        print len(classifier.theta_)
-        print len(classifier.theta_[1])
-        print len(classifier.sigma_)
-        print len(classifier.sigma_[1])
-        print classifier.sigma_[1]
+        
        # model = Classificationmodel()
         modelname = "model_" + str(datetime.now())
         joblib.dump(classifier, 'Category_Modeler/static/signaturefile/%s'%modelname)
@@ -252,6 +247,7 @@ def signaturefile(request):
             y_pred= clf.predict(data_array)
             score= metrics.accuracy_score(target_array, y_pred)
             cm = confusion_matrix(target_array, y_pred)
+            kp = calculateKappa(cm)
             numpy.set_printoptions(precision=2)
             plt.figure()
             plot_confusion_matrix(cm)
@@ -268,7 +264,7 @@ def signaturefile(request):
             clf.fit(x_train, y_train)
             score = clf.score(x_test, y_test)
             y_pred = clf.predict(x_test)
-        return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist()})
+        return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp})
         
     else:
         return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name})
@@ -312,6 +308,51 @@ def createSampleArray(trainingsample, targetAttributeIndex):
     newArray.append(trainingSampleArray)
     newArray.append(targetValueArray)
     return newArray
+
+def calculateSumOfRows(confusionMatrix):
+    sumRows = []
+    for i, row in enumerate(confusionMatrix):
+        for j,column in enumerate(row):
+            if i<=len(sumRows)-1:
+                b=sumRows.pop(i)
+                sumRows.insert(i, (column+b))
+            else:
+                sumRows.insert(i, column)
+    return sumRows
+
+def calculateSumOfColumns(confusionMatrix):
+    sumColumns = []
+    for i, row in enumerate(confusionMatrix):
+        for j,column in enumerate(row):
+            if j<=len(sumColumns)-1:
+                a=sumColumns.pop(j)
+                sumColumns.insert(j, (column+a))
+            else:
+                sumColumns.insert(j, column)
+    return sumColumns
+                                
+def calculateKappa(confusionMatrix):
+    # confusionMatrix = check_arrays(confusionMatrix)
+    sumRows = calculateSumOfRows(confusionMatrix)
+    sumColumns = calculateSumOfColumns(confusionMatrix)
+    sumOfWeights=0
+    for weight in sumRows:
+        sumOfWeights +=weight
+    
+    correct=float(0)
+    chanceAgreement=float(0)
+    for i,row in enumerate(confusionMatrix):
+        chanceAgreement += (sumRows[i] * sumColumns[i])
+        correct += row[i]
+    
+    chanceAgreement /= (sumOfWeights * sumOfWeights)
+    correct /= sumOfWeights
+    
+    if chanceAgreement<1:
+        return (correct-chanceAgreement)/(1-chanceAgreement)
+    else:
+        return 1
+
 
 def supervised(request):
     return render (request, 'supervised.html')

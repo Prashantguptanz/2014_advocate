@@ -65,9 +65,15 @@
 			Signature file details
 		</legend>
 		<div class="form-group" id="signaturefiledetails" style="border-style: solid; border-width: 1px; overflow: auto; border-color: #E5E5E5; margin-left: 1%; margin-right: 1%">
-			
-			<label for="score" id = "validationscore" style="font-weight: normal"> </label>
-			<div id="signaturefiledetailsoptions" style="display:none">
+			<div id="" style="padding-left: 15px; padding-right: 15px"><br />
+			&nbsp; &nbsp;<label for="score" id = "validationscore" style="font-weight: normal; "> </label>
+			&nbsp; &nbsp;<label for="kappa" id = "kappa" style="font-weight: normal; "> </label>
+			</div>
+			<br />
+			<div id="signaturefiledetailsoptions" style="display:none; padding-left: 15px; padding-right: 15px">
+				<legend style="font-size: 16px">
+					
+				</legend>
 				&nbsp; &nbsp;
 				<input type="radio" name="signaturefiledetailsoptions" value="1" style="vertical-align: middle; margin: 0px;"/> Mean vectors &nbsp; &nbsp;  &nbsp; 
 				<input type="radio" name="signaturefiledetailsoptions" value="2" style="vertical-align: middle; margin: 0px;"/> Variances &nbsp; &nbsp;  &nbsp; 
@@ -76,12 +82,12 @@
 			</div>
 			<br /><br />
 
-			  <div id="meanvectors">
+			  <div class="form-group" id="meanvectors" style="padding-left: 15px; padding-right: 15px">
 			  </div>
-			  <div id="variance" >
+			  <div class="form-group" id="variance" style="padding-left: 15px; padding-right: 15px">
 			  </div>
-			  <div id="confusionmatrix" style="display:none">
-				<img style="" src="{% static 'images/cm1.png' %}" />
+			  <div class="form-group" id="confusionmatrix" style="display:none ">
+				<img style="width:100%; height:100%" src="{% static 'images/cm1.png' %}" />
 			  </div>
 
 		</div>
