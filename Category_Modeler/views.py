@@ -254,6 +254,7 @@ def signaturefile(request):
             print('Confusion matrix')
             print(cm)
             plt.figure()
+            plt.savefig()
             plot_confusion_matrix(cm)
         elif (validationoption=='2'):
             print "test"
