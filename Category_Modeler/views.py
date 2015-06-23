@@ -2,14 +2,12 @@ from django.shortcuts import render, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.core.servers.basehttp import FileWrapper
 from django.contrib import auth
 from django.http import JsonResponse
-import csv, json, numpy, struct
+import csv, json, numpy
 import gdal
-from gdalconst import *
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, AuthUser, CollectingTrainingset, ChangeTrainingset
+from Category_Modeler.models import Trainingset, AuthUser, CollectingTrainingset, ChangeTrainingset, AuthUser
 import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
@@ -73,7 +71,6 @@ def logout_view(request):
 def index(request):
     if '_auth_user_id' in request.session:
         user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username  # @UndefinedVariable
-        print user_name
         return render(request, 'base.html', {'user_name': user_name})
     form = UserCreationForm()
     return render(request, 'base.html', {'form': form})
@@ -82,13 +79,13 @@ def index(request):
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
 @login_required
 def trainingsampleprocessing(request):
-    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username # @UndefinedVariable
+    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username 
      
     if request.method == 'POST' and request.is_ajax():
         if request.is_ajax():
             if request.FILES:
                 trainingfile = request.FILES['trainingfile']
-                request.session['current_training_file_name'] = trainingfile.name
+                request.session['current_training_file_name'] = trainingfile.name.split('.', 1)[0] + '.csv'
                 
                 if trainingfile.name.split(".")[-1] == ".csv":
                     handle_uploaded_file(request, trainingfile)
@@ -131,7 +128,12 @@ def savetrainingdatadetails(request):
         otherDetails = data['OtherDetails'];
         
         #add training dataset details in trainingset table and a collection activity in new_trainingset_collection_activity table
-        latestid = (Trainingset.objects.all().order_by("-trainingset_id")[0]).trainingset_id # @UndefinedVariable
+        latestidarray = Trainingset.objects.all().order_by("-id")# @UndefinedVariable
+        if not latestidarray:
+            latestid = 0
+        else:
+            latestid = latestidarray[0].id
+            
         tr = Trainingset(id=int(latestid)+1, ver =1, trainingset_name=request.session['current_training_file_name'], description=otherDetails, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
         tr_activity = CollectingTrainingset( trainingset_id= int(latestid)+1, trainingset_ver =1, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'), trainingset_location=location, collector=researcherName)
@@ -146,20 +148,21 @@ def saveNewTrainingVersion(request):
         data = json.loads(request.body)
         filename= request.session['current_training_file_name']
         version = request.session['current_training_file_ver']
-        id= request.session['current_training_file_id']
-        newfilename = filename.split('.', 1)[0] + "_ver" + str(int(version)+1) + ".csv"
+        fileid= request.session['current_training_file_id']
+        newfilename = (filename.split('.')[0]).split('_')[0] + "_ver" + str(int(version)+1) + ".csv"
         f1 = open('Category_Modeler/static/trainingfiles/%s' % newfilename, 'w')
         writer = csv.writer(f1)
         for i in range(len(data)):
             writer.writerow(data[i])
         f1.close()
         
-        oldversion = Trainingset.objects.get(trainingset_id=int(id), trainingset_ver =int(version)) # @UndefinedVariable
-        oldversion.enddate = datetime.now()
+        oldversion = Trainingset.objects.get(id=int(fileid), ver =int(version)) # @UndefinedVariable
+        oldversion.date_expired = datetime.now()
         oldversion.save()
-        tr = Trainingset(id=id, ver =int(version)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
+        tr = Trainingset(id=int(fileid), ver =int(version)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
-        tr_activity = ChangeTrainingset( oldtrainingset_id= id, oldtrainingset_ver =version, newtrainingset_id=id, newtrainingset_ver=int(version)+1, completed_by=request.session['_auth_user_id'])
+        authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
+        tr_activity = ChangeTrainingset( oldtrainingset_id= int(fileid), oldtrainingset_ver =int(version), newtrainingset_id=int(fileid), newtrainingset_ver=int(version)+1, completed_by=authuser_instance)
         tr_activity.save()
     return HttpResponse("Changed dataset is saved as a new version");
         
@@ -202,6 +205,9 @@ def handle_raster_file(request, f):
         for i in range(5000):
             spamwriter.writerow(final_array[i])
         csvfile.close();
+
+
+
 
 @login_required
 def signaturefile(request):
