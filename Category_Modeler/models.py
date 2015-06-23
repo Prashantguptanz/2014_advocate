@@ -340,9 +340,15 @@ class SpatialRefSys(models.Model):
         db_table = 'spatial_ref_sys'
 
 class TrainClassifier(models.Model):
+    validation_type = (
+        ('training data', 'training data'),
+        ('validation data', 'validation data'),
+        ('cross validation', 'cross validation'),
+        ('train test split', 'train test split')
+    )
     classifier = models.ForeignKey(Classifier)
     signaturefile = models.ForeignKey(Signaturefile)
-    validation = models.TextField()  # This field type is a guess.
+    validation = models.CharField(choices=validation_type, max_length=256)
     validation_score = models.FloatField()
     confusionmatrix_location = models.CharField(max_length=1024)
     confusionmatrix_name = models.CharField(max_length=100)
