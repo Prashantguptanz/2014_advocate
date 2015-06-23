@@ -9,7 +9,7 @@ import csv, json, numpy, struct
 import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity, AuthUser
+from Category_Modeler.models import Trainingset, AuthUser, CollectingTrainingset, ChangeTrainingset
 import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
@@ -132,9 +132,9 @@ def savetrainingdatadetails(request):
         
         #add training dataset details in trainingset table and a collection activity in new_trainingset_collection_activity table
         latestid = (Trainingset.objects.all().order_by("-trainingset_id")[0]).trainingset_id # @UndefinedVariable
-        tr = Trainingset(trainingset_id=int(latestid)+1, trainingset_ver =1, name=request.session['current_training_file_name'], description=otherDetails, startdate=datetime.now(), enddate=datetime(9999, 9, 12), location="Category_Modeler/static/trainingfiles/")
+        tr = Trainingset(id=int(latestid)+1, ver =1, trainingset_name=request.session['current_training_file_name'], description=otherDetails, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
-        tr_activity = NewTrainingsetCollectionActivity( trainingset_id= int(latestid)+1, trainingset_ver =1, startdate = datetime.strptime(trainingstart, '%Y-%m-%d'), enddate= datetime.strptime(trainingend, '%Y-%m-%d'))
+        tr_activity = CollectingTrainingset( trainingset_id= int(latestid)+1, trainingset_ver =1, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'), trainingset_location=location, collector=researcherName)
         tr_activity.save()
         request.session['current_training_file_id'] = int(latestid)+1
         request.session['current_training_file_ver'] = 1
@@ -157,9 +157,9 @@ def saveNewTrainingVersion(request):
         oldversion = Trainingset.objects.get(trainingset_id=int(id), trainingset_ver =int(version)) # @UndefinedVariable
         oldversion.enddate = datetime.now()
         oldversion.save()
-        tr = Trainingset(trainingset_id=id, trainingset_ver =int(version)+1, name=newfilename, startdate=datetime.now(), enddate=datetime(9999, 9, 12), location="Category_Modeler/static/trainingfiles/")
+        tr = Trainingset(id=id, ver =int(version)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
-        tr_activity = ChangeTrainingSetActivity( oldtrainingset_id= id, oldtrainingset_ver =version, newtrainingset_id=id, newtrainingset_ver=int(version)+1)
+        tr_activity = ChangeTrainingset( oldtrainingset_id= id, oldtrainingset_ver =version, newtrainingset_id=id, newtrainingset_ver=int(version)+1, completed_by=request.session['_auth_user_id'])
         tr_activity.save()
     return HttpResponse("Changed dataset is saved as a new version");
         
