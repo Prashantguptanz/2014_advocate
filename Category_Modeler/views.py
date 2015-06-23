@@ -7,7 +7,7 @@ from django.http import JsonResponse
 import csv, json, numpy
 import gdal
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, AuthUser, CollectingTrainingset, ChangeTrainingset, AuthUser, Signaturefile
+from Category_Modeler.models import Trainingset, AuthUser, CollectingTrainingset, ChangeTrainingset, AuthUser, Signaturefile, Classifier, TrainClassifier
 import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
@@ -226,13 +226,18 @@ def signaturefile(request):
         classifiername = data['classifiertype']
         targetattribute = data['targetattribute']
         validationoption = data['validationoption']
-
-        if (validationoption=='2'):   
+        
+        if (validationoption=='1'):
+            validationtype="training data"  
+        elif (validationoption=='2'):   
             validationfile = request.FILES['validationfile']
+            validationtype = "validation data"
         elif(validationoption=='3'):
             folds = data['fold']
+            validationtype = "cross validation"
         elif(validationoption=='4'):
             percentsplit = float(data['Percentage'])
+            validationtype = "train test split"
             
         
         classifier = chooseClassifier(classifiername)
@@ -260,8 +265,12 @@ def signaturefile(request):
             numpy.set_printoptions(precision=2)
             plt.figure()
             plot_confusion_matrix(cm)
-            plt.savefig("Category_Modeler/static/images/%s.png"%"cm1",  bbox_inches='tight')
-            
+            cmname = modelname+"_cm"
+            plt.savefig("Category_Modeler/static/images/%s.png" % cmname,  bbox_inches='tight')
+            classifier_instance = Classifier.objects.get(classifier_name=classifiername)
+            signaturefile_instance = Signaturefile.objects.get(signaturefile_name=request.session['current_signature_file'])
+            tc = TrainClassifier(classifier=classifier_instance, signaturefile= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix_location="Category_Modeler/static/images/", confusionmatrix_name= cmname+".png", completed_by= authuser_instance)
+            tc.save()
         elif (validationoption=='2'):
             print "test"
         elif (validationoption=='3'):
@@ -273,6 +282,7 @@ def signaturefile(request):
             clf.fit(x_train, y_train)
             score = clf.score(x_test, y_test)
             y_pred = clf.predict(x_test)
+        
         return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp})
         
     else:
@@ -296,7 +306,7 @@ def read_CSVFile(f):
     return samples
 
 def chooseClassifier(classifiername):
-    if classifiername=='NaiveBayes':
+    if classifiername=='Naive Bayes':
         clf= GaussianNB()
         
     elif classifiername=='C4.5':
