@@ -7,7 +7,7 @@ from django.http import JsonResponse
 import csv, json, numpy
 import gdal
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, AuthUser, CollectingTrainingset, ChangeTrainingset, AuthUser
+from Category_Modeler.models import Trainingset, AuthUser, CollectingTrainingset, ChangeTrainingset, AuthUser, Signaturefile
 import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
@@ -243,10 +243,13 @@ def signaturefile(request):
         target_array=numpy.asarray(trainingSampleDataWithTargetValues[1], dtype=numpy.float)
         classifier.fit(data_array, target_array)
         
-       # model = Classificationmodel()
+       
         modelname = "model_" + str(datetime.now())
         joblib.dump(classifier, 'Category_Modeler/static/signaturefile/%s'%modelname)
         request.session['current_signature_file']= modelname
+        authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
+        sf = Signaturefile(signaturefile_name = modelname, filelocation="Category_Modeler/static/signaturefile/", created_by=authuser_instance)
+        sf.save()
         clf = joblib.load('Category_Modeler/static/signaturefile/%s' % (request.session['current_signature_file']))
         
         if (validationoption=='1'):
