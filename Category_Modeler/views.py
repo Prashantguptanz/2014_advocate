@@ -107,7 +107,7 @@ def trainingsampleprocessing(request):
                 request.session['current_training_file_ver'] = ver
                 trainingfilename = data['2']
                 request.session['current_training_file_name'] = trainingfilename
-                trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).location # @UndefinedVariable
+                trainingfilelocation = (Trainingset.objects.get(id=trid, ver=ver)).filelocation # @UndefinedVariable
                 fp = file (trainingfilelocation+trainingfilename, 'rb')
                 response = HttpResponse( fp, content_type='text/csv')
                 response['Content-Disposition'] = 'attachment; filename="training File"'
