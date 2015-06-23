@@ -10,16 +10,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
-
-
-class Activity(models.Model):
-    activity_id = models.IntegerField(primary_key=True)
-    activity_name = models.TextField(blank=True)  # This field type is a guess.
-
-    class Meta:
-        managed = False
-        db_table = 'activity'
-
+from datetime import datetime
 
 class AuthGroup(models.Model):
     id = models.IntegerField(primary_key=True)  # AutoField?
@@ -89,68 +80,75 @@ class AuthUserUserPermissions(models.Model):
 
 
 class Category(models.Model):
-    category_id = models.IntegerField(primary_key=True)
-    category_ver = models.IntegerField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
+    ver = models.IntegerField(primary_key=True)
     category_name = models.CharField(max_length=100)
-    startdate = models.DateTimeField()
-    enddate = models.DateTimeField()
+    date_created = models.DateTimeField(default=datetime.now)
+    date_expired = models.DateTimeField()
     description = models.TextField(blank=True)
     concept = models.ForeignKey('Concept', blank=True, null=True)
-    legend = models.ForeignKey('Legend')
+    legend_id = models.IntegerField()
     legend_ver = models.IntegerField()
-    trainingset = models.ForeignKey('Trainingset')
-    trainingset_ver = models.IntegerField()
-
+    trainingset_id = models.IntegerField()
+    legend_vertrainingset_ver = models.IntegerField()
+    creator = models.ForeignKey(AuthUser, db_column='creator')
+    
     class Meta:
         managed = False
         db_table = 'category'
+        unique_together = ("trainingset_id", "trainingset_ver")
+        unique_together = ("legend_id", "legend_ver")
 
-
-class ChangeTrainingSetActivity(models.Model):
+class ChangeTrainingset(models.Model):
     oldtrainingset_id = models.IntegerField()
     oldtrainingset_ver = models.IntegerField()
     newtrainingset_id = models.IntegerField()
     newtrainingset_ver = models.IntegerField()
+    completed = models.DateTimeField(default=datetime.now)
+    completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
 
     class Meta:
         managed = False
-        db_table = 'change_training_set_activity'
+        db_table = 'change_trainingset'
         unique_together = ("oldtrainingset_id", "oldtrainingset_ver")
         unique_together = ("newtrainingset_id", "newtrainingset_ver")
 
-class Classificationmodel(models.Model):
-    accuracy = models.FloatField()
-    confusionmatrixlocation = models.CharField(max_length=256)
-    classifier = models.ForeignKey('Classifier')
-    location = models.CharField(max_length=1024)
+class Classification(models.Model):
+    signaturefile = models.ForeignKey('Signaturefile')
+    testfile_location = models.CharField(max_length=1024)
+    testfile_name = models.CharField(max_length=100)
+    classifieddata_location = models.CharField(max_length=1024)
+    classifieddata_name = models.CharField(max_length=100)
+    completed = models.DateTimeField(default=datetime.now)
+    completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
 
     class Meta:
         managed = False
-        db_table = 'classificationmodel'
-
-
-class ClassificationmodelTrainingsets(models.Model):
-    model_trainingsets_id = models.IntegerField(primary_key=True)
-    trainingset = models.ForeignKey('Trainingset')
-    trainingset_ver = models.IntegerField()
-    model = models.ForeignKey(Classificationmodel)
-
-    class Meta:
-        managed = False
-        db_table = 'classificationmodel_trainingsets'
-
+        db_table = 'classification'
 
 class Classifier(models.Model):
-    classifier_id = models.IntegerField(primary_key=True)
-    classifier_name = models.CharField(max_length=100, blank=True)
+    classifier_name = models.CharField(max_length=100)
 
     class Meta:
         managed = False
         db_table = 'classifier'
 
+class CollectingTrainingset(models.Model):
+    trainingset_id = models.IntegerField()
+    trainingset_ver = models.IntegerField()
+    date_started = models.DateField()
+    date_finished = models.DateField()
+    date_used = models.DateTimeField(default=datetime.now)
+    trainingset_location = models.CharField(max_length=256)
+    description = models.TextField(blank=True)
+    collector = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'collecting_trainingset'
+        unique_together = ("trainingset_id", "trainingset_ver")
 
 class Concept(models.Model):
-    concept_id = models.BigIntegerField(primary_key=True)
     concept_name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
 
@@ -207,10 +205,15 @@ class DjangoSession(models.Model):
 
 
 class ExplorationChain(models.Model):
-    exploration_chain_id = models.IntegerField(primary_key=True)
+    activity_type = (
+        ('change_trainingset', 'change_trainingset'),
+        ('train_classifier', 'train_classifier'),
+        ('classification', 'classification')
+    )
+    id = models.IntegerField(primary_key=True)
     step = models.IntegerField(primary_key=True)
-    current_activity = models.ForeignKey(Activity)
-    current_activity_instance_id = models.IntegerField()
+    current_activity = models.CharField(choices=activity_type, max_length=256)
+    activity_instance = models.IntegerField()
 
     class Meta:
         managed = False
@@ -246,13 +249,13 @@ class GeometryColumns(models.Model):
 
 
 class Legend(models.Model):
-    legend_id = models.IntegerField()
-    legend_ver = models.IntegerField()
+    id = models.IntegerField(primary_key=True)
+    ver = models.IntegerField(primary_key=True)
     legend_name = models.CharField(max_length=100)
-    startdate = models.DateTimeField()
-    enddate = models.DateTimeField()
-    description = models.TextField()
-    model = models.ForeignKey(Classificationmodel)
+    date_created = models.DateTimeField(default=datetime.now)
+    date_expired = models.DateTimeField()
+    signaturefile = models.ForeignKey('Signaturefile')
+    created_by = models.ForeignKey(AuthUser, db_column='created_by')
 
     def __unicode__(self):
         return self.legend_name
@@ -260,18 +263,6 @@ class Legend(models.Model):
     class Meta:
         managed = False
         db_table = 'legend'
-
-
-class NewTrainingsetCollectionActivity(models.Model):
-    trainingset_id = models.IntegerField()
-    trainingset_ver = models.IntegerField()
-    startdate = models.DateTimeField()
-    enddate = models.DateTimeField()
-    
-    class Meta:
-        managed = False
-        db_table = 'new_trainingset_collection_activity'
-        unique_together = ("trainingset_id", "trainingset_ver")
 
 
 class RasterColumns(models.Model):
@@ -314,18 +305,28 @@ class RasterOverviews(models.Model):
 
 
 class Relationship(models.Model):
-    relationship_id = models.BigIntegerField(primary_key=True)
-    relationship_name = models.TextField(blank=True)  # This field type is a guess.
+    relationship_name = models.TextField()  # This field type is a guess.
     expired = models.BooleanField(default=False)
-    category1 = models.ForeignKey(Category, related_name='category1')
+    category1_id = models.IntegerField()
     category1_ver = models.IntegerField()
-    category2 = models.ForeignKey(Category, related_name='category2')
+    category2_id = models.IntegerField()
     category2_ver = models.IntegerField()
 
     class Meta:
         managed = False
         db_table = 'relationship'
+        unique_together = ("category1_id", "category1_ver")
+        unique_together = ("category2_id", "category2_ver")
 
+class Signaturefile(models.Model):
+    signaturefile_name = models.CharField(max_length=100)
+    filelocation = models.CharField(max_length=1024)
+    created = models.DateTimeField(default=datetime.now)
+    created_by = models.ForeignKey(AuthUser, db_column='created_by')
+
+    class Meta:
+        managed = False
+        db_table = 'signaturefile'
 
 class SpatialRefSys(models.Model):
     srid = models.IntegerField(primary_key=True)
@@ -338,41 +339,38 @@ class SpatialRefSys(models.Model):
         managed = False
         db_table = 'spatial_ref_sys'
 
-
-class TestdataClassificationActivity(models.Model):
-    testdata_classification_activity_id = models.IntegerField(primary_key=True)
-    model = models.ForeignKey(Classificationmodel)
-    testfilelocation = models.CharField(max_length=1024)
-
-    def __unicode__(self):
-        return self.testdata_classification_activity_id
-    
-    class Meta:
-        managed = False
-        db_table = 'testdata_classification_activity'
-
-
-class TrainClassifierActivity(models.Model):
-    train_classifier_activity_id = models.IntegerField(primary_key=True)
+class TrainClassifier(models.Model):
     classifier = models.ForeignKey(Classifier)
-    model = models.ForeignKey(Classificationmodel)
-    
-    def __unicode__(self):
-        return self.train_classifier_activity_id
+    signaturefile = models.ForeignKey(Signaturefile)
+    validation = models.TextField()  # This field type is a guess.
+    validation_score = models.FloatField()
+    confusionmatrix_location = models.CharField(max_length=1024)
+    confusionmatrix_name = models.CharField(max_length=100)
+    completed = models.DateTimeField(default=datetime.now)
+    completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
 
     class Meta:
         managed = False
-        db_table = 'train_classifier_activity'
+        db_table = 'train_classifier'
 
+class TrainclassifierTrainingsets(models.Model):
+    trainingset_id = models.IntegerField()
+    trainingset_ver = models.IntegerField()
+    trainclassifier = models.ForeignKey(TrainClassifier)
+
+    class Meta:
+        managed = False
+        db_table = 'trainclassifier_trainingsets'
+        unique_together = ("trainingset_id", "trainingset_ver")
 
 class Trainingset(models.Model):
-    trainingset_id = models.IntegerField(primary_key=True)
-    trainingset_ver = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=256)
+    id = models.IntegerField(primary_key=True)
+    ver = models.IntegerField(primary_key=True)
+    trainingset_name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    startdate = models.DateTimeField()
-    enddate = models.DateTimeField()
-    location = models.CharField(max_length=1024)
+    date_used = models.DateTimeField(default=datetime.now)
+    date_expired = models.DateTimeField()
+    filelocation = models.CharField(max_length=1024)
 
     def __unicode__(self):
         return self.name
