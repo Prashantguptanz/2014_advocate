@@ -13,7 +13,9 @@ from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
 from sklearn import tree, svm, cross_validation, metrics
 from sklearn.externals import joblib
+from sklearn.externals.six import StringIO
 import matplotlib.pyplot as plt
+import pydot
 
 # Create your views here.
 
@@ -268,19 +270,13 @@ def signaturefile(request):
             for train_index, test_index in skf:
                 X_train, X_test = data_array[train_index], data_array[test_index]
                 y_train, y_test = target_array[train_index], target_array[test_index]
-                print y_train.shape, y_test.shape
-                print "ok"
                 clf=classifier.fit(X_train, y_train)
                 y_pred = clf.predict(X_test)
                 individual_cm = metrics.confusion_matrix(y_test, y_pred)
-                print individual_cm.shape
-                print "done"
                 if (count==0):
                     count +=1
                     cm = individual_cm
                 else:
-                    print cm.shape
-                    print "done again"
                     if (individual_cm.shape == cm.shape):
                         cm += individual_cm
     
@@ -308,10 +304,16 @@ def signaturefile(request):
         cmname = modelname+"_cm.png"
         plt.savefig("Category_Modeler/static/images/%s" % cmname,  bbox_inches='tight')
         classifier_instance = Classifier.objects.get(classifier_name=classifiername)
+        print classifier_instance
         signaturefile_instance = Signaturefile.objects.get(signaturefile_name=request.session['current_signature_file'])
         tc = TrainClassifier(classifier=classifier_instance, signaturefile= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix_location="Category_Modeler/static/images/", confusionmatrix_name= cmname, completed_by= authuser_instance)
         tc.save()    
-            
+        print clf.tree_
+        
+        dot_data = StringIO()
+        tree.export_graphviz(clf, out_file=dot_data)
+        graph = pydot.graph_from_dot_data(dot_data.getvalue())
+        graph.write_png("test.png")   
         return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname})
         
     else:
