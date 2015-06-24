@@ -265,12 +265,13 @@ def signaturefile(request):
             numpy.set_printoptions(precision=2)
             plt.figure()
             plot_confusion_matrix(cm)
-            cmname = modelname+"_cm"
-            plt.savefig("Category_Modeler/static/images/%s.png" % cmname,  bbox_inches='tight')
+            cmname = modelname+"_cm.png"
+            plt.savefig("Category_Modeler/static/images/%s" % cmname,  bbox_inches='tight')
             classifier_instance = Classifier.objects.get(classifier_name=classifiername)
             signaturefile_instance = Signaturefile.objects.get(signaturefile_name=request.session['current_signature_file'])
-            tc = TrainClassifier(classifier=classifier_instance, signaturefile= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix_location="Category_Modeler/static/images/", confusionmatrix_name= cmname+".png", completed_by= authuser_instance)
+            tc = TrainClassifier(classifier=classifier_instance, signaturefile= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix_location="Category_Modeler/static/images/", confusionmatrix_name= cmname, completed_by= authuser_instance)
             tc.save()
+            
         elif (validationoption=='2'):
             print "test"
         elif (validationoption=='3'):
@@ -283,7 +284,7 @@ def signaturefile(request):
             score = clf.score(x_test, y_test)
             y_pred = clf.predict(x_test)
         
-        return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp})
+        return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname})
         
     else:
         return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name})
