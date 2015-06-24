@@ -335,9 +335,12 @@ $(function() {
 							b = b +	"</table>";	
 							$('#variance').html(b);
 							
+							var c = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['cm'] + "\" />";
+							$('#confusionmatrix').html(c);
+							
 							$('#meanvectors').hide();
 							$('#variance').hide();
-		
+							$('#confusionmatrix').hide();
 						}
 		
 					});

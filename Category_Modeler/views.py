@@ -2,19 +2,20 @@ from django.shortcuts import render, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.core.servers.basehttp import FileWrapper
 from django.contrib import auth
 from django.http import JsonResponse
-import csv, json, numpy, struct
+import csv, json, numpy
 import gdal
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, NewTrainingsetCollectionActivity, ChangeTrainingSetActivity, AuthUser
+from Category_Modeler.models import Trainingset, AuthUser, CollectingTrainingset, ChangeTrainingset, AuthUser, Signaturefile, Classifier, TrainClassifier
+import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
 from sklearn import tree, svm, cross_validation, metrics
-from sklearn.metrics import confusion_matrix
 from sklearn.externals import joblib
+from sklearn.externals.six import StringIO
 import matplotlib.pyplot as plt
+import pydot
 
 # Create your views here.
 
@@ -71,7 +72,6 @@ def logout_view(request):
 def index(request):
     if '_auth_user_id' in request.session:
         user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username  # @UndefinedVariable
-        print user_name
         return render(request, 'base.html', {'user_name': user_name})
     form = UserCreationForm()
     return render(request, 'base.html', {'form': form})
@@ -80,13 +80,13 @@ def index(request):
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
 @login_required
 def trainingsampleprocessing(request):
-    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username # @UndefinedVariable
+    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username 
      
     if request.method == 'POST' and request.is_ajax():
         if request.is_ajax():
             if request.FILES:
                 trainingfile = request.FILES['trainingfile']
-                request.session['current_training_file_name'] = trainingfile.name
+                request.session['current_training_file_name'] = trainingfile.name.split('.', 1)[0] + '.csv'
                 
                 if trainingfile.name.split(".")[-1] == ".csv":
                     handle_uploaded_file(request, trainingfile)
@@ -105,7 +105,7 @@ def trainingsampleprocessing(request):
                 request.session['current_training_file_ver'] = ver
                 trainingfilename = data['2']
                 request.session['current_training_file_name'] = trainingfilename
-                trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).location # @UndefinedVariable
+                trainingfilelocation = (Trainingset.objects.get(id=trid, ver=ver)).filelocation # @UndefinedVariable
                 fp = file (trainingfilelocation+trainingfilename, 'rb')
                 response = HttpResponse( fp, content_type='text/csv')
                 response['Content-Disposition'] = 'attachment; filename="training File"'
@@ -129,10 +129,15 @@ def savetrainingdatadetails(request):
         otherDetails = data['OtherDetails'];
         
         #add training dataset details in trainingset table and a collection activity in new_trainingset_collection_activity table
-        latestid = (Trainingset.objects.all().order_by("-trainingset_id")[0]).trainingset_id # @UndefinedVariable
-        tr = Trainingset(trainingset_id=int(latestid)+1, trainingset_ver =1, name=request.session['current_training_file_name'], description=otherDetails, startdate=datetime.now(), enddate=datetime(9999, 9, 12), location="Category_Modeler/static/trainingfiles/")
+        latestidarray = Trainingset.objects.all().order_by("-id")
+        if not latestidarray:
+            latestid = 0
+        else:
+            latestid = latestidarray[0].id
+            
+        tr = Trainingset(id=int(latestid)+1, ver =1, trainingset_name=request.session['current_training_file_name'], description=otherDetails, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
-        tr_activity = NewTrainingsetCollectionActivity( trainingset_id= int(latestid)+1, trainingset_ver =1, startdate = datetime.strptime(trainingstart, '%Y-%m-%d'), enddate= datetime.strptime(trainingend, '%Y-%m-%d'))
+        tr_activity = CollectingTrainingset( trainingset_id= int(latestid)+1, trainingset_ver =1, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'), trainingset_location=location, collector=researcherName)
         tr_activity.save()
         request.session['current_training_file_id'] = int(latestid)+1
         request.session['current_training_file_ver'] = 1
@@ -144,20 +149,21 @@ def saveNewTrainingVersion(request):
         data = json.loads(request.body)
         filename= request.session['current_training_file_name']
         version = request.session['current_training_file_ver']
-        id= request.session['current_training_file_id']
-        newfilename = filename.split('.', 1)[0] + "_ver" + str(int(version)+1) + ".csv"
+        fileid= request.session['current_training_file_id']
+        newfilename = (filename.split('.')[0]).split('_')[0] + "_ver" + str(int(version)+1) + ".csv"
         f1 = open('Category_Modeler/static/trainingfiles/%s' % newfilename, 'w')
         writer = csv.writer(f1)
         for i in range(len(data)):
             writer.writerow(data[i])
         f1.close()
         
-        oldversion = Trainingset.objects.get(trainingset_id=int(id), trainingset_ver =int(version)) # @UndefinedVariable
-        oldversion.enddate = datetime.now()
+        oldversion = Trainingset.objects.get(id=int(fileid), ver =int(version)) 
+        oldversion.date_expired = datetime.now()
         oldversion.save()
-        tr = Trainingset(trainingset_id=id, trainingset_ver =int(version)+1, name=newfilename, startdate=datetime.now(), enddate=datetime(9999, 9, 12), location="Category_Modeler/static/trainingfiles/")
+        tr = Trainingset(id=int(fileid), ver =int(version)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
-        tr_activity = ChangeTrainingSetActivity( oldtrainingset_id= id, oldtrainingset_ver =version, newtrainingset_id=id, newtrainingset_ver=int(version)+1)
+        authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
+        tr_activity = ChangeTrainingset( oldtrainingset_id= int(fileid), oldtrainingset_ver =int(version), newtrainingset_id=int(fileid), newtrainingset_ver=int(version)+1, completed_by=authuser_instance)
         tr_activity.save()
     return HttpResponse("Changed dataset is saved as a new version");
         
@@ -201,6 +207,9 @@ def handle_raster_file(request, f):
             spamwriter.writerow(final_array[i])
         csvfile.close();
 
+
+
+
 @login_required
 def signaturefile(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username # @UndefinedVariable
@@ -218,13 +227,18 @@ def signaturefile(request):
         classifiername = data['classifiertype']
         targetattribute = data['targetattribute']
         validationoption = data['validationoption']
-
-        if (validationoption=='2'):   
+        
+        if (validationoption=='1'):
+            validationtype="training data"  
+        elif (validationoption=='2'):   
             validationfile = request.FILES['validationfile']
+            validationtype = "validation data"
         elif(validationoption=='3'):
             folds = data['fold']
+            validationtype = "cross validation"
         elif(validationoption=='4'):
             percentsplit = float(data['Percentage'])
+            validationtype = "train test split"
             
         
         classifier = chooseClassifier(classifiername)
@@ -233,37 +247,74 @@ def signaturefile(request):
         trainingSampleDataWithTargetValues = createSampleArray(trainingFileAsArray, targetAttributeIndex)
         data_array=numpy.asarray(trainingSampleDataWithTargetValues[0], dtype=numpy.float)
         target_array=numpy.asarray(trainingSampleDataWithTargetValues[1], dtype=numpy.float)
-        classifier.fit(data_array, target_array)
-        
-       # model = Classificationmodel()
         modelname = "model_" + str(datetime.now())
-        joblib.dump(classifier, 'Category_Modeler/static/signaturefile/%s'%modelname)
-        request.session['current_signature_file']= modelname
-        clf = joblib.load('Category_Modeler/static/signaturefile/%s' % (request.session['current_signature_file']))
+        authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
+       
+     #   clf = joblib.load('Category_Modeler/static/signaturefile/%s' % (request.session['current_signature_file']))
         
         if (validationoption=='1'):
+            clf = classifier.fit(data_array, target_array)
             y_pred= clf.predict(data_array)
             score= metrics.accuracy_score(target_array, y_pred)
-            cm = confusion_matrix(target_array, y_pred)
+            cm = metrics.confusion_matrix(target_array, y_pred)
             kp = calculateKappa(cm)
-            numpy.set_printoptions(precision=2)
-            plt.figure()
-            plt.savefig()
-            plot_confusion_matrix(cm)
-            plt.savefig("Category_Modeler/static/images/%s.png"%"cm1",  bbox_inches='tight')
-            
+                        
         elif (validationoption=='2'):
             print "test"
+            
         elif (validationoption=='3'):
+            skf = cross_validation.KFold(len(target_array), n_folds=int(folds))
+            print skf
+            cm=[]
+            count =0
+            for train_index, test_index in skf:
+                X_train, X_test = data_array[train_index], data_array[test_index]
+                y_train, y_test = target_array[train_index], target_array[test_index]
+                clf=classifier.fit(X_train, y_train)
+                y_pred = clf.predict(X_test)
+                individual_cm = metrics.confusion_matrix(y_test, y_pred)
+                if (count==0):
+                    count +=1
+                    cm = individual_cm
+                else:
+                    if (individual_cm.shape == cm.shape):
+                        cm += individual_cm
+    
             scores=cross_validation.cross_val_score(clf, data_array, target_array, cv=int(folds))
             score = scores.mean()
-            print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+            kp = calculateKappa(cm)
+            
         else:
             x_train, x_test, y_train, y_test = cross_validation.train_test_split(data_array, target_array, test_size=percentsplit/100.0)
-            clf.fit(x_train, y_train)
+            clf=classifier.fit(x_train, y_train)
             score = clf.score(x_test, y_test)
             y_pred = clf.predict(x_test)
-        return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp})
+            cm = metrics.confusion_matrix(y_test, y_pred)
+            kp = calculateKappa(cm)
+
+         
+        joblib.dump(clf, 'Category_Modeler/static/signaturefile/%s'%modelname)
+        request.session['current_signature_file']= modelname
+        authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
+        sf = Signaturefile(signaturefile_name = modelname, filelocation="Category_Modeler/static/signaturefile/", created_by=authuser_instance)
+        sf.save()
+        numpy.set_printoptions(precision=2)
+        plt.figure()
+        plot_confusion_matrix(cm)
+        cmname = modelname+"_cm.png"
+        plt.savefig("Category_Modeler/static/images/%s" % cmname,  bbox_inches='tight')
+        classifier_instance = Classifier.objects.get(classifier_name=classifiername)
+        print classifier_instance
+        signaturefile_instance = Signaturefile.objects.get(signaturefile_name=request.session['current_signature_file'])
+        tc = TrainClassifier(classifier=classifier_instance, signaturefile= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix_location="Category_Modeler/static/images/", confusionmatrix_name= cmname, completed_by= authuser_instance)
+        tc.save()    
+        print clf.tree_
+        
+        dot_data = StringIO()
+        tree.export_graphviz(clf, out_file=dot_data)
+        graph = pydot.graph_from_dot_data(dot_data.getvalue())
+        graph.write_png("test.png")   
+        return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname})
         
     else:
         return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name})
@@ -286,7 +337,7 @@ def read_CSVFile(f):
     return samples
 
 def chooseClassifier(classifiername):
-    if classifiername=='NaiveBayes':
+    if classifiername=='Naive Bayes':
         clf= GaussianNB()
         
     elif classifiername=='C4.5':
@@ -307,10 +358,6 @@ def createSampleArray(trainingsample, targetAttributeIndex):
     newArray.append(trainingSampleArray)
     newArray.append(targetValueArray)
     return newArray
-
-
-def dendrogram(meanVectorArray, varianceArray):
-    return ""
 
 def calculateSumOfRows(confusionMatrix):
     sumRows = []
