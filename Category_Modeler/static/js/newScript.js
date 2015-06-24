@@ -234,13 +234,16 @@ $(function() {
 					contentType : false,
 					data : formdata,
 					success : function(response) {
-						//newfile = response['training File'];
-						var trainingdata = $.csv.toArrays(response);
-						$('#instances').html(trainingdata.length-1);
-						$('#Attributes').html(trainingdata[0].length);
+						if (response){
+							//newfile = response['training File'];
+							var trainingdata = $.csv.toArrays(response);
+							$('#instances').html(trainingdata.length-1);
+							$('#Attributes').html(trainingdata[0].length);
+							
+							$('#trainingdataTable').show();
+							hot.loadData(trainingdata);
+						}
 						
-						$('#trainingdataTable').show();
-						hot.loadData(trainingdata);
 	
 					}
 				});
@@ -260,7 +263,7 @@ $(function() {
 				e.preventDefault();
 				var $this = $('#newtrainingdatasetdetails');
 				$.post("http://127.0.0.1:8000/AdvoCate/savetrainingdatadetails/", $this.serialize(), function(response){
-					alert(response);
+					
 				});
 				
 			});
