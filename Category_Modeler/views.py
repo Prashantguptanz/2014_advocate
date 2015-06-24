@@ -12,7 +12,6 @@ import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
 from sklearn import tree, svm, cross_validation, metrics
-from sklearn.metrics import confusion_matrix
 from sklearn.externals import joblib
 import matplotlib.pyplot as plt
 
@@ -128,7 +127,7 @@ def savetrainingdatadetails(request):
         otherDetails = data['OtherDetails'];
         
         #add training dataset details in trainingset table and a collection activity in new_trainingset_collection_activity table
-        latestidarray = Trainingset.objects.all().order_by("-id")# @UndefinedVariable
+        latestidarray = Trainingset.objects.all().order_by("-id")
         if not latestidarray:
             latestid = 0
         else:
@@ -156,7 +155,7 @@ def saveNewTrainingVersion(request):
             writer.writerow(data[i])
         f1.close()
         
-        oldversion = Trainingset.objects.get(id=int(fileid), ver =int(version)) # @UndefinedVariable
+        oldversion = Trainingset.objects.get(id=int(fileid), ver =int(version)) 
         oldversion.date_expired = datetime.now()
         oldversion.save()
         tr = Trainingset(id=int(fileid), ver =int(version)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
@@ -246,44 +245,73 @@ def signaturefile(request):
         trainingSampleDataWithTargetValues = createSampleArray(trainingFileAsArray, targetAttributeIndex)
         data_array=numpy.asarray(trainingSampleDataWithTargetValues[0], dtype=numpy.float)
         target_array=numpy.asarray(trainingSampleDataWithTargetValues[1], dtype=numpy.float)
-        classifier.fit(data_array, target_array)
-        
-       
         modelname = "model_" + str(datetime.now())
-        joblib.dump(classifier, 'Category_Modeler/static/signaturefile/%s'%modelname)
+        authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
+       
+     #   clf = joblib.load('Category_Modeler/static/signaturefile/%s' % (request.session['current_signature_file']))
+        
+        if (validationoption=='1'):
+            clf = classifier.fit(data_array, target_array)
+            y_pred= clf.predict(data_array)
+            score= metrics.accuracy_score(target_array, y_pred)
+            cm = metrics.confusion_matrix(target_array, y_pred)
+            kp = calculateKappa(cm)
+                        
+        elif (validationoption=='2'):
+            print "test"
+            
+        elif (validationoption=='3'):
+            skf = cross_validation.KFold(len(target_array), n_folds=int(folds))
+            print skf
+            cm=[]
+            count =0
+            for train_index, test_index in skf:
+                X_train, X_test = data_array[train_index], data_array[test_index]
+                y_train, y_test = target_array[train_index], target_array[test_index]
+                print y_train.shape, y_test.shape
+                print "ok"
+                clf=classifier.fit(X_train, y_train)
+                y_pred = clf.predict(X_test)
+                individual_cm = metrics.confusion_matrix(y_test, y_pred)
+                print individual_cm.shape
+                print "done"
+                if (count==0):
+                    count +=1
+                    cm = individual_cm
+                else:
+                    print cm.shape
+                    print "done again"
+                    if (individual_cm.shape == cm.shape):
+                        cm += individual_cm
+    
+            scores=cross_validation.cross_val_score(clf, data_array, target_array, cv=int(folds))
+            score = scores.mean()
+            kp = calculateKappa(cm)
+            
+        else:
+            x_train, x_test, y_train, y_test = cross_validation.train_test_split(data_array, target_array, test_size=percentsplit/100.0)
+            clf=classifier.fit(x_train, y_train)
+            score = clf.score(x_test, y_test)
+            y_pred = clf.predict(x_test)
+            cm = metrics.confusion_matrix(y_test, y_pred)
+            kp = calculateKappa(cm)
+
+         
+        joblib.dump(clf, 'Category_Modeler/static/signaturefile/%s'%modelname)
         request.session['current_signature_file']= modelname
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         sf = Signaturefile(signaturefile_name = modelname, filelocation="Category_Modeler/static/signaturefile/", created_by=authuser_instance)
         sf.save()
-        clf = joblib.load('Category_Modeler/static/signaturefile/%s' % (request.session['current_signature_file']))
-        
-        if (validationoption=='1'):
-            y_pred= clf.predict(data_array)
-            score= metrics.accuracy_score(target_array, y_pred)
-            cm = confusion_matrix(target_array, y_pred)
-            kp = calculateKappa(cm)
-            numpy.set_printoptions(precision=2)
-            plt.figure()
-            plot_confusion_matrix(cm)
-            cmname = modelname+"_cm.png"
-            plt.savefig("Category_Modeler/static/images/%s" % cmname,  bbox_inches='tight')
-            classifier_instance = Classifier.objects.get(classifier_name=classifiername)
-            signaturefile_instance = Signaturefile.objects.get(signaturefile_name=request.session['current_signature_file'])
-            tc = TrainClassifier(classifier=classifier_instance, signaturefile= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix_location="Category_Modeler/static/images/", confusionmatrix_name= cmname, completed_by= authuser_instance)
-            tc.save()
+        numpy.set_printoptions(precision=2)
+        plt.figure()
+        plot_confusion_matrix(cm)
+        cmname = modelname+"_cm.png"
+        plt.savefig("Category_Modeler/static/images/%s" % cmname,  bbox_inches='tight')
+        classifier_instance = Classifier.objects.get(classifier_name=classifiername)
+        signaturefile_instance = Signaturefile.objects.get(signaturefile_name=request.session['current_signature_file'])
+        tc = TrainClassifier(classifier=classifier_instance, signaturefile= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix_location="Category_Modeler/static/images/", confusionmatrix_name= cmname, completed_by= authuser_instance)
+        tc.save()    
             
-        elif (validationoption=='2'):
-            print "test"
-        elif (validationoption=='3'):
-            scores=cross_validation.cross_val_score(clf, data_array, target_array, cv=int(folds))
-            score = scores.mean()
-            print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
-        else:
-            x_train, x_test, y_train, y_test = cross_validation.train_test_split(data_array, target_array, test_size=percentsplit/100.0)
-            clf.fit(x_train, y_train)
-            score = clf.score(x_test, y_test)
-            y_pred = clf.predict(x_test)
-        
         return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname})
         
     else:
