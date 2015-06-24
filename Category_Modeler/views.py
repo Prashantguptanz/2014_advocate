@@ -87,8 +87,9 @@ def trainingsampleprocessing(request):
             if request.FILES:
                 trainingfile = request.FILES['trainingfile']
                 request.session['current_training_file_name'] = trainingfile.name.split('.', 1)[0] + '.csv'
-                
-                if trainingfile.name.split(".")[-1] == ".csv":
+                print  request.session['current_training_file_name']
+                print trainingfile.name.split(".")[-1]
+                if trainingfile.name.split(".")[-1] == "csv":
                     handle_uploaded_file(request, trainingfile)
                 else:
                     handle_raster_file(request, trainingfile)
@@ -218,6 +219,7 @@ def signaturefile(request):
         return render (request, 'signaturefile.html', {'user_name':user_name})
     
     trainingfile = request.session['current_training_file_name']
+    print trainingfile
     trainingFileAsArray = read_CSVFile(trainingfile)
     features = trainingFileAsArray[0]  
     
