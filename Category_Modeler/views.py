@@ -310,14 +310,19 @@ def signaturefile(request):
         signaturefile_instance = Signaturefile.objects.get(signaturefile_name=request.session['current_signature_file'])
         tc = TrainClassifier(classifier=classifier_instance, signaturefile= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix_location="Category_Modeler/static/images/", confusionmatrix_name= cmname, completed_by= authuser_instance)
         tc.save()    
-        print clf.tree_
         
-        dot_data = StringIO()
-        tree.export_graphviz(clf, out_file=dot_data)
-        graph = pydot.graph_from_dot_data(dot_data.getvalue())
-        graph.write_png("test.png")   
-        return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname})
         
+        if (classifiername=="Naive Bayes"):
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname})
+        elif (classifiername=="C4.5"):
+            dot_data = StringIO()
+            tree.export_graphviz(clf, out_file=dot_data)
+            graph = pydot.graph_from_dot_data(dot_data.getvalue())
+            tree_name = modelname + "_tree.png"
+            graph.write_png('Category_Modeler/static/images/%s'%tree_name)
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name})
+        else:
+            return ""   
     else:
         return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name})
 

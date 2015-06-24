@@ -323,27 +323,42 @@ $(function() {
 							console.log(response['kappa']);
 							$('#validationscore').html("<b>Validation score:  </b>" + response['score']);
 							$('#kappa').html("<b>Kappa:  </b>" + response['kappa']);
-							$('#signaturefiledetailsoptions').show();
-							var a =	"<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Mean Vector </th></tr>"
-							for (var i=0; i<response['listofclasses'].length; i++){
-								a = a+ "<tr><td>" +  	response['listofclasses'][i] + "</td><td>" + 	response['meanvectors'][i] + "</td></tr>";						
-							} 
-							a = a+	"</table>";	
-							$('#meanvectors').html(a);
+							if (response['meanvectors']){
+								$('#DecisionTreemodeldetails').hide()
+								$('#NaiveBayesmodeldetails').show();
+								var a =	"<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Mean Vector </th></tr>"
+								for (var i=0; i<response['listofclasses'].length; i++){
+									a = a+ "<tr><td>" +  	response['listofclasses'][i] + "</td><td>" + 	response['meanvectors'][i] + "</td></tr>";						
+								} 
+								a = a+	"</table>";	
+								$('#meanvectors').html(a);
+								
+								var b = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Variance </th></tr>"
+								for (var i=0; i<response['listofclasses'].length; i++){
+									b = b + "<tr><td>" + response['listofclasses'][i] + "</td><td>" + response['variance'][i] + "</td></tr>";						
+								} 
+								b = b +	"</table>";	
+								$('#variance').html(b);
+								
+								var c = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['cm'] + "\" />";
+								$('#confusionmatrix1').html(c);
+								
+								$('#meanvectors').hide();
+								$('#variance').hide();
+								$('#confusionmatrix1').hide();
+							}
+							else {
+								$('#NaiveBayesmodeldetails').hide();
+								$('#DecisionTreemodeldetails').show();
+								var a = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['tree'] + "\" />";
+								$('#decisiontree').html(a);
+								var b = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['cm'] + "\" />";
+								$('#confusionmatrix2').html(b);
+								$('#decisiontree').hide();
+								$('#confusionmatrix2').hide();
+								
+							}
 							
-							var b = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Variance </th></tr>"
-							for (var i=0; i<response['listofclasses'].length; i++){
-								b = b + "<tr><td>" + response['listofclasses'][i] + "</td><td>" + response['variance'][i] + "</td></tr>";						
-							} 
-							b = b +	"</table>";	
-							$('#variance').html(b);
-							
-							var c = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['cm'] + "\" />";
-							$('#confusionmatrix').html(c);
-							
-							$('#meanvectors').hide();
-							$('#variance').hide();
-							$('#confusionmatrix').hide();
 						}
 		
 					});
@@ -351,33 +366,45 @@ $(function() {
 
 			});
 			
-			$('input[name="signaturefiledetailsoptions"]').on('click', function(e){
+			$('input[name="NaiveBayesmodeldetails"]').on('click', function(e){
 				
-				var detailsoption = $('input[name="signaturefiledetailsoptions"]:checked').val();
-				console.log(detailsoption);
+				var detailsoption = $('input[name="NaiveBayesmodeldetails"]:checked').val();
 				if (detailsoption=='1'){
 					$('#meanvectors').show();
 					$('#variance').hide();
-					$('#confusionmatrix').hide();					
+					$('#confusionmatrix1').hide();					
 				}					
 				else if (detailsoption=='2'){
 					console.log(detailsoption);
 					$('#meanvectors').hide();
 					$('#variance').show();
-					$('#confusionmatrix').hide();
+					$('#confusionmatrix1').hide();
 				}
 				else if (detailsoption=='3'){
 					$('#meanvectors').hide();
 					$('#variance').hide();
-					$('#confusionmatrix').show();
+					$('#confusionmatrix1').show();
 				}
 				else {
 					$('#meanvectors').hide();
 					$('#variance').hide();
-					$('#confusionmatrix').hide();
+					$('#confusionmatrix1').hide();
 					
 				}
 			});
+			
+			$('input[name="DecisionTreemodeldetails"]').on('click', function(e){
+				var detailsoption = $('input[name="DecisionTreemodeldetails"]:checked').val();
+				if (detailsoption=='1'){
+					$('#decisiontree').show();
+					$('#confusionmatrix2').hide();	
+				}
+				else{
+					$('#decisiontree').hide();
+					$('#confusionmatrix2').show();	
+				}
+			});
+			
 		}
 		
 		
