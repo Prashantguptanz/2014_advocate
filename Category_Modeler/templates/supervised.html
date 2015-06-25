@@ -5,133 +5,36 @@
 		{% csrf_token %}
 		<fieldset>
 
-			<div class="form-group" style="width: 38%; float: left">
+			<div class="form-group" style="width: 35%; float: left">
 				<legend style="font-size: 18px">
 					Choose Options
 				</legend>
 
 				<div class="form-group" style="width: 98%; overflow: hidden">
 
-					<div style="float: left; margin-left: 1%">
-						<select id="classifiertype" name="classifiertype"required ">
-						<option value="">Select Classifier</option>
-						<option value="NaiveBayes">NaiveBayes</option>
-						<option value="C4.5">C4.5</option>
+					<div >
+						<select id="classifiertype" name="classifiertype"required>
+						<option value="">Select signature file</option>
+						<option value=""></option>
 						</select>
-						</div>
-
-						<div style="float: right; margin-right: 1%">
-						{% if attributes %}
-
-						<select name="targetattribute" id="targetattribute"required  ">
-							<option value="">Select target attribute</option>
-							{% for attr in attributes %}
-							<option value="{{ attr }}"> {{ attr }}
-								{% endfor %}
-						</select>
-
-						{% endif %}
-
+						<br /><br />
+						<label style="font-weight: bold"> Upload test data </label>
+						<span style="float: right">
+						<input type="file" id="testfile" name="testfile"  accept=".csv,.xls,.tif,.png,.adf" required/>
+						</span>
 					</div>
-				</div>
 
-				<div class="form-group" style="margin-left: 1%; margin-right: 1%">
-					<legend style="font-size: 18px">
-						Training Options
-					</legend>
-
-					<input type="radio" name="testoption" value="1" required />
-					Use training set
-					<br/>
-					<br/>
-
-					<input type="radio" name="testoption" id="" value="2">
-					Supplied test set <span style="float: right">
-						<input id="testfile" name="testfile" disabled="disabled" type="file" required />
-					</span>
-					<br/>
-					<br/>
-
-					<input type="radio" name="testoption" id="CrossValidation" value="3">
-					Cross-validation <span style="float: right"> <label style="font-weight: normal"> Folds &nbsp &nbsp</label>
-						<input id="Fold" disabled="disabled" type="text" size="25" value="10" required />
-					</span>
-					<br/>
-					<br/>
-
-					<input type="radio" name="testoption" id="PercentageSplit" value="4">
-					Percentage split <span style="float: right"> <label style="font-weight: normal"> % &nbsp &nbsp &nbsp &nbsp </label>
-						<input id="Percentage" disabled="disabled" type="text" size="25" value="66" required />
-					</span>
-					<br/>
-					<br/>
-
-					<input class="btn btn-default" type="submit" value="submit" />
-
+					<br />
+					<input type="submit" id="doclassification" value="Submit" class="submit button" />
 				</div>
 			</div>
-			<div style="width: 61%; float: right;">
+			<div style="width: 64%; float: right">
 				<legend style="font-size: 18px">
-					Classifier Output
+					Classified data
 				</legend>
 				<div class="form-group"
 				style="height: 400px; border-style: solid; border-width: 1px; overflow: auto; border-color: #E5E5E5; margin-left: 1%; margin-right: 1%">
 
-					{% if classifierName %}
-					<table style="width: 100%; margin-top: 5px; margin-left: 5px">
-						<tr>
-							<td>Correctly classified instances:</td>
-							<td>{{ clbp }}</td>
-							<td>{{ mean_accuracy }} %</td>
-						</tr>
-						<tr>
-							<td>Incorrectly classified instances:</td>
-							<td>{{ mlbp }}</td>
-							<td>{{ misclassified_accuracy }} %</td>
-						</tr>
-						<tr>
-							<td>Kappa statistic:</td>
-							<td>{{ kp }}</td>
-						</tr>
-					</table>
-
-					<br />
-
-					<label for="ConfusionMatrix" style="margin-left: 10px">Confusion Matrix:</label>
-					<table class="table table-bordered" style="width: auto; margin-left: 20px">
-						<tr>
-							<th></th>
-							{% for i in numerical_classes %}
-							<th>{{ i }}</th>
-							{% endfor %}
-						</tr>
-						{% for row in cm %}
-						<tr>
-							{% for class in numerical_classes%}
-							{% ifequal forloop.counter forloop.parentloop.counter %}
-							<td><strong>{{ class }}</strong></td>
-							{% endifequal %}
-							{% endfor %}
-
-							{% for data in row %}
-							<td>{{ data }}</td>
-							{% endfor %}
-							{% for sum in rowsum%}
-							{% ifequal forloop.counter forloop.parentloop.counter %}
-							<td> {{ sum }} </td>
-							{% endifequal %}
-							{% endfor %}
-						</tr>
-
-						{% endfor %}
-						<tr>
-							<td></td>
-							{% for sum in columnsum %}
-							<td>{{ sum }} </td>
-							{% endfor %}
-							<td> {{ totalsum }}</td>
-						</tr>
-						{% endif %}
 				</div>
 			</div>
 		</fieldset>

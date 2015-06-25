@@ -410,9 +410,10 @@ def calculateKappa(confusionMatrix):
     else:
         return 1
 
-
+@login_required
 def supervised(request):
-    return render (request, 'supervised.html')
+    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
+    return render (request, 'supervised.html', {'user_name':user_name})
 
 def visualization(request):
     return render (request, 'visualization.html')
