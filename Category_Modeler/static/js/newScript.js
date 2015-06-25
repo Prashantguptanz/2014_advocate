@@ -280,7 +280,7 @@ $(function() {
 							contentType : false,
 							data : JSON.stringify(hot.getData()),
 							success : function(response) {
-	
+								$('#saveChanges').hide();
 							}
 	
 						});
