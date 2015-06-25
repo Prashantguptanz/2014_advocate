@@ -138,7 +138,7 @@ def savetrainingdatadetails(request):
             
         tr = Trainingset(id=int(latestid)+1, ver =1, trainingset_name=request.session['current_training_file_name'], description=otherDetails, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
-        tr_activity = CollectingTrainingset( trainingset_id= int(latestid)+1, trainingset_ver =1, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'), trainingset_location=location, collector=researcherName)
+        tr_activity = CollectingTrainingset( trainingset_id= int(latestid)+1, trainingset_ver =1, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'), trainingset_location=location, collector=researcherName, description= otherDetails)
         tr_activity.save()
         request.session['current_training_file_id'] = int(latestid)+1
         request.session['current_training_file_ver'] = 1
