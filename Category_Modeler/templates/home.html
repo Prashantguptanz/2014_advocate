@@ -1,0 +1,89 @@
+{% extends "base.html" %} {% block content %}
+{% csrf_token %}
+
+<div class="container" >
+
+	<p style="font-size: 16px">
+		AdvoCate - Adventures of Categories - provides a computational framework to explore and conceptualize changes in concepts and categories, as changes happen in other aspects
+		of the scientific investigation, for example, new observations, or change in classification method. AdvoCate allows to study and understand changes in concepts and
+		categories, or evolution in scientific knowledge in breadth and depth. Changes are studied at different facets - intension, computational intension, extension and
+		relationships. Changes in concepts and categories are captured as they evolve with time and also conflicting changes that may happen due to different perspectives of
+		communities/domains. We further study change epistemology by capturing the whole life cycle of change, starting from various internal and external change triggers, then
+		conceptualization and validation of changes, then applying changes through change operations and realizing their effects through the structural and semantic changes to
+		concepts and categories, and finally the distribution of those changes to the related artifacts.
+		<br />
+		<br />
+		Choose an option below to start your journey of exploration:
+	</p>
+
+	<div style="width: 80%; float: left">
+
+		<div class="form-group radio" style="margin-left: 5px; margin-right: 5px">
+
+			<input type="radio" name="chooseactivity" value="option1" id="newlegend"/>
+			Model a new taxonomy
+			<br />
+			<br />
+			<input type="radio" name="chooseactivity" value="option2" id="existinglegends"/>
+			Explore changes in an existing taxonomy
+			<br />
+			<br />
+		</div>
+
+		<form  id="existingtaxonomydetails" style="display:none" enctype="multipart/form-data" action="#">
+			
+			<div class="form-group">
+				<label for="existingtaxonomies" style="font-weight: normal"> Choose a taxonomy &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; <span>
+						<select name="existingtaxonomies" id="existingtaxonomies" required>
+							<option value="">Existing taxonomies</option>
+							<option value="1">NZ land cover taxonomy</option>
+						</select> </span> </label>
+			</div>
+			<div class="form-group">
+				<label for="externaltriggers" style="font-weight: normal"> Choose an external trigger &nbsp; &nbsp; <span>
+						<select name="externaltriggers" id="externaltriggers" required >
+							<option value="">External triggers </option>
+							<option value="ET1"> Conceptual change </option>
+							<option value="ET2"> Social requirement </option>
+							<option value="ET3"> Scientific requirement </option>
+							<option value="ET4"> Error in data collection </option>
+							<option value="ET5"> New observation </option>
+							<option value="ET6"> Other </option>
+						</select> </span> </label>
+			</div>
+
+			<button id="savetaxonomynameandexternaltrigger" class="btn btn-default">
+				Save
+			</button>
+			<br /><br />
+			<p id = "messageforexploringchanges" style="font-size: 16px"> </p>
+
+		</form>
+
+		<form  id="newtaxonomydetails" style="display:none" enctype="multipart/form-data" action="#" >
+			
+			<div class="form-group">
+				<label for="newtaxonomyname" style="font-weight: normal"> Name of the new taxonomy &nbsp; &nbsp; &nbsp;</label>
+				<input type="text" name="newtaxonomyname" value="" id="newtaxonomyname" placeholder="Enter Name" required/>
+
+			</div>
+			<div class="form-group">
+				<label for="description" style="font-weight: normal"> Other details &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</label><br />
+				<textarea name="description" rows="6" cols="35" id="description" placeholder="Enter any more relevant details"> </textarea>
+			</div>
+			<button id="savenewtaxonomydetails" class="btn btn-default">
+				Save  
+			</button>
+			<br /><br />
+			<p id = "messagefornewtaxonomymodelling" style="font-size: 16px"> </p>
+		</form>
+
+		{% if messages %}
+			{% for message in messages %}
+			<p id="chooseanactivitymessage" style= "color: red"> <em>{{message}} </em> </p>
+			{% endfor %}
+		{% endif %}
+	</div>
+</div>
+
+{% endblock %}

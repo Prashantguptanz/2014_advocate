@@ -1,9 +1,11 @@
 from django.conf.urls import patterns, url
-from Category_Modeler.views import index, trainingsampleprocessing, supervised, savetrainingdatadetails, saveNewTrainingVersion, signaturefile, visualization, loginrequired, logout_view, auth_view, register_view
+from Category_Modeler.views import index, saveexistingtaxonomydetails, savenewtaxonomydetails, trainingsampleprocessing, supervised, savetrainingdatadetails, saveNewTrainingVersion, signaturefile, visualization, loginrequired, logout_view, auth_view, register_view
 
 urlpatterns = patterns('',
         url(r'^$', index),
         url(r'^home/$', index),
+        url(r'^saveexistingtaxonomydetails/$', saveexistingtaxonomydetails),
+        url(r'^savenewtaxonomydetails/$', savenewtaxonomydetails),
         url(r'^trainingsample/$', trainingsampleprocessing),
         url(r'^signaturefile/$', signaturefile),  
         url(r'^supervised/$', supervised),

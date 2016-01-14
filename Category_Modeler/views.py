@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth
+from django.contrib import messages
 from django.http import JsonResponse
 import csv, json, numpy
 import gdal
@@ -13,9 +14,12 @@ from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
 from sklearn import tree, svm, cross_validation, metrics
 from sklearn.externals import joblib
+from sklearn.covariance import EmpiricalCovariance, MinCovDet
 from sklearn.externals.six import StringIO
 import matplotlib.pyplot as plt
 import pydot
+from Category_Modeler.measuring_categories import DecisionTreeIntensionalModel
+
 
 # Create your views here.
 
@@ -72,10 +76,23 @@ def logout_view(request):
 def index(request):
     if '_auth_user_id' in request.session:
         user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username  # @UndefinedVariable
-        return render(request, 'base.html', {'user_name': user_name})
+        return render(request, 'home.html', {'user_name': user_name})
     form = UserCreationForm()
-    return render(request, 'base.html', {'form': form})
+    return render(request, 'home.html', {'form': form})
 
+def saveexistingtaxonomydetails(request):
+    if request.method == 'POST':
+        data = request.POST
+        request.session['existing_taxonomy_name'] = data['existingtaxonomies'];
+        request.session['external_trigger'] = data['externaltriggers']
+    return HttpResponse("Upload new training samples or choose an existing one, and start the exploration process!");
+
+def savenewtaxonomydetails(request):
+    if request.method == 'POST':
+        data = request.POST
+        request.session['new_taxonomy_name'] = data['newtaxonomyname']
+        request.session['new_taxonomy_description'] = data['description']
+    return HttpResponse("Upload training samples by switching to 'Training Samples' tab, and start the modelling process!");
 
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
 @login_required
@@ -83,37 +100,39 @@ def trainingsampleprocessing(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username 
      
     if request.method == 'POST' and request.is_ajax():
-        if request.is_ajax():
-            if request.FILES:
-                trainingfile = request.FILES['trainingfile']
-                request.session['current_training_file_name'] = trainingfile.name.split('.', 1)[0] + '.csv'
-                print  request.session['current_training_file_name']
-                print trainingfile.name.split(".")[-1]
-                if trainingfile.name.split(".")[-1] == "csv":
-                    handle_uploaded_file(request, trainingfile)
-                else:
-                    handle_raster_file(request, trainingfile)
-                    filename = trainingfile.name.split('.', 1)[0] + '.csv'
-                    fp = file("Category_Modeler/static/trainingfiles/%s" % filename, 'rb')
-                    response = HttpResponse( fp, content_type='text/csv')
-                    response['Content-Disposition'] = 'attachment; filename="training File"'
-                    return response
+        if request.FILES:
+            trainingfile = request.FILES['trainingfile']
+            request.session['current_training_file_name'] = trainingfile.name.split('.', 1)[0] + '.csv'
+            print  request.session['current_training_file_name']
+            print trainingfile.name.split(".")[-1]
+            if trainingfile.name.split(".")[-1] == "csv":
+                handle_uploaded_file(request, trainingfile)
             else:
-                data = request.POST
-                trainingfilepkey = data['1']
-                trid, ver = trainingfilepkey.split('+')
-                request.session['current_training_file_id'] = trid
-                request.session['current_training_file_ver'] = ver
-                trainingfilename = data['2']
-                request.session['current_training_file_name'] = trainingfilename
-                trainingfilelocation = (Trainingset.objects.get(id=trid, ver=ver)).filelocation # @UndefinedVariable
-                fp = file (trainingfilelocation+trainingfilename, 'rb')
+                handle_raster_file(request, trainingfile)
+                filename = trainingfile.name.split('.', 1)[0] + '.csv'
+                fp = file("Category_Modeler/static/trainingfiles/%s" % filename, 'rb')
                 response = HttpResponse( fp, content_type='text/csv')
                 response['Content-Disposition'] = 'attachment; filename="training File"'
                 return response
-        return HttpResponse("")
+        else:
+            data = request.POST
+            trainingfilepkey = data['1']
+            trid, ver = trainingfilepkey.split('+')
+            request.session['current_training_file_id'] = trid
+            request.session['current_training_file_ver'] = ver
+            trainingfilename = data['2']
+            request.session['current_training_file_name'] = trainingfilename
+            trainingfilelocation = (Trainingset.objects.get(id=trid, ver=ver)).filelocation # @UndefinedVariable
+            fp = file (trainingfilelocation+trainingfilename, 'rb')
+            response = HttpResponse( fp, content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="training File"'
+            return response
+
     else:
-        if Trainingset.objects.exists(): # @UndefinedVariable
+        if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
+            messages.error(request, "Choose an activity before you proceed further")
+            return HttpResponseRedirect("/AdvoCate/home/", {'user_name': user_name})
+        elif Trainingset.objects.exists(): # @UndefinedVariable
             training_set_list = Trainingset.objects.all()  # @UndefinedVariable
             return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name})
         else:
@@ -204,7 +223,7 @@ def handle_raster_file(request, f):
     with BufferedWriter( FileIO( 'Category_Modeler/static/trainingfiles/%s' % filename, "wb" ) ) as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',')
         spamwriter.writerow(['X', 'Y', 'band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7'])
-        for i in range(5000):
+        for i in range(100000):
             spamwriter.writerow(final_array[i])
         csvfile.close();
 
@@ -214,7 +233,11 @@ def handle_raster_file(request, f):
 @login_required
 def signaturefile(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username # @UndefinedVariable
-
+    
+    if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
+        messages.error(request, "Choose an activity before you proceed further")
+        return HttpResponseRedirect("/AdvoCate/home/", {'user_name': user_name})
+    
     if 'current_training_file_name' not in request.session:
         return render (request, 'signaturefile.html', {'user_name':user_name})
     
@@ -223,7 +246,7 @@ def signaturefile(request):
     trainingFileAsArray = read_CSVFile(trainingfile)
     features = trainingFileAsArray[0]  
     
-    if request.method=='POST' and 'current_training_file_name' in request.session:
+    if request.method=='POST':
         data = request.POST;
         
         classifiername = data['classifiertype']
@@ -248,7 +271,8 @@ def signaturefile(request):
         
         trainingSampleDataWithTargetValues = createSampleArray(trainingFileAsArray, targetAttributeIndex)
         data_array=numpy.asarray(trainingSampleDataWithTargetValues[0], dtype=numpy.float)
-        target_array=numpy.asarray(trainingSampleDataWithTargetValues[1], dtype=numpy.float)
+        print data_array.shape
+        target_array=numpy.asarray(trainingSampleDataWithTargetValues[1])
         modelname = "model_" + str(datetime.now())
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
        
@@ -293,6 +317,14 @@ def signaturefile(request):
             y_pred = clf.predict(x_test)
             cm = metrics.confusion_matrix(y_test, y_pred)
             kp = calculateKappa(cm)
+            robust_cov = MinCovDet().fit(x_train, y_train)
+            emp_cov = EmpiricalCovariance().fit(x_train, y_train)
+            print x_train
+            covariance = numpy.cov(x_train.T, bias=1)
+            print covariance
+            print robust_cov.covariance_
+            print emp_cov.covariance_
+            
 
          
         joblib.dump(clf, 'Category_Modeler/static/signaturefile/%s'%modelname)
@@ -315,6 +347,13 @@ def signaturefile(request):
         if (classifiername=="Naive Bayes"):
             return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname})
         elif (classifiername=="C4.5"):
+          #  print clf.tree_.__getstate__()
+           # print clf.tree_.children_left
+           # print clf.tree_.children_right
+           # print clf.tree_.feature
+           # print clf.tree_.threshold
+           # print clf.tree_.value
+            newModel = DecisionTreeIntensionalModel(clf)
             dot_data = StringIO()
             tree.export_graphviz(clf, out_file=dot_data)
             graph = pydot.graph_from_dot_data(dot_data.getvalue())
@@ -336,10 +375,11 @@ def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
 
 def read_CSVFile(f):
     with open('Category_Modeler/static/trainingfiles/%s' % f, 'rU') as datafile:
-        data = csv.reader(datafile, delimiter=',', quoting=csv.QUOTE_NONE)
-        samples = []
-        for eachinstance in data:
-            samples.append(eachinstance);
+        dataReader = csv.reader(datafile, delimiter=',', quoting=csv.QUOTE_NONE)
+        samples = list(dataReader)
+     #   samples = []
+     #   for eachinstance in data:
+     #       samples.append(eachinstance);
         datafile.close();    
     return samples
 
@@ -365,6 +405,15 @@ def createSampleArray(trainingsample, targetAttributeIndex):
     newArray.append(trainingSampleArray)
     newArray.append(targetValueArray)
     return newArray
+
+def splitTrainingSampleForEachClass(trainingsample, classIndex):
+    
+    return
+
+def combineTrainingSamplesForSameClass(trainingsamplesarray):
+    
+    return
+    
 
 def calculateSumOfRows(confusionMatrix):
     sumRows = []
