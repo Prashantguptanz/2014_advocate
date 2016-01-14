@@ -113,12 +113,56 @@ $(function() {
 
 		});
 
+//Script for 'Home' page
+		
+		if (loc.match('http://127.0.0.1:8000/AdvoCate/home/')){
+			
+			$('input[name="chooseactivity"]').on('click', function(){
+				var $this = $(this);
+				
+				if ($this.attr('value')=='option2'){
+					$('#existingtaxonomydetails').show();
+					$('#newtaxonomydetails').hide();
+				}
+				else if($this.attr('value')=='option1'){
+					$('#existingtaxonomydetails').hide();
+					$('#newtaxonomydetails').show();
+				}
+				else{
+					$('#newtaxonomydetails').hide();
+					$('#existingtaxonomydetails').hide();
+				}
+			});
+			
+			$('#savetaxonomynameandexternaltrigger').on('click', function(e){
+				e.preventDefault();
+				var $this = $('#existingtaxonomydetails');
+				$.post("http://127.0.0.1:8000/AdvoCate/saveexistingtaxonomydetails/", $this.serialize(), function(response){
+					$('#savetaxonomynameandexternaltrigger').attr('disabled', 'disabled');
+					$('#messageforexploringchanges').html(response);
+					$('#chooseanactivitymessage').hide();
+				});
+				
+			});
+			
+			$('#savenewtaxonomydetails').on('click', function(e){
+				e.preventDefault();
+				var $this = $('#newtaxonomydetails');
+				$.post("http://127.0.0.1:8000/AdvoCate/savenewtaxonomydetails/", $this.serialize(), function(response){
+					$('#savenewtaxonomydetails').attr('disabled', 'disabled');
+					$('#messagefornewtaxonomymodelling').html(response);
+					$('#chooseanactivitymessage').hide();
+				});
+				
+			});
+			
+		}
+		
+		
 // Script for 'Training Samples' page	
 		
 		if (loc.match('http://127.0.0.1:8000/AdvoCate/trainingsample/')){
-			
-			
-		
+					
 		
 			$('input[name="choosetrainingfile"]').on('click', function(){
 				var $this = $(this);
