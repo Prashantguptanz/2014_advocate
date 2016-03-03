@@ -105,7 +105,6 @@ class Concept(models.Model):
         db_table = 'concept'
 
 class Classificationmodel(models.Model):
-    model_id = models.IntegerField(primary_key=True)
     model_name = models.CharField(max_length=256)
     model_location = models.CharField(max_length=1024)
     accuracy = models.FloatField(blank=True, null=True)
@@ -219,7 +218,6 @@ class Category(models.Model):
         unique_together = ("trainingset_id", "trainingset_ver")
 
 class ChangeTrainingsetActivity(models.Model):
-    change_trainingset_activity_id = models.IntegerField(primary_key=True)
     oldtrainingset_id = models.IntegerField()
     oldtrainingset_ver = models.IntegerField()
     newtrainingset_id = models.IntegerField()
@@ -234,30 +232,6 @@ class ChangeTrainingsetActivity(models.Model):
         unique_together = ("newtrainingset_id", "newtrainingset_ver")
 
 
-
-
-
-
-
-
-        
-
-
-        
-class CollectingTrainingset(models.Model):
-    trainingset_id = models.IntegerField()
-    trainingset_ver = models.IntegerField()
-    date_started = models.DateField()
-    date_finished = models.DateField()
-    date_used = models.DateTimeField(default=datetime.now)
-    trainingset_location = models.CharField(max_length=256)
-    description = models.TextField(blank=True)
-    collector = models.CharField(max_length=100)
-
-    class Meta:
-        managed = False
-        db_table = 'collecting_trainingset'
-        unique_together = ("trainingset_id", "trainingset_ver")
 
 
 class DjangoAdminLog(models.Model):
@@ -460,7 +434,6 @@ class Trainingset(models.Model):
 
 
 class TrainingsetCollectionActivity(models.Model):
-    trainingset_collection_activity_id = models.IntegerField(primary_key=True)
     date_started = models.DateField()
     date_finished = models.DateField()
     trainingset_location = models.CharField(max_length=256)

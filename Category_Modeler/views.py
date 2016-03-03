@@ -9,7 +9,7 @@ import csv, json, numpy
 import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, AuthUser, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity
+from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity
 import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
@@ -22,18 +22,10 @@ import pydot
 from Category_Modeler.measuring_categories import DecisionTreeIntensionalModel
 
 
-# Create your views here.
+# Login and logout methods
 
 def register_view(request):
     if request.method == 'POST':
-    # form = UserCreationForm(request.POST)
-    # print form
-    # if form.is_valid():
-    #      print "it's fine"
-    #      new_user = form.save()
-    #      return HttpResponseRedirect("/AdvoCate/")
-    # print "it's not"
-    # return HttpResponseRedirect("/AdvoCate/")
         data = request.POST;
         user_name = data['user_name'];
         firstname = data['first-name'];
@@ -73,6 +65,7 @@ def logout_view(request):
     return HttpResponseRedirect("/AdvoCate/")
 
 
+# Methods for home page to define the task and save details in session variable
 
 def index(request):
     if '_auth_user_id' in request.session:
@@ -95,7 +88,10 @@ def savenewtaxonomydetails(request):
         request.session['new_taxonomy_description'] = data['description']
     return HttpResponse("Upload training samples by switching to 'Training Samples' tab, and start the modelling process!");
 
+
+
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
+
 @login_required
 def trainingsampleprocessing(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username 
@@ -104,8 +100,6 @@ def trainingsampleprocessing(request):
         if request.FILES:
             trainingfile = request.FILES['trainingfile']
             request.session['current_training_file_name'] = trainingfile.name.split('.', 1)[0] + '.csv'
-            print  request.session['current_training_file_name']
-            print trainingfile.name.split(".")[-1]
             if trainingfile.name.split(".")[-1] == "csv":
                 handle_uploaded_file(request, trainingfile)
                 return HttpResponse("We got the file");
@@ -124,6 +118,7 @@ def trainingsampleprocessing(request):
             request.session['current_training_file_ver'] = ver
             trainingfilename = data['2']
             request.session['current_training_file_name'] = trainingfilename
+            print trid, ver
             trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
             fp = file (trainingfilelocation+trainingfilename, 'rb')
             response = HttpResponse( fp, content_type='text/csv')
@@ -155,7 +150,7 @@ def savetrainingdatadetails(request):
         if not latestidarray:
             latestid = 0
         else:
-            latestid = latestidarray[0].id
+            latestid = latestidarray[0].trainingset_id
             
         tr = Trainingset(trainingset_id=int(latestid)+1, trainingset_ver =1, trainingset_name=request.session['current_training_file_name'], description=otherDetails, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
@@ -187,6 +182,9 @@ def saveNewTrainingVersion(request):
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         tr_activity = ChangeTrainingsetActivity( oldtrainingset_id= int(fileid), oldtrainingset_ver =int(version), newtrainingset_id=int(fileid), newtrainingset_ver=int(version)+1, completed_by=authuser_instance)
         tr_activity.save()
+        request.session['current_training_file_name'] = newfilename
+        request.session['current_training_file_ver'] = int(version)+1
+        
     return HttpResponse("Changed dataset is saved as a new version");
         
 # create a file with similar name as provided in the static folder and copy all the contents    
@@ -258,7 +256,8 @@ def signaturefile(request):
     print trainingfile
     trainingFileAsArray = read_CSVFile(trainingfile)
     features = trainingFileAsArray[0]  
-    
+    features.pop(0)
+    features.pop(0)
     if request.method=='POST':
         data = request.POST;
         
@@ -280,12 +279,12 @@ def signaturefile(request):
             
         
         classifier = chooseClassifier(classifiername)
-        targetAttributeIndex = features.index(targetattribute)
+        targetAttributeIndex = features.index(targetattribute)+2
         
-        trainingSampleDataWithTargetValues = createSampleArray(trainingFileAsArray, targetAttributeIndex)
-        data_array=numpy.asarray(trainingSampleDataWithTargetValues[0], dtype=numpy.float)
+        trainingSampleArray, targetValueArray = createSampleArray(trainingFileAsArray, targetAttributeIndex)
+        data_array=numpy.array(trainingSampleArray, dtype=numpy.float32)
         print data_array.shape
-        target_array=numpy.asarray(trainingSampleDataWithTargetValues[1])
+        target_array=numpy.array(targetValueArray)
         modelname = "model_" + str(datetime.now())
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
        
@@ -297,7 +296,7 @@ def signaturefile(request):
             score= metrics.accuracy_score(target_array, y_pred)
             cm = metrics.confusion_matrix(target_array, y_pred)
             kp = calculateKappa(cm)
-                        
+            print "done"            
         elif (validationoption=='2'):
             print "test"
             
@@ -411,14 +410,19 @@ def createSampleArray(trainingsample, targetAttributeIndex):
     trainingsample.pop(0)
     trainingSampleArray = []
     targetValueArray = []
-    newArray=[]
     for sample in trainingsample:
+        print sample[targetAttributeIndex]
         targetValueArray.append(sample[targetAttributeIndex])
         sample.pop(targetAttributeIndex)
+        del sample[0:2]
         trainingSampleArray.append(sample)
-    newArray.append(trainingSampleArray)
-    newArray.append(targetValueArray)
-    return newArray
+    #print targetValueArray
+ #   distinct_values = list(set(targetValueArray))
+ #   print distinct_values
+ #   for i in range(len(targetValueArray)):
+ #       targetValueArray[i] = distinct_values.index(targetValueArray[i])
+    #print targetValueArray
+    return trainingSampleArray, targetValueArray
 
 def splitTrainingSampleForEachClass(trainingsample, classIndex):
     

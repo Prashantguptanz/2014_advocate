@@ -14,7 +14,7 @@
 						<select name="existingtrainingfiles" id="existingtrainingfiles"  disabled>
 							<option>Existing training files</option>
 							{% for train in training_set_list %}
-							<option id="trainingset{{ forloop.counter }}" value="{{ train.id }}+{{train.ver}}">{{ train.trainingset_name }}</option>
+							<option id="trainingset{{ forloop.counter }}" value="{{ train.trainingset_id }}+{{train.trainingset_ver}}">{{ train.trainingset_name }}</option>
 							{% endfor %}
 	 					</select>
 					</span>
