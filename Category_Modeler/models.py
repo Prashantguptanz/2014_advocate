@@ -78,28 +78,148 @@ class AuthUserUserPermissions(models.Model):
         managed = False
         db_table = 'auth_user_user_permissions'
 
+class Confusionmatrix(models.Model):
+    confusionmatrix_id = models.IntegerField(primary_key=True)
+    confusionmatrix_name = models.CharField(max_length=256)
+    confusionmatrix_location = models.CharField(max_length=1024)
 
+    class Meta:
+        managed = False
+        db_table = 'confusionmatrix'
+
+class Classifier(models.Model):
+    classifier_id = models.IntegerField(primary_key=True)
+    classifier_name = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'classifier'
+
+class Concept(models.Model):
+    concept_id = models.IntegerField(primary_key=True)
+    concept_name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'concept'
+
+class Classificationmodel(models.Model):
+    model_id = models.IntegerField(primary_key=True)
+    model_name = models.CharField(max_length=256)
+    model_location = models.CharField(max_length=1024)
+    accuracy = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'classificationmodel'
+
+class LearningActivity(models.Model):
+    validation_type = (
+        ('training data', 'training data'),
+        ('validation data', 'validation data'),
+        ('cross validation', 'cross validation'),
+        ('train test split', 'train test split')
+    )    
+    learning_activity_id = models.IntegerField(primary_key=True)
+    classifier_id = models.ForeignKey(Classifier)
+    model_id = models.ForeignKey(Classificationmodel, blank=True, null=True)
+    validation = models.CharField(choices=validation_type, max_length=256)
+    validation_score = models.FloatField()
+    completed = models.DateTimeField()
+    completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
+    confusionmatrix_id = models.ForeignKey(Confusionmatrix, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'learning_activity'
+
+
+
+class Legend(models.Model):
+    legend_id = models.IntegerField(primary_key=True)
+    legend_ver = models.IntegerField(primary_key=True)
+    legend_name = models.CharField(max_length=100)
+    date_created = models.DateTimeField(default=datetime.now)
+    date_expired = models.DateTimeField()
+    description = models.TextField(blank=True)
+    created_by = models.ForeignKey(AuthUser, db_column='created_by')
+    model_id = models.ForeignKey(Classificationmodel)
+
+    def __unicode__(self):
+        return self.legend_name
+    
+    class Meta:
+        managed = False
+        db_table = 'legend'
+
+
+class LegendConceptCombination(models.Model):
+    legend_concept_combination_id = models.IntegerField(primary_key=True)
+    legend_id = models.IntegerField()
+    legend_ver = models.IntegerField()
+    concept_id = models.ForeignKey(Concept)
+
+    class Meta:
+        managed = False
+        db_table = 'legend_concept_combination'
+        unique_together = ("legend_id", "legend_ver")
+        
+class ComputationalIntension(models.Model):
+    computational_intension_id = models.IntegerField(primary_key=True)
+    file_name = models.CharField(max_length=100)
+    filelocation = models.CharField(max_length=1024)
+    created = models.DateTimeField()
+    created_by = models.ForeignKey(AuthUser, db_column='created_by')
+    learning_activity_id = models.ForeignKey(LearningActivity, db_column='learning_activity_id', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'computational_intension'
+
+class ClassificationActivity(models.Model):
+    classification_activity_id = models.IntegerField(primary_key=True)
+    classificationmodel_id = models.ForeignKey(Classificationmodel, db_column='classificationmodel_id')
+    testfile_location = models.CharField(max_length=1024)
+    testfile_name = models.CharField(max_length=100)
+    classifiedfile_location = models.CharField(max_length=1024)
+    classifiedfile_name = models.CharField(max_length=100)
+    completed = models.DateTimeField(default=datetime.now)
+    completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
+
+    class Meta:
+        managed = False
+        db_table = 'classification_activity'
+
+class Extension(models.Model):
+    extension_id = models.IntegerField(primary_key=True)
+    classification_activity = models.ForeignKey(ClassificationActivity)
+
+    class Meta:
+        managed = False
+        db_table = 'extension'
+       
 class Category(models.Model):
-    id = models.IntegerField(primary_key=True)
-    ver = models.IntegerField(primary_key=True)
+    category_id = models.IntegerField(primary_key=True)
+    category_ver = models.IntegerField(primary_key=True)
     category_name = models.CharField(max_length=100)
     date_created = models.DateTimeField(default=datetime.now)
     date_expired = models.DateTimeField()
     description = models.TextField(blank=True)
-    concept = models.ForeignKey('Concept', blank=True, null=True)
-    legend_id = models.IntegerField()
-    legend_ver = models.IntegerField()
     trainingset_id = models.IntegerField()
-    legend_vertrainingset_ver = models.IntegerField()
+    trainingset_ver = models.IntegerField()
     creator = models.ForeignKey(AuthUser, db_column='creator')
+    legend_concept_combination_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_combination_id')
+    computational_intension_id = models.ForeignKey(ComputationalIntension, db_column='computational_intension_id')
+    extension_id = models.ForeignKey(Extension, db_column='extension_id')
     
     class Meta:
         managed = False
         db_table = 'category'
         unique_together = ("trainingset_id", "trainingset_ver")
-        unique_together = ("legend_id", "legend_ver")
 
-class ChangeTrainingset(models.Model):
+class ChangeTrainingsetActivity(models.Model):
+    change_trainingset_activity_id = models.IntegerField(primary_key=True)
     oldtrainingset_id = models.IntegerField()
     oldtrainingset_ver = models.IntegerField()
     newtrainingset_id = models.IntegerField()
@@ -109,30 +229,21 @@ class ChangeTrainingset(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'change_trainingset'
+        db_table = 'change_trainingset_activity'
         unique_together = ("oldtrainingset_id", "oldtrainingset_ver")
         unique_together = ("newtrainingset_id", "newtrainingset_ver")
 
-class Classification(models.Model):
-    signaturefile = models.ForeignKey('Signaturefile')
-    testfile_location = models.CharField(max_length=1024)
-    testfile_name = models.CharField(max_length=100)
-    classifieddata_location = models.CharField(max_length=1024)
-    classifieddata_name = models.CharField(max_length=100)
-    completed = models.DateTimeField(default=datetime.now)
-    completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
 
-    class Meta:
-        managed = False
-        db_table = 'classification'
 
-class Classifier(models.Model):
-    classifier_name = models.CharField(max_length=100)
 
-    class Meta:
-        managed = False
-        db_table = 'classifier'
 
+
+
+
+        
+
+
+        
 class CollectingTrainingset(models.Model):
     trainingset_id = models.IntegerField()
     trainingset_ver = models.IntegerField()
@@ -147,14 +258,6 @@ class CollectingTrainingset(models.Model):
         managed = False
         db_table = 'collecting_trainingset'
         unique_together = ("trainingset_id", "trainingset_ver")
-
-class Concept(models.Model):
-    concept_name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-
-    class Meta:
-        managed = False
-        db_table = 'concept'
 
 
 class DjangoAdminLog(models.Model):
@@ -206,8 +309,9 @@ class DjangoSession(models.Model):
 
 class ExplorationChain(models.Model):
     activity_type = (
-        ('change_trainingset', 'change_trainingset'),
-        ('train_classifier', 'train_classifier'),
+        ('trainingset collection', 'trainingset collection'),
+        ('change trainingset', 'change trainingset'),
+        ('learning', 'learning'),
         ('classification', 'classification')
     )
     id = models.IntegerField(primary_key=True)
@@ -247,22 +351,47 @@ class GeometryColumns(models.Model):
         managed = False
         db_table = 'geometry_columns'
 
+class HierarchicalRelationship(models.Model):
+    hierarchical_relationship_type = (
+        ('child-of', 'child-of'),
+        ('parent-of', 'parent-of'),
+        ('sibling-of', 'sibling-of')
+    )
+    hierarchical_relationship_id = models.BigIntegerField(primary_key=True)
+    relationship_name = models.CharField(choices=hierarchical_relationship_type, max_length=256)
+    expired = models.NullBooleanField()
+    concept1 = models.ForeignKey(Concept, related_name='concept1')
+    concept2 = models.ForeignKey(Concept, related_name='concept2')
 
-class Legend(models.Model):
-    id = models.IntegerField(primary_key=True)
-    ver = models.IntegerField(primary_key=True)
-    legend_name = models.CharField(max_length=100)
-    date_created = models.DateTimeField(default=datetime.now)
-    date_expired = models.DateTimeField()
-    signaturefile = models.ForeignKey('Signaturefile')
-    created_by = models.ForeignKey(AuthUser, db_column='created_by')
+    class Meta:
+        managed = False
+        db_table = 'hierarchical_relationship'
 
-    def __unicode__(self):
-        return self.legend_name
+
+class HorizontalRelationship(models.Model):
+    horizontal_relationship_type = (
+        ('same as', 'same as'),
+        ('includes', 'includes'),
+        ('is included in', 'is included in'),
+        ('overlaps with', 'overlaps with'),
+        ('excludes', 'excludes')
+    )
+    horizontal_relationship_id = models.IntegerField(primary_key=True)
+    relationship_name = models.CharField(choices=horizontal_relationship_type, max_length=256)
+    expired = models.NullBooleanField()
+    category1_id = models.IntegerField()
+    category1_ver = models.IntegerField()
+    category2_id = models.IntegerField()
+    category2_ver = models.IntegerField()
     
     class Meta:
         managed = False
-        db_table = 'legend'
+        db_table = 'horizontal_relationship'
+        unique_together = ("category1_id", "category1_ver")
+        unique_together = ("category2_id", "category2_ver")
+
+
+
 
 
 class RasterColumns(models.Model):
@@ -304,30 +433,6 @@ class RasterOverviews(models.Model):
         db_table = 'raster_overviews'
 
 
-class Relationship(models.Model):
-    relationship_name = models.TextField()  # This field type is a guess.
-    expired = models.BooleanField(default=False)
-    category1_id = models.IntegerField()
-    category1_ver = models.IntegerField()
-    category2_id = models.IntegerField()
-    category2_ver = models.IntegerField()
-
-    class Meta:
-        managed = False
-        db_table = 'relationship'
-        unique_together = ("category1_id", "category1_ver")
-        unique_together = ("category2_id", "category2_ver")
-
-class Signaturefile(models.Model):
-    signaturefile_name = models.CharField(max_length=100)
-    filelocation = models.CharField(max_length=1024)
-    created = models.DateTimeField(default=datetime.now)
-    created_by = models.ForeignKey(AuthUser, db_column='created_by')
-
-    class Meta:
-        managed = False
-        db_table = 'signaturefile'
-
 class SpatialRefSys(models.Model):
     srid = models.IntegerField(primary_key=True)
     auth_name = models.CharField(max_length=256, blank=True)
@@ -339,48 +444,32 @@ class SpatialRefSys(models.Model):
         managed = False
         db_table = 'spatial_ref_sys'
 
-class TrainClassifier(models.Model):
-    validation_type = (
-        ('training data', 'training data'),
-        ('validation data', 'validation data'),
-        ('cross validation', 'cross validation'),
-        ('train test split', 'train test split')
-    )
-    classifier = models.ForeignKey(Classifier)
-    signaturefile = models.ForeignKey(Signaturefile)
-    validation = models.CharField(choices=validation_type, max_length=256)
-    validation_score = models.FloatField()
-    confusionmatrix_location = models.CharField(max_length=1024)
-    confusionmatrix_name = models.CharField(max_length=100)
-    completed = models.DateTimeField(default=datetime.now)
-    completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
-
-    class Meta:
-        managed = False
-        db_table = 'train_classifier'
-
-class TrainclassifierTrainingsets(models.Model):
-    trainingset_id = models.IntegerField()
-    trainingset_ver = models.IntegerField()
-    trainclassifier = models.ForeignKey(TrainClassifier)
-
-    class Meta:
-        managed = False
-        db_table = 'trainclassifier_trainingsets'
-        unique_together = ("trainingset_id", "trainingset_ver")
 
 class Trainingset(models.Model):
-    id = models.IntegerField(primary_key=True)
-    ver = models.IntegerField(primary_key=True)
-    trainingset_name = models.CharField(max_length=100)
+    trainingset_id = models.IntegerField(primary_key=True)
+    trainingset_ver = models.IntegerField(primary_key=True)
     description = models.TextField(blank=True)
-    date_used = models.DateTimeField(default=datetime.now)
+    date_first_used = models.DateTimeField(default=datetime.now)
     date_expired = models.DateTimeField()
+    trainingset_name = models.CharField(max_length=100)
     filelocation = models.CharField(max_length=1024)
 
-    def __unicode__(self):
-        return self.name
-    
     class Meta:
         managed = False
         db_table = 'trainingset'
+
+
+class TrainingsetCollectionActivity(models.Model):
+    trainingset_collection_activity_id = models.IntegerField(primary_key=True)
+    date_started = models.DateField()
+    date_finished = models.DateField()
+    trainingset_location = models.CharField(max_length=256)
+    description = models.TextField(blank=True)
+    collector = models.CharField(max_length=100)
+    trainingset_id = models.IntegerField(blank=True, null=True)
+    trainingset_ver = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'trainingset_collection_activity'
+        unique_together = ("trainingset_id", "trainingset_ver")

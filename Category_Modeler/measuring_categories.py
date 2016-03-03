@@ -1,6 +1,10 @@
 import csv
 import numpy as np
 from operator import itemgetter
+import gdal
+from gdalconst import *
+from io import FileIO, BufferedWriter
+import csv
 
 class TrainingSample:
     
@@ -132,10 +136,60 @@ class DecisionTreeIntensionalModel:
   #  def compare_decision_rules(self, other):
         
                 
-                
+class ManageRasterData:
+    
+    def __init__(self, raster_files):
+        self.raster_files = raster_files
+    
+    def read_raster_file(self, f):
+        print f
+        dataset = gdal.Open('static/data/%s' % f, GA_ReadOnly)
+        cols = dataset.RasterXSize
+        rows = dataset.RasterYSize
+        noOfBands = dataset.RasterCount
+        bands = []
+        
+        final_array = []
+        pixelValue=[]
+        className = f.split('.', 1)[0]
+    
+    
+        for i in range(1, noOfBands+1):
+            bands.append(dataset.GetRasterBand(i).ReadAsArray(0,0,cols,rows))
+        
+        for j in range(rows):
+            for k in range (cols): 
+                pixelValue.append(j)
+                pixelValue.append(k)
+                for l in range(noOfBands):
+                    pixelValue.append(bands[l][j][k])
+                pixelValue.append(className)
+                final_array.append(pixelValue)
+                pixelValue=[]
+        
+        return final_array
+    
+    def combine_raster_files(self):
+        filename ="trainingsample1.csv"
+        with BufferedWriter( FileIO( 'static/trainingfiles/%s' % filename, "wb" ) ) as csvfile:
+            spamwriter = csv.writer(csvfile, delimiter=',')
+            spamwriter.writerow(['X', 'Y', 'band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7', 'band8', 'class'])
+            
+        
+        for eachFile in self.raster_files:
+            final_array = self.read_raster_file(eachFile)
+              
+            with BufferedWriter( FileIO( 'static/trainingfiles/%s' % filename, "a" ) ) as csvfile:
+                spamwriter = csv.writer(csvfile, delimiter=',')
+                for i in range(len(final_array)):
+                    spamwriter.writerow(final_array[i])
+       
+    
+                    
                 
         
-        
+#a= ManageRasterData(['arti1_1.tif', 'arti1_2.tif', 'cloud1_3.tif', 'cloud1_2.tif', 'forest1.tif', 'grass1.tif', 'shado1_1.tif', 'shado1_2.tif', 'water1_1.tif'])  
+#a.combine_raster_files()
        
 #a=TrainingSample("akl.csv")
 #print a.training_samples_as_nparray.dtype

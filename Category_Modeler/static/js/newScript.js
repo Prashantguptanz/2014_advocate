@@ -263,9 +263,9 @@ $(function() {
 					reader.readAsText(newtrainingdataset);
 					
 				}
-				else{
+				
 					
-				}
+				
 						
 				// Posting file to the server side using formdata
 				var formdata = new FormData();
@@ -278,7 +278,7 @@ $(function() {
 					contentType : false,
 					data : formdata,
 					success : function(response) {
-						if (response){
+						if (response['Content-Disposition']){
 							//newfile = response['training File'];
 							var trainingdata = $.csv.toArrays(response);
 							$('#instances').html(trainingdata.length-1);
@@ -291,6 +291,8 @@ $(function() {
 	
 					}
 				});
+				
+				
 	
 			});
 			

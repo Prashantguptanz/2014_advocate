@@ -7,8 +7,9 @@ from django.contrib import messages
 from django.http import JsonResponse
 import csv, json, numpy
 import gdal
+from gdalconst import *
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, AuthUser, CollectingTrainingset, ChangeTrainingset, AuthUser, Signaturefile, Classifier, TrainClassifier
+from Category_Modeler.models import Trainingset, AuthUser, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity
 import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
@@ -107,6 +108,7 @@ def trainingsampleprocessing(request):
             print trainingfile.name.split(".")[-1]
             if trainingfile.name.split(".")[-1] == "csv":
                 handle_uploaded_file(request, trainingfile)
+                return HttpResponse("We got the file");
             else:
                 handle_raster_file(request, trainingfile)
                 filename = trainingfile.name.split('.', 1)[0] + '.csv'
@@ -122,7 +124,7 @@ def trainingsampleprocessing(request):
             request.session['current_training_file_ver'] = ver
             trainingfilename = data['2']
             request.session['current_training_file_name'] = trainingfilename
-            trainingfilelocation = (Trainingset.objects.get(id=trid, ver=ver)).filelocation # @UndefinedVariable
+            trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
             fp = file (trainingfilelocation+trainingfilename, 'rb')
             response = HttpResponse( fp, content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="training File"'
@@ -148,16 +150,16 @@ def savetrainingdatadetails(request):
         location = data['TrainingLocation'];
         otherDetails = data['OtherDetails'];
         
-        #add training dataset details in trainingset table and a collection activity in new_trainingset_collection_activity table
-        latestidarray = Trainingset.objects.all().order_by("-id")
+        #add training dataset details in trainingset table and a collection activity in trainingset_collection_activity table
+        latestidarray = Trainingset.objects.all().order_by("-trainingset_id")
         if not latestidarray:
             latestid = 0
         else:
             latestid = latestidarray[0].id
             
-        tr = Trainingset(id=int(latestid)+1, ver =1, trainingset_name=request.session['current_training_file_name'], description=otherDetails, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
+        tr = Trainingset(trainingset_id=int(latestid)+1, trainingset_ver =1, trainingset_name=request.session['current_training_file_name'], description=otherDetails, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
-        tr_activity = CollectingTrainingset( trainingset_id= int(latestid)+1, trainingset_ver =1, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'), trainingset_location=location, collector=researcherName, description= otherDetails)
+        tr_activity = TrainingsetCollectionActivity( trainingset_id= int(latestid)+1, trainingset_ver =1, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'), trainingset_location=location, collector=researcherName, description= otherDetails)
         tr_activity.save()
         request.session['current_training_file_id'] = int(latestid)+1
         request.session['current_training_file_ver'] = 1
@@ -177,13 +179,13 @@ def saveNewTrainingVersion(request):
             writer.writerow(data[i])
         f1.close()
         
-        oldversion = Trainingset.objects.get(id=int(fileid), ver =int(version)) 
+        oldversion = Trainingset.objects.get(trainingset_id=int(fileid), trainingset_ver =int(version)) 
         oldversion.date_expired = datetime.now()
         oldversion.save()
-        tr = Trainingset(id=int(fileid), ver =int(version)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
+        tr = Trainingset(trainingset_id=int(fileid), trainingset_ver =int(version)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation="Category_Modeler/static/trainingfiles/")
         tr.save(force_insert=True)
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
-        tr_activity = ChangeTrainingset( oldtrainingset_id= int(fileid), oldtrainingset_ver =int(version), newtrainingset_id=int(fileid), newtrainingset_ver=int(version)+1, completed_by=authuser_instance)
+        tr_activity = ChangeTrainingsetActivity( oldtrainingset_id= int(fileid), oldtrainingset_ver =int(version), newtrainingset_id=int(fileid), newtrainingset_ver=int(version)+1, completed_by=authuser_instance)
         tr_activity.save()
     return HttpResponse("Changed dataset is saved as a new version");
         
@@ -197,33 +199,44 @@ def handle_uploaded_file(request, f):
         dest.close();
 
 def handle_raster_file(request, f):
-    dataset = gdal.Open('Category_Modeler/static/data/%s' % f.name)
+    print f.name
+    dataset = gdal.Open('Category_Modeler/static/data/%s' % f.name, GA_ReadOnly)
+    print dataset
     cols = dataset.RasterXSize
     rows = dataset.RasterYSize
     noOfBands = dataset.RasterCount
+    print noOfBands
+    geotransform = dataset.GetGeoTransform()
+    print geotransform[0]
+    print geotransform[1]
+    print geotransform[2]
+    print geotransform[3]
+    print geotransform[4]
+    print geotransform[5]
     bands = []
     
     final_array = []
     pixelValue=[]
 
-    for i in range(1, noOfBands):
+    for i in range(1, noOfBands+1):
         bands.append(dataset.GetRasterBand(i).ReadAsArray(0,0,cols,rows))
     
     for j in range(rows):
         for k in range (cols):
             pixelValue.append(j)
             pixelValue.append(k)
-            for l in range(len(bands)):
+            for l in range(noOfBands):
+                
                 pixelValue.append(bands[l][j][k])
             final_array.append(pixelValue)
             pixelValue=[]
 
-    head = f.name.split('.', 1)[0]
+    head = f.name.split('.', 1)[0] 
     filename = head + '.csv'    
     with BufferedWriter( FileIO( 'Category_Modeler/static/trainingfiles/%s' % filename, "wb" ) ) as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',')
-        spamwriter.writerow(['X', 'Y', 'band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7'])
-        for i in range(100000):
+        spamwriter.writerow(['X', 'Y', 'band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7', 'band8'])
+        for i in range(len(final_array)):
             spamwriter.writerow(final_array[i])
         csvfile.close();
 
@@ -330,7 +343,7 @@ def signaturefile(request):
         joblib.dump(clf, 'Category_Modeler/static/signaturefile/%s'%modelname)
         request.session['current_signature_file']= modelname
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
-        sf = Signaturefile(signaturefile_name = modelname, filelocation="Category_Modeler/static/signaturefile/", created_by=authuser_instance)
+        sf = Classificationmodel(model_name = modelname, model_location="Category_Modeler/static/signaturefile/", accuracy=score)
         sf.save()
         numpy.set_printoptions(precision=2)
         plt.figure()
@@ -339,9 +352,9 @@ def signaturefile(request):
         plt.savefig("Category_Modeler/static/images/%s" % cmname,  bbox_inches='tight')
         classifier_instance = Classifier.objects.get(classifier_name=classifiername)
         print classifier_instance
-        signaturefile_instance = Signaturefile.objects.get(signaturefile_name=request.session['current_signature_file'])
-        tc = TrainClassifier(classifier=classifier_instance, signaturefile= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix_location="Category_Modeler/static/images/", confusionmatrix_name= cmname, completed_by= authuser_instance)
-        tc.save()    
+        signaturefile_instance = Classificationmodel.objects.get(model_name=request.session['current_signature_file'])
+     #   tc = LearningActivity(classifier_id=classifier_instance, model_id= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix_location="Category_Modeler/static/images/", confusionmatrix_name= cmname, completed_by= authuser_instance)
+     #   tc.save()    
         
         
         if (classifiername=="Naive Bayes"):
@@ -380,7 +393,8 @@ def read_CSVFile(f):
      #   samples = []
      #   for eachinstance in data:
      #       samples.append(eachinstance);
-        datafile.close();    
+        datafile.close(); 
+        print samples[0]   
     return samples
 
 def chooseClassifier(classifiername):
