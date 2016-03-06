@@ -79,7 +79,6 @@ class AuthUserUserPermissions(models.Model):
         db_table = 'auth_user_user_permissions'
 
 class Confusionmatrix(models.Model):
-    confusionmatrix_id = models.IntegerField(primary_key=True)
     confusionmatrix_name = models.CharField(max_length=256)
     confusionmatrix_location = models.CharField(max_length=1024)
 
@@ -88,7 +87,6 @@ class Confusionmatrix(models.Model):
         db_table = 'confusionmatrix'
 
 class Classifier(models.Model):
-    classifier_id = models.IntegerField(primary_key=True)
     classifier_name = models.CharField(max_length=100)
 
     class Meta:
@@ -96,7 +94,6 @@ class Classifier(models.Model):
         db_table = 'classifier'
 
 class Concept(models.Model):
-    concept_id = models.IntegerField(primary_key=True)
     concept_name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
 
@@ -120,14 +117,13 @@ class LearningActivity(models.Model):
         ('cross validation', 'cross validation'),
         ('train test split', 'train test split')
     )    
-    learning_activity_id = models.IntegerField(primary_key=True)
-    classifier_id = models.ForeignKey(Classifier)
-    model_id = models.ForeignKey(Classificationmodel, blank=True, null=True)
+    classifier = models.ForeignKey(Classifier)
+    model = models.ForeignKey(Classificationmodel, blank=True, null=True)
     validation = models.CharField(choices=validation_type, max_length=256)
     validation_score = models.FloatField()
-    completed = models.DateTimeField()
+    completed = models.DateTimeField(default=datetime.now)
     completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
-    confusionmatrix_id = models.ForeignKey(Confusionmatrix, blank=True, null=True)
+    confusionmatrix = models.ForeignKey(Confusionmatrix, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -154,7 +150,6 @@ class Legend(models.Model):
 
 
 class LegendConceptCombination(models.Model):
-    legend_concept_combination_id = models.IntegerField(primary_key=True)
     legend_id = models.IntegerField()
     legend_ver = models.IntegerField()
     concept_id = models.ForeignKey(Concept)
@@ -165,7 +160,6 @@ class LegendConceptCombination(models.Model):
         unique_together = ("legend_id", "legend_ver")
         
 class ComputationalIntension(models.Model):
-    computational_intension_id = models.IntegerField(primary_key=True)
     file_name = models.CharField(max_length=100)
     filelocation = models.CharField(max_length=1024)
     created = models.DateTimeField()
@@ -177,7 +171,6 @@ class ComputationalIntension(models.Model):
         db_table = 'computational_intension'
 
 class ClassificationActivity(models.Model):
-    classification_activity_id = models.IntegerField(primary_key=True)
     classificationmodel_id = models.ForeignKey(Classificationmodel, db_column='classificationmodel_id')
     testfile_location = models.CharField(max_length=1024)
     testfile_name = models.CharField(max_length=100)
@@ -191,7 +184,6 @@ class ClassificationActivity(models.Model):
         db_table = 'classification_activity'
 
 class Extension(models.Model):
-    extension_id = models.IntegerField(primary_key=True)
     classification_activity = models.ForeignKey(ClassificationActivity)
 
     class Meta:
@@ -331,7 +323,6 @@ class HierarchicalRelationship(models.Model):
         ('parent-of', 'parent-of'),
         ('sibling-of', 'sibling-of')
     )
-    hierarchical_relationship_id = models.BigIntegerField(primary_key=True)
     relationship_name = models.CharField(choices=hierarchical_relationship_type, max_length=256)
     expired = models.NullBooleanField()
     concept1 = models.ForeignKey(Concept, related_name='concept1')
@@ -350,7 +341,6 @@ class HorizontalRelationship(models.Model):
         ('overlaps with', 'overlaps with'),
         ('excludes', 'excludes')
     )
-    horizontal_relationship_id = models.IntegerField(primary_key=True)
     relationship_name = models.CharField(choices=horizontal_relationship_type, max_length=256)
     expired = models.NullBooleanField()
     category1_id = models.IntegerField()

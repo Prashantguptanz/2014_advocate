@@ -138,8 +138,9 @@ class DecisionTreeIntensionalModel:
                 
 class ManageRasterData:
     
-    def __init__(self, raster_files):
+    def __init__(self, raster_files, noOfBands):
         self.raster_files = raster_files
+        self.countBands = noOfBands
     
     def read_raster_file(self, f):
         print f
@@ -154,14 +155,14 @@ class ManageRasterData:
         className = f.split('.', 1)[0]
     
     
-        for i in range(1, noOfBands+1):
+        for i in range(1, self.countBands+1):
             bands.append(dataset.GetRasterBand(i).ReadAsArray(0,0,cols,rows))
         
         for j in range(rows):
             for k in range (cols): 
                 pixelValue.append(j)
                 pixelValue.append(k)
-                for l in range(noOfBands):
+                for l in range(self.countBands):
                     pixelValue.append(bands[l][j][k])
                 pixelValue.append(className)
                 final_array.append(pixelValue)
@@ -169,11 +170,36 @@ class ManageRasterData:
         
         return final_array
     
-    def combine_raster_files(self):
-        filename ="trainingsample1.csv"
+    def read_test_file(self, f):
+        dataset = gdal.Open('static/data/%s' % f, GA_ReadOnly)
+        cols = dataset.RasterXSize
+        rows = dataset.RasterYSize
+        noOfBands = dataset.RasterCount
+        bands = []
+        
+        final_array = []
+        pixelValue=[]
+    
+    
+        for i in range(1, self.countBands+1):
+            bands.append(dataset.GetRasterBand(i).ReadAsArray(0,0,cols,rows))
+        
+        for j in range(rows):
+            for k in range (cols):
+                for l in range(self.countBands):
+                    pixelValue.append(bands[l][j][k])
+                final_array.append(pixelValue)
+                pixelValue=[]
+        
+        return final_array
+    
+    def combine_raster_files(self, filename):
         with BufferedWriter( FileIO( 'static/trainingfiles/%s' % filename, "wb" ) ) as csvfile:
             spamwriter = csv.writer(csvfile, delimiter=',')
-            spamwriter.writerow(['X', 'Y', 'band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7', 'band8', 'class'])
+            if self.countBands==3:
+                spamwriter.writerow(['X', 'Y', 'band1', 'band2', 'band3', 'class'])
+            else:
+                spamwriter.writerow(['X', 'Y', 'band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7', 'band8', 'class'])
             
         
         for eachFile in self.raster_files:
@@ -183,13 +209,29 @@ class ManageRasterData:
                 spamwriter = csv.writer(csvfile, delimiter=',')
                 for i in range(len(final_array)):
                     spamwriter.writerow(final_array[i])
-       
     
-                    
+    def create_csv_file(self):
+        final_array = self.read_test_file(self.raster_files)
+        filename = self.raster_files.split('.', 1)[0] + ".csv"
+        with BufferedWriter( FileIO( 'static/testfiles/%s' % filename, "wb" ) ) as csvfile:
+            spamwriter = csv.writer(csvfile, delimiter=',')
+            for i in range(len(final_array)):
+                spamwriter.writerow(final_array[i])
+            
+            
+            
+
+    
+
+            
+            
+#a= ManageRasterData('final3b.tif', 3)
+#a.create_csv_file()        
+               
                 
         
-#a= ManageRasterData(['arti1_1.tif', 'arti1_2.tif', 'cloud1_3.tif', 'cloud1_2.tif', 'forest1.tif', 'grass1.tif', 'shado1_1.tif', 'shado1_2.tif', 'water1_1.tif'])  
-#a.combine_raster_files()
+#a= ManageRasterData(['arti1_1.tif', 'arti1_2.tif', 'cloud1_3.tif', 'cloud1_2.tif', 'forest1.tif', 'grass1.tif', 'shado1_1.tif', 'shado1_2.tif', 'water1_1.tif', 'water1_2.tif', 'water1_3.tif', 'water1_4.tif'], 3)  
+#a.combine_raster_files('akl_cbd_ts1_3bands.csv')
        
 #a=TrainingSample("akl.csv")
 #print a.training_samples_as_nparray.dtype
