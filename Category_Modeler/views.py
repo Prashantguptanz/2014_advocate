@@ -341,7 +341,7 @@ def signaturefile(request):
             
 
         prodacc, useracc = calculateAccuracies(cm) 
-        joblib.dump(clf, 'Category_Modeler/static/classificationmodel/%s' %modelname)
+        pickle.dumps(clf, 'Category_Modeler/static/classificationmodel/%s' %modelname)
         request.session['current_signature_file']= modelname
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         sf = Classificationmodel(model_name = modelname, model_location="Category_Modeler/static/classificationmodel/", accuracy=score)
@@ -499,11 +499,13 @@ def calculateAccuracies(confusionMatrix):
 @login_required
 def supervised(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
-    print request.session['current_signature_file']
+    
     
     if request.method == 'POST' and request.is_ajax():
+        print request.session['current_signature_file']
         if request.FILES:
             testfile = request.FILES['testfile']
+            print request.session['current_signature_file']
             request.session['current_test_file_name'] = testfile
             print testfile
             
@@ -511,11 +513,12 @@ def supervised(request):
             print testFileAsArray[0]
             test_array=numpy.array(testFileAsArray, dtype=numpy.float32)
             modelname = request.session['current_signature_file']
-            clf = joblib.load('Category_Modeler/static/classificationmodel/%s' %modelname)
+            clf = pickle.loads('Category_Modeler/static/classificationmodel/%s' %modelname)
             predictedValue = clf.predict(test_array)
             savePredictedValues(testfile, predictedValue)
             
             #print predictedValue.shape
+            print "done"
             return HttpResponse("done");
     
     
