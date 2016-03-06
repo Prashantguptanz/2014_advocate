@@ -341,7 +341,7 @@ def signaturefile(request):
             
 
         prodacc, useracc = calculateAccuracies(cm) 
-        pickle.dumps(clf, 'Category_Modeler/static/classificationmodel/%s' %modelname)
+        joblib.dump(clf, 'Category_Modeler/static/classificationmodel/%s' %modelname)
         request.session['current_signature_file']= modelname
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         sf = Classificationmodel(model_name = modelname, model_location="Category_Modeler/static/classificationmodel/", accuracy=score)
@@ -506,16 +506,13 @@ def supervised(request):
         if request.FILES:
             testfile = request.FILES['testfile']
             print request.session['current_signature_file']
-            request.session['current_test_file_name'] = testfile
-            print testfile
-            
+            request.session['current_test_file_name'] = testfile.name
             testFileAsArray = read_test_file_as_array(testfile)
-            print testFileAsArray[0]
-            test_array=numpy.array(testFileAsArray, dtype=numpy.float32)
+            test_array=numpy.array(testFileAsArray)
             modelname = request.session['current_signature_file']
-            clf = pickle.loads('Category_Modeler/static/classificationmodel/%s' %modelname)
+            clf = joblib.load('Category_Modeler/static/classificationmodel/%s' %modelname)
             predictedValue = clf.predict(test_array)
-            savePredictedValues(testfile, predictedValue)
+            savePredictedValues(request.session['current_test_file_name'], predictedValue)
             
             #print predictedValue.shape
             print "done"
@@ -530,7 +527,7 @@ def savePredictedValues(filename, predictedValue):
     with BufferedWriter( FileIO( 'Category_Modeler/static/predictedvalues/%s' % filename, "wb" ) ) as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',')
         for i in range(len(predictedValue)):
-            spamwriter.writerow(predictedValue[i])
+            spamwriter.writerow([predictedValue[i]])
     csvfile.close();
 
 

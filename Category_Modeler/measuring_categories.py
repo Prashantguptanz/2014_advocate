@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 from operator import itemgetter
-import gdal
+import gdal, osr
 from gdalconst import *
 from io import FileIO, BufferedWriter
 import csv
@@ -220,12 +220,35 @@ class ManageRasterData:
             
             
             
-
+    def read_raster_and_print(self):
+        dataset = gdal.Open('static/data/%s' % self.raster_files, GA_ReadOnly)
+        cols = dataset.RasterXSize
+        rows = dataset.RasterYSize
+        noOfBands = dataset.RasterCount
+        driver = dataset.GetDriver().LongName
+        geotransform = dataset.GetGeoTransform()
+        originX = geotransform[0]
+        originY = geotransform[3]
+        pixelWidth = geotransform[1]
+        pixelHeight = geotransform[5]
+        prj = dataset.GetProjection()
+        
+        return cols, rows, noOfBands, driver, originX, originY, pixelWidth, pixelHeight, prj
+            
     
-
+    def create_raster(self):
+        cols, rows, bands, driverName, originX, originY, pixelWidth, pixelHeight, prj = self.read_raster_and_print()
+        driver = gdal.GetDriverByName(driverName)
+        outRaster = driver.Create('test.tif', cols, rows, 1, gdal.GDT_Byte )
+        outRaster.SetGeoTransform(originX, pixelWidth, 0, originY, 0, pixelHeight)
+        outband = outRaster.GetRasterBand(1)
+        outband.WriteArray()
+        outRasterSRS = osr.SpatialReference(wkt=prj)
+        outRaster.SetProjection(outRasterSRS.ExportToWkt())
+        outband.FlushCache()
             
-            
-#a= ManageRasterData('final3b.tif', 3)
+a= ManageRasterData('final3b.tif', 3)
+a.read_raster_and_print()
 #a.create_csv_file()        
                
                 
