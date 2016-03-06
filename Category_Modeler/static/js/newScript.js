@@ -630,8 +630,9 @@ $(function() {
 		$('#doclassification').on('click', function(e) {
 			e.preventDefault();
 			console.log("I am here");
-			
-			var newtestfile = $('#testfile').files[0];
+			console.log($('#testfile'))
+			console.log("done")
+			var newtestfile = ($('#testfile'))[0].files[0];
 			console.log("I am here again")
 			// Posting file to the server side using formdata
 			var formdata = new FormData();
@@ -644,7 +645,7 @@ $(function() {
 				contentType : false,
 				data : formdata,
 				success : function(response) {
-					
+					console.log("done")
 
 				}
 			});
