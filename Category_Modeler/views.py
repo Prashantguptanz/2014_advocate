@@ -72,7 +72,6 @@ def index(request):
         user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username  # @UndefinedVariable
         return render(request, 'home.html', {'user_name': user_name})
     form = UserCreationForm()
-    print request.session['_auth_user_id']
     return render(request, 'home.html', {'form': form})
 
 def saveexistingtaxonomydetails(request):
