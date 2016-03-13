@@ -4,7 +4,7 @@ from operator import itemgetter
 import gdal, osr, ogr, os
 from gdalconst import *
 from io import FileIO, BufferedWriter
-import csv
+
 
 class TrainingSample:
     
@@ -240,42 +240,56 @@ class ManageRasterData:
     
     def create_raster(self):
         cols, rows, bands, driverName, originX, originY, pixelWidth, pixelHeight, prj = self.read_raster_and_print()
-        dataarray = np.array(self.create_array_from_predicted_values(), dtype=np.uint8)
-        newcols = dataarray.shape[1]
-        newrows = dataarray.shape[0]
-        print cols, newcols
+        dataarray1, dataarray2, dataarray3 = self.create_array_from_predicted_values()
+      #  newcols = dataarray.shape[1]
+      #  newrows = dataarray.shape[0]
+      #  print cols, newcols
         driver = gdal.GetDriverByName('GTiff')
         driver.Register()
-        outRaster = driver.Create('test.tif', cols, rows, 1, gdal.GDT_Byte )
+        outRaster = driver.Create('test.tif', cols, rows, 3, gdal.GDT_Byte )
         outRaster.SetGeoTransform((originX, pixelWidth, 0.0, originY, 0.0, pixelHeight))
-        outband = outRaster.GetRasterBand(1)
-        dataarray = np.array(self.create_array_from_predicted_values(), dtype=np.uint8)
-        print dataarray.shape
+        outbandR = outRaster.GetRasterBand(1)
+        outbandG = outRaster.GetRasterBand(2)
+        outbandB = outRaster.GetRasterBand(3)
+        #dataarray = np.array(self.create_array_from_predicted_values(), dtype=np.uint8)
         
-        newarray = dataarray[::-1]
-        outband.WriteArray(np.transpose(dataarray))
+        outbandR.WriteArray(np.array(dataarray1, dtype=np.uint8))
+        outbandG.WriteArray(np.array(dataarray2, dtype=np.uint8))
+        outbandB.WriteArray(np.array(dataarray3, dtype=np.uint8))
         outRaster.SetProjection(prj)
        # outRasterSRS = osr.SpatialReference(wkt=prj)
        # outRaster.SetProjection(outRasterSRS.ExportToWkt())
-        outband.FlushCache()
+        outbandR.FlushCache()
+        outbandG.FlushCache()
+        outbandB.FlushCache()
     
     def create_array_from_predicted_values(self):
         filename = "final3b.csv"
         with open('static/predictedvaluesinnumbers/%s' % filename, 'rU') as datafile:
             dataReader = csv.reader(datafile, delimiter=',', quoting=csv.QUOTE_NONE)
-            data_array=[]
-            final_array=[]
+            data_array1=[]
+            data_array2=[]
+            data_array3=[]
+            final_array1=[]
+            final_array2=[]
+            final_array3=[]
             i=0
             j=0
             for row in dataReader:
-                data_array.append(row[0])
+                data_array1.append(row[0])
+                data_array2.append(row[1])
+                data_array3.append(row[2])
                 i=i+1
-                if i==865:
-                    final_array.append(data_array)
+                if i==1171:
+                    final_array1.append(data_array1)
+                    final_array2.append(data_array2)
+                    final_array3.append(data_array3)
                     j=j+1
                     i=0
-                    data_array=[]
-            return final_array
+                    data_array1=[]
+                    data_array2=[]
+                    data_array3=[]  
+            return final_array1, final_array2, final_array3
                 
     def find_and_replace(self):
         ifile = open('static/predictedvalues/%s' % self.raster_files, 'rb')
@@ -284,7 +298,7 @@ class ManageRasterData:
         writer = csv.writer(ofile, delimiter = ',')
         
         findlist = ['water', 'shadow', 'forest', 'grassland', 'artificial surface', 'cloud']
-        replacelist = ['4', '2', '6', '7', '5', '1']
+        replacelist = ['115,178,255', '52,52,52', '38,115,0', '85,255,0', '255,127,127', '255,255,255']
         
         s = ifile.read()
         for item, replacement in zip(findlist, replacelist):
@@ -377,9 +391,10 @@ class ManageRasterData:
         src_ds1 = None
         new_file1 = None
         
-a= ManageRasterData('img05.tif', 1)
+a= ManageRasterData('final3b.tif', 3)
+a.create_raster()
 #a.create_csv_from_one_band_raster()
-a.test1()
+#a.test1()
 
 #a.find_and_replace()
 #a.read_raster_and_print()
