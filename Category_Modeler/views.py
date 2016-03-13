@@ -508,13 +508,10 @@ def supervised(request):
             print request.session['current_signature_file']
             request.session['current_test_file_name'] = testfile.name
             testFileAsArray = read_test_file_as_array(testfile)
-            print testFileAsArray[0]
             test_array=numpy.array(testFileAsArray)
             modelname = request.session['current_signature_file']
             clf = joblib.load('Category_Modeler/static/classificationmodel/%s' %modelname)
             predictedValue = clf.predict(test_array)
-            print predictedValue[0]
-            print predictedValue.shape
             savePredictedValues(request.session['current_test_file_name'], predictedValue)
             
             #print predictedValue.shape

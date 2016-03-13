@@ -1,0 +1,21 @@
+<VRTDataset rasterXSize="1171" rasterYSize="865">
+  <GeoTransform>  2.8538475000000000e+05,  2.8500000000000000e+01,  0.0000000000000000e+00, -4.0709257500000000e+06,  0.0000000000000000e+00, -2.8500000000000000e+01</GeoTransform>
+  <Metadata />
+  <VRTRasterBand dataType="Byte" band="1">
+    <Metadata />
+    <ColorInterp>Palette</ColorInterp>
+    <ColorTable>
+	   <Entry c1="0" c2="0" c3="255" c4="240"/>
+	   <Entry c1="0" c2="0" c3="254" c4="240"/>
+	   <Entry c1="0" c2="0" c3="253" c4="240"/>
+	   <Entry c1="0" c2="0" c3="252" c4="240"/>
+	</ColorTable>
+    <SimpleSource>
+      <SourceFilename relativeToVRT="1">test.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="1171" RasterYSize="865" DataType="Byte" BlockXSize="1171" BlockYSize="6" />
+      <SrcRect xOff="0" yOff="0" xSize="1171" ySize="865" />
+      <DstRect xOff="0" yOff="0" xSize="1171" ySize="865" />
+    </SimpleSource>
+  </VRTRasterBand>
+</VRTDataset>

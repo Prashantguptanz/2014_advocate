@@ -1,0 +1,2 @@
+water;shadow;forest;grassland;artificial surface;cloud
+115,178,255;52,52,52;38,115,0;85,255,0;255,127,127;255,255,255
