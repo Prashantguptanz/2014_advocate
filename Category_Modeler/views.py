@@ -306,7 +306,6 @@ def signaturefile(request):
         targetAttributeIndex = features.index(targetattribute)
         
         trainingSampleArray, targetValueArray = createSampleArray(trainingFileAsArray, targetAttributeIndex)
-        print trainingSampleArray
         data_array=numpy.array(trainingSampleArray, dtype=numpy.float32)
         target_array=numpy.array(targetValueArray)
         modelname = "model_" + str(datetime.now())
@@ -380,7 +379,10 @@ def signaturefile(request):
         confusionmatrix_instance = Confusionmatrix.objects.get(confusionmatrix_name=cmname)
         tc = LearningActivity(classifier=classifier_instance, model= signaturefile_instance, validation = validationtype, validation_score= score, confusionmatrix=confusionmatrix_instance, completed_by= authuser_instance)
         tc.save()    
-        
+        current_activity_instance = LearningActivity.objects.get(model_id = signaturefile_instance.id).id
+        exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'learning', activity_instance = current_activity_instance)
+        exp_chain.save()
+        request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
         
         if (classifiername=="Naive Bayes"):
             return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc})
@@ -522,6 +524,9 @@ def calculateAccuracies(confusionMatrix):
 def supervised(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
     
+    if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
+        messages.error(request, "Choose an activity before you proceed further")
+        return HttpResponseRedirect("/AdvoCate/home/", {'user_name': user_name})
     
     if request.method == 'POST' and request.is_ajax():
         print request.session['current_signature_file']
