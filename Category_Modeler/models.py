@@ -171,7 +171,7 @@ class ComputationalIntension(models.Model):
         db_table = 'computational_intension'
 
 class ClassificationActivity(models.Model):
-    classificationmodel_id = models.ForeignKey(Classificationmodel, db_column='classificationmodel_id')
+    model = models.ForeignKey(Classificationmodel)
     testfile_location = models.CharField(max_length=1024)
     testfile_name = models.CharField(max_length=100)
     classifiedfile_location = models.CharField(max_length=1024)

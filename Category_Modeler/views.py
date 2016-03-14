@@ -9,7 +9,7 @@ import csv, json, numpy
 import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity, Confusionmatrix, ExplorationChain
+from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity, Confusionmatrix, ExplorationChain, ClassificationActivity
 import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
@@ -21,6 +21,14 @@ import matplotlib.pyplot as plt
 import pydot
 from Category_Modeler.measuring_categories import DecisionTreeIntensionalModel
 
+
+#Different Files Locations
+NEW_TRAINING_DATA_LOCATION = 'Category_Modeler/static/data/'
+EXISTING_TRAINING_DATA_LOCATION = 'Category_Modeler/static/trainingfiles/'
+CLASSIFICATION_MODEL_LOCATION = 'Category_Modeler/static/classificationmodel/'
+CLASSIFIED_DATA_LOCATION = 'Category_Modeler/static/predictedvalues/'
+VALIDATION_DATA_LOCATION = 'Category_Modeler/static/validationfiles/'
+IMAGE_LOCATION = 'Category_Modeler/static/images/'
 
 # Login and logout methods
 
@@ -529,7 +537,6 @@ def supervised(request):
         return HttpResponseRedirect("/AdvoCate/home/", {'user_name': user_name})
     
     if request.method == 'POST' and request.is_ajax():
-        print request.session['current_signature_file']
         if request.FILES:
             testfile = request.FILES['testfile']
             print request.session['current_signature_file']
@@ -544,6 +551,15 @@ def supervised(request):
             #print predictedValue.shape
             print "done"
             return HttpResponse("done");
+        authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
+        model_instance = Classificationmodel.objects.get(model_name=request.session['current_signature_file'])
+        tc = ClassificationActivity(model=model_instance, testfile_location = 'Category_Modeler/static/testfiles/', testfile_name = request.session['current_test_file_name'], classifiedfile_location = 'Category_Modeler/static/predictedvalues/', classifiedfile_name = request.session['current_test_file_name'], completed_by= authuser_instance)
+        tc.save()    
+        current_activity_instance = ClassificationActivity.objects.get(model_id = model_instance.id, testfile_name = request.session['current_test_file_name']).id
+        exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'classification', activity_instance = current_activity_instance)
+        exp_chain.save()
+        request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
+        
     
     
     if Classificationmodel.objects.exists(): # @UndefinedVariable
