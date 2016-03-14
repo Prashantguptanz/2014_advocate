@@ -391,8 +391,8 @@ class ManageRasterData:
         src_ds1 = None
         new_file1 = None
         
-a= ManageRasterData('final3b.tif', 3)
-a.create_raster()
+#a= ManageRasterData('final3b.tif', 3)
+#a.create_raster()
 #a.create_csv_from_one_band_raster()
 #a.test1()
 

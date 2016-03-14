@@ -282,7 +282,7 @@ class ExplorationChain(models.Model):
     )
     id = models.IntegerField(primary_key=True)
     step = models.IntegerField(primary_key=True)
-    current_activity = models.CharField(choices=activity_type, max_length=256)
+    activity = models.CharField(choices=activity_type, max_length=256)
     activity_instance = models.IntegerField()
 
     class Meta:

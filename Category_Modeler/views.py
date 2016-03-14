@@ -9,7 +9,7 @@ import csv, json, numpy
 import gdal
 from gdalconst import *
 from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity, Confusionmatrix
+from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity, Confusionmatrix, ExplorationChain
 import os, pickle
 from datetime import datetime
 from sklearn.naive_bayes import GaussianNB
@@ -72,7 +72,7 @@ def index(request):
         user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username  # @UndefinedVariable
         return render(request, 'home.html', {'user_name': user_name})
     form = UserCreationForm()
-    print request.session['_auth_user_id']
+    #print request.session['_auth_user_id']
     return render(request, 'home.html', {'form': form})
 
 def saveexistingtaxonomydetails(request):
@@ -80,6 +80,14 @@ def saveexistingtaxonomydetails(request):
         data = request.POST
         request.session['existing_taxonomy_name'] = data['existingtaxonomies'];
         request.session['external_trigger'] = data['externaltriggers']
+        #Trying to get the last id of exploration chain
+        latestidarray = ExplorationChain.objects.all().order_by("id")
+        if not latestidarray:
+            latestid = 0
+        else:
+            latestid = latestidarray[0].id
+        request.session['exploration_chain_id'] = latestid
+        request.session['exploration_chain_step'] = 1
     return HttpResponse("Upload new training samples or choose an existing one, and start the exploration process!");
 
 def savenewtaxonomydetails(request):
@@ -87,6 +95,13 @@ def savenewtaxonomydetails(request):
         data = request.POST
         request.session['new_taxonomy_name'] = data['newtaxonomyname']
         request.session['new_taxonomy_description'] = data['description']
+    latestidarray = ExplorationChain.objects.all().order_by("-id")
+    if not latestidarray:
+        latestid = 0
+    else:
+        latestid = latestidarray[0].id
+    request.session['exploration_chain_id'] = latestid
+    request.session['exploration_chain_step'] = 1
     return HttpResponse("Upload training samples by switching to 'Training Samples' tab, and start the modelling process!");
 
 
@@ -96,9 +111,9 @@ def savenewtaxonomydetails(request):
 @login_required
 def trainingsampleprocessing(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username 
-    print request.session['new_taxonomy_name']
-    print request.session['new_taxonomy_description']
-    
+   # print request.session['new_taxonomy_name']
+   # print request.session['new_taxonomy_description']
+    print request.session['exploration_chain_id']
     if request.method == 'POST' and request.is_ajax():
         if request.FILES:
             trainingfile = request.FILES['trainingfile']
@@ -161,6 +176,10 @@ def savetrainingdatadetails(request):
         tr_activity.save()
         request.session['current_training_file_id'] = int(latestid)+1
         request.session['current_training_file_ver'] = 1
+        current_activity_instance = TrainingsetCollectionActivity.objects.get(trainingset_id=request.session['current_training_file_id'], trainingset_ver =request.session['current_training_file_ver']).id
+        exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'trainingset collection', activity_instance = current_activity_instance)
+        exp_chain.save()
+        request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
     return HttpResponse("We got the data");
 
 
@@ -187,7 +206,10 @@ def saveNewTrainingVersion(request):
         tr_activity.save()
         request.session['current_training_file_name'] = newfilename
         request.session['current_training_file_ver'] = int(version)+1
-        
+        current_activity_instance = ChangeTrainingsetActivity.objects.get(newtrainingset_id=request.session['current_training_file_id'], newtrainingset_ver =request.session['current_training_file_ver']).id
+        exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'change trainingset', activity_instance = current_activity_instance)
+        exp_chain.save()
+        request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
     return HttpResponse("Changed dataset is saved as a new version");
         
 # create a file with similar name as provided in the static folder and copy all the contents    
@@ -247,7 +269,7 @@ def handle_raster_file(request, f):
 @login_required
 def signaturefile(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username # @UndefinedVariable
-    print request.session['current_training_file_name']
+   # print request.session['current_training_file_name']
     
     if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
         messages.error(request, "Choose an activity before you proceed further")
