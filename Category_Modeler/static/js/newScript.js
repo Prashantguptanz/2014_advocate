@@ -280,32 +280,51 @@ $(function() {
 			$('#instanceslabel').show();
 			$('#attributeslabel').show();
 
-			var ext = this.value.match(/\.(.+)$/)[1];
-			var newtrainingdataset = this.files[0];
-			if (ext == 'csv') {
-				// FileReader Object reads the content
-				// of file as text string into memory
-				var reader = new FileReader();
-
-				reader.onload = function(event) {
-					var csv = reader.result; // I can also write
-												// event.target.result
-					var trainingdata = $.csv.toArrays(csv);
-
-					$('#instances').html(trainingdata.length - 1);
-					$('#Attributes').html(trainingdata[0].length);
-
-					$('#trainingdataTable').show();
-					hot.loadData(trainingdata);
-
-				};
-				reader.readAsText(newtrainingdataset);
-
+			//var ext = this.value.match(/\.(.+)$/)[1];
+			
+		//	var newtrainingdataset = this.files[0];
+			var newtrainingdatasets = this.files;
+			
+			// If only one file is uploaded
+			if (newtrainingdatasets.length ==1){
+				var ext = this.value.match(/\.(.+)$/)[1];
+			
+				if (ext == 'csv') {
+					// FileReader Object reads the content
+					// of file as text string into memory
+					var reader = new FileReader();
+	
+					reader.onload = function(event) {
+						var csv = reader.result; // I can also write
+													// event.target.result
+						var trainingdata = $.csv.toArrays(csv);
+	
+						$('#instances').html(trainingdata.length - 1);
+						$('#Attributes').html(trainingdata[0].length);
+	
+						$('#trainingdataTable').show();
+						hot.loadData(trainingdata);
+	
+					};
+					reader.readAsText(newtrainingdatasets[0]);
+	
+				}
 			}
-
+			console.log(newtrainingdatasets);
 			// Posting file to the server side using formdata
 			var formdata = new FormData();
-			formdata.append("trainingfile", newtrainingdataset);
+			$.each(newtrainingdatasets, function(i, file){
+				formdata.append('file', file);
+			});
+		
+	//		$.each(newtrainingdatasets, function(i, file) {
+	//	        formdata.append('file['+i+']', file);
+	//		});
+			testdata = new FormData();
+			testdata.append("trainingfile", newtrainingdatasets[0]);
+			console.log(testdata);
+		//	formdata.append("trainingfile", newtrainingdatasets);
+			console.log(formdata);
 			$.ajax({
 				type : "POST",
 				url : "http://127.0.0.1:8000/AdvoCate/trainingsample/",
@@ -314,7 +333,7 @@ $(function() {
 				contentType : false,
 				data : formdata,
 				success : function(response) {
-					if (response['Content-Disposition']) {
+					if (response['Content-Disposition'] !== -1) {
 						// newfile = response['training File'];
 						var trainingdata = $.csv.toArrays(response);
 						$('#instances').html(trainingdata.length - 1);
@@ -335,21 +354,12 @@ $(function() {
 			setTrainingSamplesTableHeight();
 		});
 
-		$('#savetrainingdatadetails')
-				.on(
-						'click',
-						function(e) {
-							e.preventDefault();
-							var $this = $('#newtrainingdatasetdetails');
-							$
-									.post(
-											"http://127.0.0.1:8000/AdvoCate/savetrainingdatadetails/",
-											$this.serialize(), function(
-													response) {
-
-											});
-
-						});
+		$('#savetrainingdatadetails').on('click', function(e) {
+			e.preventDefault();
+			var $this = $('#newtrainingdatasetdetails');
+			$.post("http://127.0.0.1:8000/AdvoCate/savetrainingdatadetails/", $this.serialize(), function(response) {
+			});
+		});
 
 		$('#saveChanges').on('click', function() {
 			// So after the execution it doesn't refresh back

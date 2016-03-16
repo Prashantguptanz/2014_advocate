@@ -6,10 +6,12 @@ import csv
 
 class ManageRasterData:
     
-    RASTER_DATA_LOCATION = 'static/data/'
+    RASTER_DATA_LOCATION = 'Category_Modeler/static/data/'
     
-    def __init__(self, *args):
-        self.raster_files = args
+    def __init__(self, files):
+        self.raster_files = files
+        print self.raster_files
+        print self.raster_files[0]
 
     def extract_raster_info(self, filename):
         dataset = gdal.Open('%s%s' %(ManageRasterData.RASTER_DATA_LOCATION, filename), GA_ReadOnly)
@@ -53,7 +55,7 @@ class ManageRasterData:
                 for j in range (columns):
                     for k in range(noOfBands):
                         tempArray.append(dataFromEachBand[k][i][j])
-                        tempArray.append(className)
+                    tempArray.append(className)
                     rasterArray.append(tempArray)
                     tempArray=[]
         
@@ -81,6 +83,7 @@ class ManageRasterData:
                 spamwriter.writerow(['band1', 'band2', 'band3', 'class'])
             else:
                 spamwriter.writerow(['band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7', 'band8', 'class'])
+            csvfile.close();
         
     
             for eachFile in self.raster_files:
@@ -91,6 +94,8 @@ class ManageRasterData:
                     spamwriter = csv.writer(csvfile, delimiter=',')
                     for i in range(len(rasterArray)):
                         spamwriter.writerow(rasterArray[i])
+                    csvfile.close();
+                
     
     
     def convert_raster_csv_file_to_array(self, fileName, fileLocation, rows, columns, numOfBands):

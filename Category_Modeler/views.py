@@ -20,6 +20,7 @@ from sklearn.externals.six import StringIO
 import matplotlib.pyplot as plt
 import pydot
 from Category_Modeler.measuring_categories import DecisionTreeIntensionalModel
+from Category_Modeler.data_processing import ManageRasterData
 
 
 #Different Files Locations
@@ -118,24 +119,38 @@ def savenewtaxonomydetails(request):
 
 @login_required
 def trainingsampleprocessing(request):
-    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username 
-   # print request.session['new_taxonomy_name']
-   # print request.session['new_taxonomy_description']
-    print request.session['exploration_chain_id']
+    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
+    
     if request.method == 'POST' and request.is_ajax():
         if request.FILES:
-            trainingfile = request.FILES['trainingfile']
-            request.session['current_training_file_name'] = trainingfile.name.split('.', 1)[0] + '.csv'
-            if trainingfile.name.split(".")[-1] == "csv":
-                handle_uploaded_file(request, trainingfile)
-                return HttpResponse("We got the file");
+            trainingFilesList = request.FILES.getlist('file')
+            if len(trainingFilesList)==1:
+                trainingfile = trainingFilesList[0]
+                request.session['current_training_file_name'] = trainingfile.name.split('.', 1)[0] + '.csv'      
+                if trainingfile.name.split(".")[-1] == "csv":
+                    handle_uploaded_file(request, trainingfile)
+                    return HttpResponse("We got the file");
+                else:
+                    handle_raster_file(request, trainingfile)
+                    filename = trainingfile.name.split('.', 1)[0] + '.csv'
+                    fp = file("Category_Modeler/static/trainingfiles/%s" % filename, 'rb')
+                    response = HttpResponse( fp, content_type='text/csv')
+                    response['Content-Disposition'] = 'attachment; filename="training File"'
+                    return response
             else:
-                handle_raster_file(request, trainingfile)
-                filename = trainingfile.name.split('.', 1)[0] + '.csv'
-                fp = file("Category_Modeler/static/trainingfiles/%s" % filename, 'rb')
-                response = HttpResponse( fp, content_type='text/csv')
-                response['Content-Disposition'] = 'attachment; filename="training File"'
-                return response
+                request.session['current_training_file_name'] = 'temp.csv'
+                if trainingFilesList[0].name.split(".")[-1] == "tif":
+                    rasterFileList = []
+                    for rasterfile in trainingFilesList:
+                        rasterFileList.append(rasterfile.name)
+                    managedata = ManageRasterData(rasterFileList)
+                    managedata.combine_multiple_raster_files_to_csv_file(request.session['current_training_file_name'], EXISTING_TRAINING_DATA_LOCATION)
+                    fp = file("%s%s" % (EXISTING_TRAINING_DATA_LOCATION, request.session['current_training_file_name']), 'rb')
+                    print fp
+                    response = HttpResponse( fp, content_type='text/csv')
+                    response['Content-Disposition'] = 'attachment; filename="training File"'
+                    return response
+                
         else:
             data = request.POST
             trainingfilepkey = data['1']
@@ -148,7 +163,7 @@ def trainingsampleprocessing(request):
             trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
             fp = file (trainingfilelocation+trainingfilename, 'rb')
             response = HttpResponse( fp, content_type='text/csv')
-            response['Content-Disposition'] = 'attachment; filename="training File"'
+            response['Content-Disposition'] = 'attachment; filename="temp.csv"'
             return response
 
     else:
@@ -222,7 +237,7 @@ def saveNewTrainingVersion(request):
         
 # create a file with similar name as provided in the static folder and copy all the contents    
 def handle_uploaded_file(request, f):
-    with BufferedWriter( FileIO( 'Category_Modeler/static/trainingfiles/%s' % f, "wb" ) ) as dest:
+    with BufferedWriter( FileIO( '%s%s' % (EXISTING_TRAINING_DATA_LOCATION, f), "wb" ) ) as dest:
         foo = f.read(1024)  
         while foo:
             dest.write(foo)
