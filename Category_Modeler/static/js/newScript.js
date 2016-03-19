@@ -56,7 +56,7 @@ $(function() {
 
 	$('.nav.nav-pills.nav-justified > li').each(
 			function() {
-				var $this = $(this)
+				var $this = $(this);
 				if (loc.match('http://127.0.0.1:8000'
 						+ $this.children().attr('href'))) {
 					$this.addClass("active");
@@ -73,7 +73,7 @@ $(function() {
 			$('#register-dropdown').hide(); // visible removes the class
 			// "active"
 		} else {
-			$('#signin-dropdown').show()
+			$('#signin-dropdown').show();
 			$('#session').addClass('active'); // When the dropdown is visible
 			// add class "active"
 		}
@@ -234,6 +234,7 @@ $(function() {
 				}
 
 				$('#saveChanges').show();
+				$('#changedtrainingdata').show();
 			},
 			cells : function(row, col, prop) {
 				var cellProperties = {};
@@ -279,7 +280,7 @@ $(function() {
 		$('#trainingfile').on('change', function() {
 			$('#instanceslabel').show();
 			$('#attributeslabel').show();
-
+			$('#trainingfileformatError').html("");
 			//var ext = this.value.match(/\.(.+)$/)[1];
 			
 		//	var newtrainingdataset = this.files[0];
@@ -310,21 +311,12 @@ $(function() {
 	
 				}
 			}
-			console.log(newtrainingdatasets);
+			
 			// Posting file to the server side using formdata
 			var formdata = new FormData();
 			$.each(newtrainingdatasets, function(i, file){
 				formdata.append('file', file);
 			});
-		
-	//		$.each(newtrainingdatasets, function(i, file) {
-	//	        formdata.append('file['+i+']', file);
-	//		});
-			testdata = new FormData();
-			testdata.append("trainingfile", newtrainingdatasets[0]);
-			console.log(testdata);
-		//	formdata.append("trainingfile", newtrainingdatasets);
-			console.log(formdata);
 			$.ajax({
 				type : "POST",
 				url : "http://127.0.0.1:8000/AdvoCate/trainingsample/",
@@ -333,8 +325,11 @@ $(function() {
 				contentType : false,
 				data : formdata,
 				success : function(response) {
-					if (response['Content-Disposition'] !== -1) {
-						// newfile = response['training File'];
+					if (response['error']){
+						console.log(response['error']);
+						$('#trainingfileformatError').html(response['error']);
+					}
+					else if (response['Content-Disposition'] !== -1) {
 						var trainingdata = $.csv.toArrays(response);
 						$('#instances').html(trainingdata.length - 1);
 						$('#Attributes').html(trainingdata[0].length);
@@ -342,7 +337,6 @@ $(function() {
 						$('#trainingdataTable').show();
 						hot.loadData(trainingdata);
 					}
-
 				}
 			});
 
@@ -374,6 +368,9 @@ $(function() {
 				data : JSON.stringify(hot.getData()),
 				success : function(response) {
 					$('#saveChanges').hide();
+					$('#changedtrainingdata').hide();
+					$('#newversionstoredsuccessfully').show();
+					$('#successmessage').html(response);
 				}
 
 			});
@@ -403,179 +400,99 @@ $(function() {
 
 				});
 
-		$('#createsignaturefile')
-				.on(
-						'click',
-						function(e) {
-							if ($('#classifiertype').val() != ""
-									&& $('#targetattribute').val() != undefined
-									&& $('input[name=validationoption]:checked')
-											.val() != null) {
-								e.preventDefault();
-								var $this = $('#trainingoptions');
-								var formData = new FormData($this[0]);
-								$
-										.ajax({
-											type : "POST",
-											url : "http://127.0.0.1:8000/AdvoCate/signaturefile/",
-											async : true,
-											processData : false,
-											contentType : false,
-											data : formData,
-											success : function(response) {
-												console.log(response['kappa']);
-												$('#validationscore')
-														.html(
-																"<b>Validation score:  </b>"
-																		+ response['score']);
-												$('#kappa')
-														.html(
-																"<b>Kappa:  </b>"
-																		+ response['kappa']);
-												if (response['meanvectors']) {
-													console
-															.log(response['meanvectors'])
-													$(
-															'#DecisionTreemodeldetails')
-															.hide()
-													$('#NaiveBayesmodeldetails')
-															.show();
-													var a = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Mean Vector </th></tr>"
-													for (var i = 0; i < response['listofclasses'].length; i++) {
-														a = a
-																+ "<tr><td>"
-																+ response['listofclasses'][i]
-																+ "</td><td>"
-														var meanvectorarray = response['meanvectors'][i]
-														for (var j = 0; j < meanvectorarray.length; j++) {
-															a = a
-																	+ parseFloat(
-																			meanvectorarray[j])
-																			.toFixed(
-																					2)
-																	+ " |  "
-														}
-														a = a + "</td></tr>";
-													}
-													a = a + "</table>";
-													$('#meanvectors').html(a);
-
-													var b = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Variance </th></tr>"
-													for (var i = 0; i < response['listofclasses'].length; i++) {
-														b = b
-																+ "<tr><td>"
-																+ response['listofclasses'][i]
-																+ "</td><td>"
-														var variancearray = response['variance'][i]
-														for (var k = 0; k < variancearray.length; k++) {
-															b = b
-																	+ parseFloat(
-																			variancearray[k])
-																			.toFixed(
-																					2)
-																	+ " |  "
-														}
-
-														b = b + "</td></tr>";
-													}
-													b = b + "</table>";
-													$('#variance').html(b);
-
-													var c = "<img style=\"width:100%; height:100%\" src=\"/static/images/"
-															+ response['cm']
-															+ "\" />";
-													$('#confusionmatrix1')
-															.html(c);
-
-													var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>"
-													for (var i = 0; i < response['listofclasses'].length; i++) {
-														d = d
-																+ "<tr><td>"
-																+ response['listofclasses'][i]
-																+ "</td><td>"
-														var producerAccuracy = parseFloat(response['prodacc'][i])
-														var userAccuracy = parseFloat(response['useracc'][i])
-														d = d
-																+ producerAccuracy
-																+ "</td><td>"
-																+ userAccuracy
-																+ "</td><td>"
-																+ parseFloat(
-																		1 - producerAccuracy)
-																		.toFixed(
-																				2)
-																+ "</td><td>"
-																+ parseFloat(
-																		1 - userAccuracy)
-																		.toFixed(
-																				2)
-																+ "</td></tr>"
-
-													}
-													d = d + "</table>";
-													$('#Error/Accuracy')
-															.html(d);
-
-													$('#meanvectors').hide();
-													$('#variance').hide();
-													$('#confusionmatrix1')
-															.hide();
-													$('#Error/Accuracy').hide()
-												} else {
-													$('#NaiveBayesmodeldetails')
-															.hide();
-													$(
-															'#DecisionTreemodeldetails')
-															.show();
-													var a = "<img style=\"width:100%; height:100%\" src=\"/static/images/"
-															+ response['tree']
-															+ "\" />";
-													$('#decisiontree').html(a);
-													var b = "<img style=\"width:100%; height:100%\" src=\"/static/images/"
-															+ response['cm']
-															+ "\" />";
-													$('#confusionmatrix2')
-															.html(b);
-													var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>"
-													for (var i = 0; i < response['listofclasses'].length; i++) {
-														d = d
-																+ "<tr><td>"
-																+ response['listofclasses'][i]
-																+ "</td><td>"
-														var producerAccuracy = parseFloat(response['prodacc'][i])
-														var userAccuracy = parseFloat(response['useracc'][i])
-														d = d
-																+ producerAccuracy
-																+ "</td><td>"
-																+ userAccuracy
-																+ "</td><td>"
-																+ parseFloat(
-																		1 - producerAccuracy)
-																		.toFixed(
-																				2)
-																+ "</td><td>"
-																+ parseFloat(
-																		1 - userAccuracy)
-																		.toFixed(
-																				2)
-																+ "</td></tr>"
-
-													}
-													d = d + "</table>";
-													$('#accuracies').html(d);
-													$('#accuracies').hide()
-													$('#decisiontree').hide();
-													$('#confusionmatrix2')
-															.hide();
-
-												}
-
-											}
-
-										});
+		$('#createsignaturefile').on('click', function(e) {
+				if ($('#classifiertype').val() != "" && $('#targetattribute').val() != undefined && $('input[name=validationoption]:checked').val() != null) {
+					e.preventDefault();
+					var $this = $('#trainingoptions');
+					var formData = new FormData($this[0]);
+					$.ajax({
+							type : "POST",
+							url : "http://127.0.0.1:8000/AdvoCate/signaturefile/",
+							async : true,
+							processData : false,
+							contentType : false,
+							data : formData,
+							success : function(response) {
+								$('#validationscore').html("<b>Validation score:  </b>"+ response['score']);
+								$('#kappa').html("<b>Kappa:  </b>"+ response['kappa']);
+								if (response['meanvectors']) {
+									$('#DecisionTreemodeldetails').hide();
+									$('#NaiveBayesmodeldetails').show();
+									var a = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Mean Vector </th></tr>";
+									for (var i = 0; i < response['listofclasses'].length; i++) {
+										a = a + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
+										var meanvectorarray = response['meanvectors'][i];
+										for (var j = 0; j < meanvectorarray.length; j++) {
+											a = a + parseFloat(meanvectorarray[j]).toFixed(2) + " |  ";
+										}
+										a = a + "</td></tr>";
+									}
+									a = a + "</table>";
+									$('#meanvectors').html(a);
+	
+									var b = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Variance </th></tr>";
+									for (var i = 0; i < response['listofclasses'].length; i++) {
+										b = b + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
+										var variancearray = response['variance'][i];
+										for (var k = 0; k < variancearray.length; k++) {
+											b = b + parseFloat(variancearray[k]).toFixed(2) + " |  ";
+										}
+	
+										b = b + "</td></tr>";
+									}
+									b = b + "</table>";
+									$('#variance').html(b);
+	
+									var c = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['cm'] + "\" />";
+									$('#confusionmatrix1').html(c);
+	
+									var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>";
+									for (var i = 0; i < response['listofclasses'].length; i++) {
+										d = d + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
+										var producerAccuracy = parseFloat(response['prodacc'][i]);
+										var userAccuracy = parseFloat(response['useracc'][i]);
+										d = d + producerAccuracy + "</td><td>" + userAccuracy + "</td><td>" + parseFloat(1 - producerAccuracy).toFixed(2)
+											+ "</td><td>" + parseFloat(1 - userAccuracy).toFixed(2) + "</td></tr>";
+	
+									}
+									d = d + "</table>";
+									$('#ErrorAccuracy').html(d);
+									$('#meanvectors').hide();
+									$('#variance').hide();
+									$('#confusionmatrix1').hide();
+									$('#ErrorAccuracy').hide();
+								} else {
+									$('#NaiveBayesmodeldetails').hide();
+									$('#DecisionTreemodeldetails').show();
+									var a = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['tree'] + "\" />";
+									$('#decisiontree').html(a);
+									var b = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['cm'] + "\" />";
+									$('#confusionmatrix2').html(b);
+									var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>";
+									for (var i = 0; i < response['listofclasses'].length; i++) {
+										d = d + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
+										var producerAccuracy = parseFloat(response['prodacc'][i]);
+										var userAccuracy = parseFloat(response['useracc'][i]);
+										d = d + producerAccuracy + "</td><td>" + userAccuracy + "</td><td>" + parseFloat(1 - producerAccuracy).toFixed(2)
+											+ "</td><td>" + parseFloat(1 - userAccuracy).toFixed(2)+ "</td></tr>";
+	
+									}
+									d = d + "</table>";
+									$('#accuracies').html(d);
+									$('#accuracies').hide();
+									$('#decisiontree').hide();
+									$('#confusionmatrix2')
+											.hide();
+	
+								}
+	
 							}
+	
+					});
+				 
+				 }
 
-						});
+			});
 
 		$('input[name="NaiveBayesmodeldetails"]').on(
 				'click',
@@ -588,23 +505,23 @@ $(function() {
 						$('#meanvectors').show();
 						$('#variance').hide();
 						$('#confusionmatrix1').hide();
-						$('#Error/Accuracy').hide();
+						$('#ErrorAccuracy').hide();
 					} else if (detailsoption == '2') {
 						console.log(detailsoption);
 						$('#meanvectors').hide();
 						$('#variance').show();
 						$('#confusionmatrix1').hide();
-						$('#Error/Accuracy').hide();
+						$('#ErrorAccuracy').hide();
 					} else if (detailsoption == '3') {
 						$('#meanvectors').hide();
 						$('#variance').hide();
 						$('#confusionmatrix1').show();
-						$('#Error/Accuracy').hide();
+						$('#ErrorAccuracy').hide();
 					} else {
 						$('#meanvectors').hide();
 						$('#variance').hide();
 						$('#confusionmatrix1').hide();
-						$('#Error/Accuracy').show();
+						$('#ErrorAccuracy').show();
 
 					}
 				});
@@ -635,15 +552,11 @@ $(function() {
 	// Script for 'Classification' page
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/supervised/')) {
-
 		// Script to deal with when the test file is uploaded
 		$('#doclassification').on('click', function(e) {
 			e.preventDefault();
 			console.log("I am here");
-			console.log($('#testfile'))
-			console.log("done")
 			var newtestfile = ($('#testfile'))[0].files[0];
-			console.log("I am here again")
 			// Posting file to the server side using formdata
 			var formdata = new FormData();
 			formdata.append("testfile", newtestfile);
@@ -655,12 +568,84 @@ $(function() {
 				contentType : false,
 				data : formdata,
 				success : function(response) {
-					console.log("done")
-
+					var c = "<img style=\"width:95%; height:95%\" src=\"/static/maps/" + response['map'] + "\" />";
+					$('#classifiedmap').html(c);
+					var d = "<label>Legend</label>"
+									+ "<table style=\"width:100%\" class=\" table table-bordered\">"
+									+ "<tr><td>"
+									+ "<img src=\"/static/images/artificial_surface.png\" />"
+									+ "</td><td>" + "Artificial surface"
+									+ "</td></tr>"
+									+ "<tr><td>"
+									+ "<img src=\"/static/images/forest.png\" />"
+									+ "</td><td>" + "Forest"
+									+ "</td></tr>"
+									+ "<tr><td>"
+									+ "<img src=\"/static/images/grassland.png\" />"
+									+ "</td><td>" + "Grassland"
+									+ "</td></tr>"
+									+ "<tr><td>"
+									+ "<img src=\"/static/images/water.png\" />"
+									+ "</td><td>" + "Water"
+									+ "</td></tr>"
+									+ "<tr><td>"
+									+ "<img src=\"/static/images/shadow.png\" />"
+									+ "</td><td>" + "Shadow"
+									+ "</td></tr>"
+									+ "<tr><td>"
+									+ "<img src=\"/static/images/inland_water.png\" />"
+									+ "</td><td>" + "Inland Water"
+									+ "</td></tr>"
+									+ "<tr><td>"
+									+ "<img src=\"/static/images/cloud.png\" />"
+									+ "</td><td>" + "Cloud"
+									+ "</td></tr>"
+							
+									+ "</table>";
+						
+					$('#categorycolors').html(d);
+					
 				}
 			});
 		});
 
+	}
+
+	// Script for 'Classification' page
+
+	if (loc.match('http://127.0.0.1:8000/AdvoCate/changerecognition/')) {
+		
+		$('#yesforchange').on('click', function(e) {
+			e.preventDefault();
+			$.get("http://127.0.0.1:8000/AdvoCate/createChangeEventForNewTaxonomy/", function(data){
+				$('#listofchangeoperations').show();
+				var d = "<table style=\"width:50%\" class=\" table table-bordered\">";
+				d = d + "<tr><th>No.</th><th>Change operation</th>" ;
+				for (var k = 1; k < data['listOfOperations'].length+1; k++) {
+					d = d + "<tr><td>" + k + "</td>" + "<td>" + data['listOfOperations'][k-1] + "</td></tr>";
+				}				
+				d = d + "</table>";
+				
+		
+				$('#listofchangeoperations').html(d);
+				$('#commit').show();
+				
+				$('#yesforchange').attr('disabled', 'disabled');
+				$('#noforchange').attr('disabled', 'disabled');
+			});
+		});
+		
+		$('#yesforcommit').on('click', function(e) {
+			e.preventDefault();
+			$.get("http://127.0.0.1:8000/AdvoCate/applyChangeOperations/", function(data){
+				$('#listofchangeoperations').hide();
+				$('#commit').hide();
+				$('#implement').hide();
+			});
+		});
+		
+		
+		
 	}
 
 	// Script for visualization

@@ -8,7 +8,7 @@ from io import FileIO, BufferedWriter
 
 class TrainingSample:
     
-    TRAINING_FILE_LOCATION = 'static/trainingfiles/'
+    TRAINING_FILE_LOCATION = 'Category_Modeler/static/trainingfiles/'
     
     def __init__(self, training_file_name):
         self.training_file_name = training_file_name
@@ -134,7 +134,61 @@ class DecisionTreeIntensionalModel:
         return rules, values
 
   #  def compare_decision_rules(self, other):
+
+class StatisticalMethods:
+    
+    def calculateSumOfRows(self, confusionMatrix):
+        sumRows = []
+        for i, row in enumerate(confusionMatrix):
+            for j,column in enumerate(row):
+                if i<=len(sumRows)-1:
+                    b=sumRows.pop(i)
+                    sumRows.insert(i, (column+b))
+                else:
+                    sumRows.insert(i, column)
+        return sumRows
+
+    def calculateSumOfColumns(self, confusionMatrix):
+        sumColumns = []
+        for i, row in enumerate(confusionMatrix):
+            for j,column in enumerate(row):
+                if j<=len(sumColumns)-1:
+                    a=sumColumns.pop(j)
+                    sumColumns.insert(j, (column+a))
+                else:
+                    sumColumns.insert(j, column)
+        return sumColumns
+                                    
+    def calculateKappa(self, confusionMatrix):
+        # confusionMatrix = check_arrays(confusionMatrix)
+        sumRows = self.calculateSumOfRows(confusionMatrix)
+        sumColumns = self.calculateSumOfColumns(confusionMatrix)
+        sumOfWeights=0
+        for weight in sumRows:
+            sumOfWeights +=weight
         
+        correct=float(0)
+        chanceAgreement=float(0)
+        for i,row in enumerate(confusionMatrix):
+            chanceAgreement += (sumRows[i] * sumColumns[i])
+            correct += row[i]
+        chanceAgreement /= (sumOfWeights * sumOfWeights)
+        correct /= sumOfWeights
+        if chanceAgreement<1:
+            return (correct-chanceAgreement)/(1-chanceAgreement)
+        else:
+            return 1
+    
+    def calculateAccuracies(self, confusionMatrix):
+        sumRows = self.calculateSumOfRows(confusionMatrix)
+        sumColumns = self.calculateSumOfColumns(confusionMatrix)
+        producersAccuracy=[]
+        usersAccuracy = []
+        for i, row in enumerate(confusionMatrix):
+            producersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumColumns[i]))))
+            usersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumRows[i]))))
+            
+        return producersAccuracy, usersAccuracy        
                 
 class ManageRasterData:
     
@@ -234,19 +288,19 @@ class ManageRasterData:
         a = geotransform[2]
         b = geotransform[4]
         prj = dataset.GetProjection()
-        print cols, rows, noOfBands, driver, originX, originY, pixelWidth, pixelHeight, prj, a, b
         return cols, rows, noOfBands, driver, originX, originY, pixelWidth, pixelHeight, prj
             
     
     def create_raster(self):
         cols, rows, bands, driverName, originX, originY, pixelWidth, pixelHeight, prj = self.read_raster_and_print()
         dataarray1, dataarray2, dataarray3 = self.create_array_from_predicted_values()
+        print len(dataarray1[0]), len(dataarray1), len(dataarray2[0]), len(dataarray2), len(dataarray3[0]), len(dataarray3)
       #  newcols = dataarray.shape[1]
       #  newrows = dataarray.shape[0]
       #  print cols, newcols
         driver = gdal.GetDriverByName('GTiff')
         driver.Register()
-        outRaster = driver.Create('test.tif', cols, rows, 3, gdal.GDT_Byte )
+        outRaster = driver.Create('test1.tif', cols, rows, 3, gdal.GDT_Byte )
         outRaster.SetGeoTransform((originX, pixelWidth, 0.0, originY, 0.0, pixelHeight))
         outbandR = outRaster.GetRasterBand(1)
         outbandG = outRaster.GetRasterBand(2)
@@ -265,7 +319,7 @@ class ManageRasterData:
     
     def create_array_from_predicted_values(self):
         filename = "final3b.csv"
-        with open('static/predictedvaluesinnumbers/%s' % filename, 'rU') as datafile:
+        with open('static/predictedvaluesRGB/%s' % filename, 'rU') as datafile:
             dataReader = csv.reader(datafile, delimiter=',', quoting=csv.QUOTE_NONE)
             data_array1=[]
             data_array2=[]

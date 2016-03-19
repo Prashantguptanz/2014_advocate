@@ -6,7 +6,16 @@ _auth_user_id
 existing_taxonomy_name
 external_trigger
 
+exploration_chain_id
+exploration_chain_step
+
 
 current_training_file_name
 current_training_file_id
 current_training_file_ver
+
+current_model_name
+current_model_id
+
+current_test_file_name
+current_predicted_file_name

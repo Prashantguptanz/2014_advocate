@@ -96,7 +96,10 @@ class Classifier(models.Model):
 class Concept(models.Model):
     concept_name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-
+    date_created = models.DateTimeField(default=datetime.now)
+    date_expired = models.DateTimeField()
+    created_by = models.ForeignKey(AuthUser, db_column='created_by')
+    
     class Meta:
         managed = False
         db_table = 'concept'

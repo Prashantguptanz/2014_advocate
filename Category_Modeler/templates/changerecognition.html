@@ -1,0 +1,63 @@
+{% extends "base.html" %} {% block content %}
+<div class="container">
+	
+	{% csrf_token %}
+	
+	<div style="width: 100%; float:center; border-style: solid; border-width: 1px; margin-bottom: 10px; padding: 10px, 10px, 10px, 10px; border-color: #E5E5E5" >
+		<legend style="font-size: 18px;  background-color: gainsboro" align="center">Summary of current exploration</legend>
+		<p style="font-size: 16px; margin-left: 10px; margin-right: 10px">
+			A taxonomy <strong><em>{{taxonomyName}}</em></strong> is conceptualized with the following concepts:
+			{% for concept in conceptsList %}
+			<strong>{{concept}}</strong>, 	
+			{% endfor %}		
+		 </p>
+		 <p style="font-size: 16px;  margin-left: 10px; margin-right: 10px">
+		 	The computational intension of the taxonomy is conceptualized as a {{modelType}} model with an accuracy of {{modelScore}}.
+		 </p>
+		 <p style="font-size: 16px; margin-left: 10px; margin-right: 10px">
+		 	Categories corresponding to each concept, along with their accuracies are as below:
+		 </p>
+		 		 
+		 <table class=" table table-bordered" style="width:35%; margin-left: 10px;">
+		 	<tr>
+		 		<th>Category</th>
+		 		<th>User accuracy</th>
+		 		<th>Producer accuracy</th>		 		
+		 	</tr>
+		 	{% for concept in conceptsList %}
+		 	{% with forloop.counter|cut:" " as index %}
+		 	<tr>
+		 		<td>{{concept}}</td>
+		 		<td>{{userAccuracies|slice:index|last}}</td>
+		 		<td>{{producerAccuracies|slice:index|last}}</td>
+		 	</tr>
+		 	{% endwith %}
+		 	{% endfor %}
+		 </table>
+		 <br />
+		 <div id="implement" style="margin-left: 10px;">
+		 <label style="margin-left: 10px" for="chooseButtons">Do you wish to implement these changes in AdvoCate:</label>&nbsp; &nbsp;
+		 <button id="yesforchange" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
+		 <button id="noforchange" class="btn btn-default">  No</button>
+		 </div>
+		 <br />
+		 <br />
+		 <div id="listofchangeoperations" style="display:none; margin-left: 10px;">
+		 </div>
+		 <div id="commit" style="display:none; margin-left: 10px;">
+		 	<br />
+			<label style="margin-left: 10px" for="chooseButtons">Do you wish to commit these change operations:</label>&nbsp; &nbsp;
+			<button id="yesforcommit" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
+			<button id="noforcommit" class="btn btn-default">  No</button>
+		 </div>
+		 
+		 
+		
+	</div>
+
+	
+	
+	
+
+</div>
+{% endblock %}

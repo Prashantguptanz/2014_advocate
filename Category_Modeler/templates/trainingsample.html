@@ -25,14 +25,21 @@
 						<input type="file" id="trainingfile" name="trainingfile" accept=".csv,.xls,.tif,.png,.adf" multiple disabled/>
 					</span>
 					
-					
+					<br /><br />
 				</div>
+				<div style="margin-left: 5px; margin-right: 5px">	
+					<p id="trainingfileformatError" style= "color: red"> <em> </em> </p>
+				</div>
+					
+				
 			</form>
-			<br /><br />
 			<form  id="newtrainingdatasetdetails" style="display:none" enctype="multipart/form-data" action="#">
 				<legend style="font-size: 16px; background-color: gainsboro" align="center">Enter new training dataset details</legend>
 				<div style=" margin-left: 5px; margin-right: 5px" >
-				  
+				  	<div class="form-group">
+						<label for="TrainingFileName" style ="font-weight:normal">Save training data as</label><br />
+						<input type="text" name="TrainingFileName" value="" id="TrainingFileName" placeholder="Enter Name"/>
+					</div>
 					<div class="form-group">
 						<label for="FieldResearcherName" style ="font-weight:normal">Field Researcher's Name</label><br />
 						<input type="text" name="FieldResearcherName" value="" id="FieldResearcherName" placeholder="Enter Name"/>
@@ -63,12 +70,19 @@
 			<div style = "margin-left:5px"> 
 				<label for="instances" id = "instanceslabel" style="font-weight: normal; display:none">Instances: <span	id="instances"> </span></label>
 				&nbsp; &nbsp; &nbsp; &nbsp;
-				<label for="attribute" id = "attributeslabel" style="font-weight: normal; display:none">No of attributes: <span id="Attributes"> </span> </label>
+				<label for="Attributes" id = "attributeslabel" style="font-weight: normal; display:none">No of attributes: <span id="Attributes"> </span> </label>
 			</div>
 			<br />
 			<div id= "trainingdataTable" class="handsontable" style="overflow: scroll; margin-left: 5px; display:none" >
 			</div>
 			<br/>
+			<div id = "changedtrainingdata" style="margin-left: 5px; display:none" >
+				<label for="reasonforchange" style ="font-weight:normal">Enter details of change</label><br />
+				<textarea name="reasonforchange" rows="8" cols="40" id="reasonforchange" placeholder="Enter any more relevant details"> </textarea>
+			</div>
+			<div id = "newversionstoredsuccessfully" style="margin-left: 5px; display:none" >
+				<p id="successmessage" style= "color: green"> <em> </em> </p><br />
+			</div>
 			<button id="saveChanges" style="display:none" class="btn btn-default">Save changes </button>
 		</div>
 	</div>
