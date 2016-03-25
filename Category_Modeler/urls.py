@@ -1,12 +1,13 @@
 from django.conf.urls import patterns, url
 from Category_Modeler.views import index, saveexistingtaxonomydetails, savenewtaxonomydetails, trainingsampleprocessing, supervised, createChangeEventForNewTaxonomy, applyChangeOperations
 from Category_Modeler.views import savetrainingdatadetails, saveNewTrainingVersion, signaturefile, visualizer, loginrequired, logout_view, auth_view, register_view, changeRecognizer
-
+from Category_Modeler.views import compareexistingtaxonomies
 urlpatterns = patterns('',
         url(r'^$', index),
         url(r'^home/$', index),
         url(r'^saveexistingtaxonomydetails/$', saveexistingtaxonomydetails),
         url(r'^savenewtaxonomydetails/$', savenewtaxonomydetails),
+        url(r'^compareexistingtaxonomies/$', compareexistingtaxonomies),        
         url(r'^trainingsample/$', trainingsampleprocessing),
         url(r'^signaturefile/$', signaturefile),  
         url(r'^supervised/$', supervised),

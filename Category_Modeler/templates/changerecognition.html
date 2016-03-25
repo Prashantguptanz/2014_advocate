@@ -3,10 +3,19 @@
 	
 	{% csrf_token %}
 	
+	{% if error_message %}
+	<div id="errormessage">
+	  <p id="displayerrormessage" style= "color: red"> <em>{{error_message}} </em> </p>
+	</div>
+	{% endif %}
+	
+	
+	{% if existing_taxonomyName %}
 	<div style="width: 100%; float:center; border-style: solid; border-width: 1px; margin-bottom: 10px; padding: 10px, 10px, 10px, 10px; border-color: #E5E5E5" >
+	
 		<legend style="font-size: 18px;  background-color: gainsboro" align="center">Summary of current exploration</legend>
 		<p style="font-size: 16px; margin-left: 10px; margin-right: 10px">
-			A taxonomy <strong><em>{{taxonomyName}}</em></strong> is conceptualized with the following concepts:
+			A taxonomy <strong><em>{{existing_taxonomyName}}</em></strong> is conceptualized with the following concepts:
 			{% for concept in conceptsList %}
 			<strong>{{concept}}</strong>, 	
 			{% endfor %}		
@@ -50,11 +59,17 @@
 			<button id="yesforcommit" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
 			<button id="noforcommit" class="btn btn-default">  No</button>
 		 </div>
+		 <div id="commitsuccessmessage" style="display:none; margin-left: 10px;" >
+		 	<p id = "successmessage" style="font-size: 16px; margin-left: 10px; margin-right: 10px">
+		 	
+		 	</p>
+		   
+		 </div>
 		 
 		 
 		
 	</div>
-
+	{% endif %}
 	
 	
 	

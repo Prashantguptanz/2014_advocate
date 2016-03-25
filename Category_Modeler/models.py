@@ -142,7 +142,7 @@ class Legend(models.Model):
     date_expired = models.DateTimeField()
     description = models.TextField(blank=True)
     created_by = models.ForeignKey(AuthUser, db_column='created_by')
-    model_id = models.ForeignKey(Classificationmodel)
+    model = models.ForeignKey(Classificationmodel)
 
     def __unicode__(self):
         return self.legend_name
@@ -155,19 +155,16 @@ class Legend(models.Model):
 class LegendConceptCombination(models.Model):
     legend_id = models.IntegerField()
     legend_ver = models.IntegerField()
-    concept_id = models.ForeignKey(Concept)
+    concept = models.ForeignKey(Concept)
 
     class Meta:
         managed = False
         db_table = 'legend_concept_combination'
-        unique_together = ("legend_id", "legend_ver")
+        unique_together = ("legend_id", "legend_ver", "concept")
         
 class ComputationalIntension(models.Model):
-    file_name = models.CharField(max_length=100)
-    filelocation = models.CharField(max_length=1024)
-    created = models.DateTimeField()
-    created_by = models.ForeignKey(AuthUser, db_column='created_by')
-    learning_activity_id = models.ForeignKey(LearningActivity, db_column='learning_activity_id', blank=True, null=True)
+    mean_vector_id = models.IntegerField(blank=True, null=True)
+    confusion_matrix_id = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -187,7 +184,9 @@ class ClassificationActivity(models.Model):
         db_table = 'classification_activity'
 
 class Extension(models.Model):
-    classification_activity = models.ForeignKey(ClassificationActivity)
+    id = models.IntegerField(primary_key=True)
+    x = models.IntegerField(primary_key=True, db_column='X')  # Field name made lowercase.
+    y = models.IntegerField(primary_key=True, db_column='Y')  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -196,7 +195,6 @@ class Extension(models.Model):
 class Category(models.Model):
     category_id = models.IntegerField(primary_key=True)
     category_ver = models.IntegerField(primary_key=True)
-    category_name = models.CharField(max_length=100)
     date_created = models.DateTimeField(default=datetime.now)
     date_expired = models.DateTimeField()
     description = models.TextField(blank=True)
@@ -205,7 +203,7 @@ class Category(models.Model):
     creator = models.ForeignKey(AuthUser, db_column='creator')
     legend_concept_combination_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_combination_id')
     computational_intension_id = models.ForeignKey(ComputationalIntension, db_column='computational_intension_id')
-    extension_id = models.ForeignKey(Extension, db_column='extension_id')
+    extension_id = models.IntegerField()
     
     class Meta:
         managed = False
@@ -219,6 +217,7 @@ class ChangeTrainingsetActivity(models.Model):
     newtrainingset_ver = models.IntegerField()
     completed = models.DateTimeField(default=datetime.now)
     completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
+    reason_for_change = models.CharField(max_length=1024)
 
     class Meta:
         managed = False
@@ -328,8 +327,8 @@ class HierarchicalRelationship(models.Model):
     )
     relationship_name = models.CharField(choices=hierarchical_relationship_type, max_length=256)
     expired = models.NullBooleanField()
-    concept1 = models.ForeignKey(Concept, related_name='concept1')
-    concept2 = models.ForeignKey(Concept, related_name='concept2')
+    concept1 = models.ForeignKey(LegendConceptCombination, related_name='concept1')
+    concept2 = models.ForeignKey(LegendConceptCombination, related_name='concept2')
 
     class Meta:
         managed = False
@@ -439,3 +438,28 @@ class TrainingsetCollectionActivity(models.Model):
         managed = False
         db_table = 'trainingset_collection_activity'
         unique_together = ("trainingset_id", "trainingset_ver")
+
+class MeanVector(models.Model):
+    band1 = models.FloatField()
+    band2 = models.FloatField()
+    band3 = models.FloatField()
+    band4 = models.FloatField(blank=True, null=True)
+    band5 = models.FloatField(blank=True, null=True)
+    band6 = models.FloatField(blank=True, null=True)
+    band7 = models.FloatField(blank=True, null=True)
+    band8 = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'mean_vector'
+
+
+class CovarianceMatrix(models.Model):
+    covariance_matrix_id  = models.IntegerField(primary_key=True)
+    matrix_row = models.IntegerField(primary_key=True)
+    matrix_column = models.IntegerField(primary_key=True)
+    cell_value = models.FloatField()
+
+    class Meta:
+        managed = False
+        db_table = 'covariance_matrix'

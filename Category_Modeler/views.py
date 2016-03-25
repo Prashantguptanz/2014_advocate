@@ -1,21 +1,21 @@
+import csv, json, numpy, pydot, os
+import matplotlib.pyplot as plt
+from io import FileIO, BufferedWriter
+from datetime import datetime
 from django.shortcuts import render, HttpResponse, HttpResponseRedirect
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-import csv, json, numpy
-from io import FileIO, BufferedWriter
-from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity, Confusionmatrix, ExplorationChain, ClassificationActivity
-import os
-from datetime import datetime
-from sklearn.naive_bayes import GaussianNB
+from django.db import transaction
 from sklearn import tree, svm, cross_validation, metrics
 from sklearn.externals import joblib
+from sklearn.naive_bayes import GaussianNB
 from sklearn.externals.six import StringIO
-import matplotlib.pyplot as plt
-import pydot
-from Category_Modeler.measuring_categories import TrainingSample, NormalDistributionIntensionalModel, DecisionTreeIntensionalModel, StatisticalMethods
+from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity
+from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Legend
+from Category_Modeler.measuring_categories import TrainingSample, NormalDistributionIntensionalModel, DecisionTreeIntensionalModel, StatisticalMethods, ClassifiedFile
 from Category_Modeler.data_processing import ManageRasterData
 from Category_Modeler.database_transactions import QueryDatabase
 
@@ -30,6 +30,8 @@ IMAGE_LOCATION = 'Category_Modeler/static/images/'
 CLASSIFIED_DATA_LOCATION = 'Category_Modeler/static/predictedvalues/'
 CLASSIFIED_DATA_IN_RGB_LOCATION = 'Category_Modeler/static/predictedvaluesRGB/'
 OUTPUT_RASTER_FILE_LOCATION = 'Category_Modeler/static/maps/'
+
+
 # Login and logout methods
 
 def register_view(request):
@@ -78,17 +80,30 @@ def logout_view(request):
 def index(request):
     if '_auth_user_id' in request.session:
         user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username  # @UndefinedVariable
-        return render(request, 'home.html', {'user_name': user_name})
+        if Legend.objects.exists(): # @UndefinedVariable
+            legend_list = Legend.objects.all()  # @UndefinedVariable
+        return render(request, 'home.html', {'user_name': user_name, 'legend_list':legend_list})
     form = UserCreationForm()
     return render(request, 'home.html', {'form': form})
 
 def saveexistingtaxonomydetails(request):
     if request.method == 'POST':
         data = request.POST
-        request.session['existing_taxonomy_name'] = data['existingtaxonomies'];
+        request.session['existing_taxonomy_name'] = data['existingtaxonomies']
         request.session['external_trigger'] = data['externaltriggers']
-        request.session['exploration_chain_id'] = ExplorationChain.objects.latest("id").id
+        if ExplorationChain.objects.all().exists():
+            request.session['exploration_chain_id'] = ExplorationChain.objects.latest("id").id + 1
+        else:
+            request.session['exploration_chain_id'] =0
         request.session['exploration_chain_step'] = 1
+    if 'new_taxonomy_name' in request.session:
+        del request.session['new_taxonomy_name']
+        del request.session['new_taxonomy_description']
+        request.session.modified = True
+    if 'view_existing_taxonomies' in request.session:
+        del request.session['view_existing_taxonomies']
+        request.session.modified = True
+    
     return HttpResponse("Upload new training samples or choose an existing one, and start the exploration process!");
 
 def savenewtaxonomydetails(request):
@@ -96,11 +111,34 @@ def savenewtaxonomydetails(request):
         data = request.POST
         request.session['new_taxonomy_name'] = data['newtaxonomyname']
         request.session['new_taxonomy_description'] = data['description']
-        request.session['exploration_chain_id'] = ExplorationChain.objects.latest("id").id
+        if ExplorationChain.objects.all().exists():
+            request.session['exploration_chain_id'] = ExplorationChain.objects.latest("id").id + 1
+        else:
+            request.session['exploration_chain_id'] =0
+        
         request.session['exploration_chain_step'] = 1
+    if 'existing_taxonomy_name' in request.session:
+        del request.session['existing_taxonomy_name']
+        del request.session['external_trigger']
+        request.session.modified = True
+    if 'view_existing_taxonomies' in request.session:
+        del request.session['view_existing_taxonomies']
+        request.session.modified = True
     return HttpResponse("Upload training samples by switching to 'Training Samples' tab, and start the modelling process!");
 
-
+def compareexistingtaxonomies(request):
+    if request.method == 'POST':
+        data = request.POST
+        request.session['view_existing_taxonomies'] = True
+    if 'existing_taxonomy_name' in request.session:
+        del request.session['existing_taxonomy_name']
+        del request.session['external_trigger']
+        request.session.modified = True
+    if 'new_taxonomy_name' in request.session:
+        del request.session['new_taxonomy_name']
+        del request.session['new_taxonomy_description']
+        request.session.modified = True
+    return HttpResponse("Click on Visualization tab and compare and explore the existing taxonomies!");
 
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
 
@@ -167,7 +205,10 @@ def savetrainingdatadetails(request):
         request.session['current_training_file_name'] = trainingFileName
         
         #add training dataset details in trainingset table and a collection activity in trainingset_collection_activity table
-        latestid = Trainingset.objects.latest("trainingset_id").trainingset_id
+        if Trainingset.objects.all().exists():
+            latestid = Trainingset.objects.latest("trainingset_id").trainingset_id
+        else:
+            latestid = 0
         tr = Trainingset(trainingset_id=int(latestid)+1, trainingset_ver =1, trainingset_name=request.session['current_training_file_name'], description=otherDetails, date_expired=datetime(9999, 9, 12), filelocation=EXISTING_TRAINING_DATA_LOCATION)
         tr.save(force_insert=True)
         tr_activity = TrainingsetCollectionActivity( trainingset_id= int(latestid)+1, trainingset_ver =1, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'), trainingset_location=location, collector=researcherName, description= otherDetails)
@@ -178,16 +219,32 @@ def savetrainingdatadetails(request):
         exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'trainingset collection', activity_instance = current_activity_instance)
         exp_chain.save()
         request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
+    
+    del request.session['model_type']    
+    del request.session['current_model_name']
+    del request.session['current_model_id']
+    del request.session['model_score']
+    del request.session['producer_accuracies']
+    del request.session['user_accuracies']
+    del request.session['current_test_file_name']
+    del request.session['current_predicted_file_name']
+    del request.session['current_test_file_columns']
+    del request.session['current_test_file_rows']
+    request.session.modified = True
+        
     return HttpResponse("");
 
 
 def saveNewTrainingVersion(request):
     if request.method=='POST':
+        
         data = json.loads(request.body)
+        
+        change_message = data.pop(0)
         filename= request.session['current_training_file_name']
         version = request.session['current_training_file_ver']
         fileid= request.session['current_training_file_id']
-        newfilename = (filename.split('.')[0]).split('_')[0] + "_ver" + str(int(version)+1) + ".csv"
+        newfilename = filename.rpartition('_')[0] + "_ver" + str(int(version)+1) + ".csv"
         f1 = open('%s%s' % (EXISTING_TRAINING_DATA_LOCATION, newfilename), 'w')
         writer = csv.writer(f1)
         for i in range(len(data)):
@@ -200,14 +257,30 @@ def saveNewTrainingVersion(request):
         tr = Trainingset(trainingset_id=int(fileid), trainingset_ver =int(version)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation=EXISTING_TRAINING_DATA_LOCATION)
         tr.save(force_insert=True)
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
-        tr_activity = ChangeTrainingsetActivity( oldtrainingset_id= int(fileid), oldtrainingset_ver =int(version), newtrainingset_id=int(fileid), newtrainingset_ver=int(version)+1, completed_by=authuser_instance)
+        
+        tr_activity = ChangeTrainingsetActivity( oldtrainingset_id= int(fileid), oldtrainingset_ver =int(version), newtrainingset_id=int(fileid), newtrainingset_ver=int(version)+1, completed_by=authuser_instance, reason_for_change = change_message)
         tr_activity.save()
+        
         request.session['current_training_file_name'] = newfilename
         request.session['current_training_file_ver'] = int(version)+1
-        current_activity_instance = ChangeTrainingsetActivity.objects.get(newtrainingset_id=request.session['current_training_file_id'], newtrainingset_ver =request.session['current_training_file_ver']).id
-        exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'change trainingset', activity_instance = current_activity_instance)
+        
+        exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'change trainingset', activity_instance = tr_activity.id)
         exp_chain.save()
+        
         request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
+        
+    del request.session['model_type']    
+    del request.session['current_model_name']
+    del request.session['current_model_id']
+    del request.session['model_score']
+    del request.session['producer_accuracies']
+    del request.session['user_accuracies']
+    del request.session['current_test_file_name']
+    del request.session['current_predicted_file_name']
+    del request.session['current_test_file_columns']
+    del request.session['current_test_file_rows']
+    request.session.modified = True
+    
     return HttpResponse("Changes are implemented and new training file is saved as "+ newfilename);
         
 # create a file with similar name as provided in the static folder and copy all the contents    
@@ -233,14 +306,13 @@ def signaturefile(request):
     trainingfile = TrainingSample(request.session['current_training_file_name'])
     features = list(trainingfile.features)
     
+    
     if request.method=='POST':
         data = request.POST;        
         classifiername = data['classifiertype']
         request.session['model_type'] = classifiername
-        #targetattribute = data['targetattribute']
         validationoption = data['validationoption']
         classifier = chooseClassifier(classifiername)
-        #targetAttributeIndex = features.index(targetattribute)
         modelname = "model_" + str(datetime.now())
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         statistical_methods = StatisticalMethods()
@@ -258,15 +330,12 @@ def signaturefile(request):
             validationtype = "validation data"
             
         else:
-            print "I am here"
             folds = data['fold']
             validationtype = "cross validation"
             skf = cross_validation.StratifiedKFold(trainingfile.target, n_folds=int(folds))
-            print skf
             cm=[]
             count =0
             for train_index, test_index in skf:
-                print train_index, test_index
                 X_train, X_test = trainingfile.samples[train_index], trainingfile.samples[test_index]
                 y_train, y_test = trainingfile.target[train_index], trainingfile.target[test_index]
                 clf=classifier.fit(X_train, y_train)
@@ -276,7 +345,6 @@ def signaturefile(request):
                     count +=1
                     cm = individual_cm
                 else:
-                    # if (individual_cm.shape == cm.shape):
                     cm += individual_cm
     
             scores=cross_validation.cross_val_score(clf, trainingfile.samples, trainingfile.target, cv=int(folds))
@@ -313,16 +381,23 @@ def signaturefile(request):
         
         request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
         
+        if 'current_predicted_file_name' in request.session:
+            del request.session['current_test_file_name']
+            del request.session['current_predicted_file_name']
+            del request.session['current_test_file_columns']
+            del request.session['current_test_file_rows']
+            request.session.modified = True
+        
         if (classifiername=="Naive Bayes"):
             return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc})
         
         elif (classifiername=="C4.5"):
-          #  print clf.tree_.__getstate__()
-           # print clf.tree_.children_left
-           # print clf.tree_.children_right
-           # print clf.tree_.feature
-           # print clf.tree_.threshold
-           # print clf.tree_.value
+            #  print clf.tree_.__getstate__()
+            # print clf.tree_.children_left
+            # print clf.tree_.children_right
+            # print clf.tree_.feature
+            # print clf.tree_.threshold
+            # print clf.tree_.value
             newModel = DecisionTreeIntensionalModel(clf)
             dot_data = StringIO()
             tree.export_graphviz(clf, out_file=dot_data)
@@ -379,10 +454,12 @@ def supervised(request):
             predictedValue = clf.predict(testFileAsArray)
             request.session['current_predicted_file_name'] = testfile.name.split('.', 1)[0] + '.csv'
             savePredictedValues(request.session['current_predicted_file_name'], predictedValue)
+            
             manageData.find_and_replace_data_in_csv_file("config.txt", request.session['current_predicted_file_name'], CLASSIFIED_DATA_LOCATION, request.session['current_predicted_file_name'], CLASSIFIED_DATA_IN_RGB_LOCATION)
             outputMap = testfile.name.split('.', 1)[0] + '.tif'
-            manageData.create_raster_from_csv_file(request.session['current_predicted_file_name'], testfile.name, CLASSIFIED_DATA_IN_RGB_LOCATION, outputMap, OUTPUT_RASTER_FILE_LOCATION)
-            
+            columns, rows = manageData.create_raster_from_csv_file(request.session['current_predicted_file_name'], testfile.name, CLASSIFIED_DATA_IN_RGB_LOCATION, outputMap, OUTPUT_RASTER_FILE_LOCATION)
+            request.session['current_test_file_columns'] = columns
+            request.session['current_test_file_rows'] = rows
             authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
             model_instance = Classificationmodel.objects.get(model_name=request.session['current_model_name'])
             tc = ClassificationActivity(model=model_instance, testfile_location = 'Category_Modeler/static/testfiles/', testfile_name = request.session['current_test_file_name'], classifiedfile_location = 'Category_Modeler/static/predictedvalues/', classifiedfile_name = request.session['current_predicted_file_name'], completed_by= authuser_instance)
@@ -419,19 +496,26 @@ def read_test_file_as_array(f):
 def changeRecognizer(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
     if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session:
-        messages.error(request, "Choose an activity before you proceed further")
-        return HttpResponseRedirect("/AdvoCate/home/", {'user_name': user_name})
+        if 'view_existing_taxonomies' not in request.session:
+            messages.error(request, "Choose an activity before you proceed further")
+            return HttpResponseRedirect("/AdvoCate/home/", {'user_name': user_name})
+        else:
+            messsage = "Choose visualization tab to view and compare existing taxonomies"
+            return render (request, 'changerecognition.html', {'user_name':user_name, 'error_message': messsage})
     elif 'existing_taxonomy_name' not in request.session:
-        new_taxonomy = request.session['new_taxonomy_name']
-        trainingfile = TrainingSample(request.session['current_training_file_name'])
-        concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
-        print concepts_in_current_taxonomy
-        model_accuracy = request.session['model_score']
-        user_accuracies = request.session['user_accuracies']
-        producer_accuracies = request.session['producer_accuracies']
-        model_type = request.session['model_type']
-        return render(request, 'changerecognition.html', {'taxonomyName': new_taxonomy, 'conceptsList':concepts_in_current_taxonomy, 'modelType': model_type, 'modelScore': model_accuracy, 'userAccuracies': user_accuracies, 'producerAccuracies': producer_accuracies})
-       
+        if 'current_predicted_file_name' not in request.session:
+            exp_incomplete = "The exploration process is not yet completed. No changes can be detected."
+            return render (request, 'changerecognition.html', {'user_name':user_name, 'error_message': exp_incomplete})
+        else:
+            new_taxonomy = request.session['new_taxonomy_name']
+            trainingfile = TrainingSample(request.session['current_training_file_name'])
+            concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
+            model_accuracy = request.session['model_score']
+            user_accuracies = request.session['user_accuracies']
+            producer_accuracies = request.session['producer_accuracies']
+            model_type = request.session['model_type']
+            return render(request, 'changerecognition.html', {'user_name':user_name, 'existing_taxonomyName': new_taxonomy, 'conceptsList':concepts_in_current_taxonomy, 'modelType': model_type, 'modelScore': model_accuracy, 'userAccuracies': user_accuracies, 'producerAccuracies': producer_accuracies})
+           
     return render (request, 'changerecognition.html', {'user_name':user_name})
 
 def createChangeEventForNewTaxonomy(request):
@@ -448,10 +532,36 @@ def createChangeEventForNewTaxonomy(request):
         changeOperation.append('create a category corresponding to concept ' + category)
         changeOperation.append('Add the computational intension of the above category')
         changeOperation.append('Add the extension of the above category')
-    request.session['list_of_change_operations'] = changeOperation
     return JsonResponse({'listOfOperations': changeOperation});
-    
+
+@transaction.atomic  
 def applyChangeOperations(request):
+    change_event_queries = QueryDatabase(request)
+    change_event_queries.create_legend()
+    trainingfile = TrainingSample(request.session['current_training_file_name'])
+    concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
+    covariance_mat = trainingfile.create_covariance_matrix()
+    mean_vectors = trainingfile.create_mean_vectors()
+    predicted_file = ClassifiedFile(request.session['current_predicted_file_name'])
+    extension = predicted_file.create_extension(request.session['current_test_file_columns'], request.session['current_test_file_rows'], request.session['current_training_file_name'])
+    for i in range(len(concepts_in_current_taxonomy)):
+        change_event_queries.create_concept(concepts_in_current_taxonomy[i], mean_vectors[i][1], covariance_mat[i][1],  extension[i])
+    
+    del request.session['new_taxonomy_name']
+    del request.session['new_taxonomy_description']
+    del request.session['exploration_chain_id']
+    del request.session['exploration_chain_step']
+    del request.session['current_training_file_name']
+    del request.session['current_training_file_id']
+    del request.session['current_training_file_ver']
+    del request.session['current_model_name']
+    del request.session['current_model_id']
+    del request.session['current_test_file_name']
+    del request.session['current_predicted_file_name']
+    del request.session['current_test_file_columns']
+    del request.session['current_test_file_rows']
+    request.session.modified = True
+    return HttpResponse("The changes are committed and stored in the database. Choose an activity from the Home page to continue further!")
     
 
 def visualizer(request):

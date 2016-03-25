@@ -28,6 +28,10 @@
 			Explore changes in an existing taxonomy
 			<br />
 			<br />
+			<input type="radio" name="chooseactivity" value="option3" id="viewexistinglegends"/>
+			View or compare existing taxonomies
+			<br />
+			<br />
 		</div>
 
 		<form  id="existingtaxonomydetails" style="display:none" enctype="multipart/form-data" action="#">
@@ -35,20 +39,22 @@
 			<div class="form-group">
 				<label for="existingtaxonomies" style="font-weight: normal"> Choose a taxonomy &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; <span>
 						<select name="existingtaxonomies" id="existingtaxonomies" required>
-							<option value="">Existing taxonomies</option>
-							<option value="1">NZ land cover taxonomy</option>
+							<option>Existing taxonomies</option>
+							{% for legend in legend_list %}
+							<option id="legend{{ forloop.counter }}" value="{{ legend.legend_name }}">{{ legend.legend_name }}</option>
+							{% endfor %}
 						</select> </span> </label>
 			</div>
 			<div class="form-group">
 				<label for="externaltriggers" style="font-weight: normal"> Choose an external trigger &nbsp; &nbsp; <span>
 						<select name="externaltriggers" id="externaltriggers" required >
 							<option value="">External triggers </option>
-							<option value="ET1"> Conceptual change </option>
-							<option value="ET2"> Social requirement </option>
-							<option value="ET3"> Scientific requirement </option>
-							<option value="ET4"> Error in data collection </option>
-							<option value="ET5"> New observation </option>
-							<option value="ET6"> Other </option>
+							<option value="Conceptual change"> Conceptual change </option>
+							<option value="Social requirement"> Social requirement </option>
+							<option value="Scientific requirement"> Scientific requirement </option>
+							<option value="Error in data collection"> Error in data collection </option>
+							<option value="New observation"> New observation </option>
+							<option value="Other"> Other </option>
 						</select> </span> </label>
 			</div>
 
@@ -76,6 +82,15 @@
 			</button>
 			<br /><br />
 			<p id = "messagefornewtaxonomymodelling" style="font-size: 16px"> </p>
+		</form>
+		
+		<form id="activitythree" style="display:none" enctype="multipart/form-data" action="#">
+			<button id="chooseactivitythree" class="btn btn-default">
+				Save  
+			</button>	
+			<br /><br />
+			<p id = "messageforviewingexistingtaxonomies" style="font-size: 16px"> </p>
+						  
 		</form>
 
 		{% if messages %}

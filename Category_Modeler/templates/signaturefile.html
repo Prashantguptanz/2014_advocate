@@ -20,12 +20,6 @@
 
 			<div style="float: right; margin-right: 1%">
 				{% if attributes %}
-				<select name="targetattribute" id="targetattribute" required  >
-					<option value="">Select target attribute</option>
-					{% for attr in attributes %}
-					<option value="{{ attr }}"> {{ attr }}
-						{% endfor %}
-				</select>
 				{% else %}
 				<p id="signinerror" class="error" style= "color: brown">
 					Select a training sample!

@@ -142,60 +142,53 @@ $(function() {
 			if ($this.attr('value') == 'option2') {
 				$('#existingtaxonomydetails').show();
 				$('#newtaxonomydetails').hide();
+				$('#activitythree').hide();
 			} else if ($this.attr('value') == 'option1') {
 				$('#existingtaxonomydetails').hide();
+				$('#activitythree').hide();
 				$('#newtaxonomydetails').show();
+			} else if ($this.attr('value') == 'option3') {
+				$('#newtaxonomydetails').hide();
+				$('#existingtaxonomydetails').hide();
+				$('#activitythree').show();
 			} else {
 				$('#newtaxonomydetails').hide();
 				$('#existingtaxonomydetails').hide();
+				$('#activitythree').hide();
 			}
 		});
 
-		$('#savetaxonomynameandexternaltrigger')
-				.on(
-						'click',
-						function(e) {
-							e.preventDefault();
-							var $this = $('#existingtaxonomydetails');
-							$
-									.post(
-											"http://127.0.0.1:8000/AdvoCate/saveexistingtaxonomydetails/",
-											$this.serialize(),
-											function(response) {
-												$(
-														'#savetaxonomynameandexternaltrigger')
-														.attr('disabled',
-																'disabled');
-												$('#messageforexploringchanges')
-														.html(response);
-												$('#chooseanactivitymessage')
-														.hide();
-											});
+		$('#savetaxonomynameandexternaltrigger').on('click', function(e) {
+			e.preventDefault();
+			var $this = $('#existingtaxonomydetails');
+			$.post("http://127.0.0.1:8000/AdvoCate/saveexistingtaxonomydetails/", $this.serialize(), function(response) {
+				$('#savetaxonomynameandexternaltrigger').attr('disabled','disabled');
+				$('#messageforexploringchanges').html(response);
+				$('#chooseanactivitymessage').hide();
+			});
 
-						});
+		});
 
-		$('#savenewtaxonomydetails')
-				.on(
-						'click',
-						function(e) {
-							e.preventDefault();
-							var $this = $('#newtaxonomydetails');
-							$
-									.post(
-											"http://127.0.0.1:8000/AdvoCate/savenewtaxonomydetails/",
-											$this.serialize(),
-											function(response) {
-												$('#savenewtaxonomydetails')
-														.attr('disabled',
-																'disabled');
-												$(
-														'#messagefornewtaxonomymodelling')
-														.html(response);
-												$('#chooseanactivitymessage')
-														.hide();
-											});
+		$('#savenewtaxonomydetails').on('click',function(e) {
+			e.preventDefault();
+			var $this = $('#newtaxonomydetails');
+			$.post("http://127.0.0.1:8000/AdvoCate/savenewtaxonomydetails/", $this.serialize(), function(response) {
+				$('#savenewtaxonomydetails').attr('disabled','disabled');
+				$('#messagefornewtaxonomymodelling').html(response);
+				$('#chooseanactivitymessage').hide();
+			});
 
-						});
+		});
+		
+		$('#chooseactivitythree').on('click',function(e) {
+			e.preventDefault();
+			$.post("http://127.0.0.1:8000/AdvoCate/compareexistingtaxonomies/", "activity3", function(response) {
+				$('#chooseactivitythree').attr('disabled','disabled');
+				$('#messageforviewingexistingtaxonomies').html(response);
+				$('#chooseanactivitymessage').hide();
+			});
+
+		});
 
 	}
 
@@ -357,7 +350,10 @@ $(function() {
 
 		$('#saveChanges').on('click', function() {
 			// So after the execution it doesn't refresh back
-			console.log(JSON.stringify(hot.getData()));
+			change_message = JSON.stringify($.trim($('#reasonforchange').val()));
+			table_data = hot.getData();
+			table_data.unshift(change_message);
+			data = JSON.stringify(table_data);
 			event.preventDefault();
 			$.ajax({
 				type : "POST",
@@ -365,7 +361,7 @@ $(function() {
 				async : true,
 				processData : false,
 				contentType : false,
-				data : JSON.stringify(hot.getData()),
+				data : data,
 				success : function(response) {
 					$('#saveChanges').hide();
 					$('#changedtrainingdata').hide();
@@ -401,7 +397,7 @@ $(function() {
 				});
 
 		$('#createsignaturefile').on('click', function(e) {
-				if ($('#classifiertype').val() != "" && $('#targetattribute').val() != undefined && $('input[name=validationoption]:checked').val() != null) {
+				if ($('#classifiertype').val() != "" && $('input[name=validationoption]:checked').val() != null) {
 					e.preventDefault();
 					var $this = $('#trainingoptions');
 					var formData = new FormData($this[0]);
@@ -641,8 +637,11 @@ $(function() {
 				$('#listofchangeoperations').hide();
 				$('#commit').hide();
 				$('#implement').hide();
+				$('#commitsuccessmessage').show();
+				$('#successmessage').html(data);
 			});
 		});
+		
 		
 		
 		

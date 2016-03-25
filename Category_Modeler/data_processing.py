@@ -87,7 +87,6 @@ class ManageRasterData:
             for eachFile in raster_files:
                 tempclassName = eachFile.split('.', 1)[0]
                 className = ''.join([i for i in tempclassName if not i.isdigit()])
-                print className
                 rasterArray = self.convert_raster_to_array(eachFile, className)
                   
                 with BufferedWriter( FileIO( '%s%s' % (targetFileLocation, targetFileName), "a" ) ) as csvfile:
@@ -129,7 +128,7 @@ class ManageRasterData:
                 data_array2.append(row[1])
                 data_array3.append(row[2])
                 i=i+1
-                if i==1171:
+                if i== columns:
                     final_array1.append(data_array1)
                     final_array2.append(data_array2)
                     final_array3.append(data_array3)
@@ -160,6 +159,7 @@ class ManageRasterData:
     
     def create_raster_from_csv_file(self, csvFile, referenceRasterFile, csvFileLocation, outputRasterFileName, outputRasterFileLocation):
         columns, rows, noOfBands, driver, originX, originY, pixelWidth, pixelHeight, prj = self.extract_raster_info(referenceRasterFile)
+        print columns, rows, noOfBands, driver, originX, originY, pixelWidth, pixelHeight, prj
         rasterBandValuesArrays1, rasterBandValuesArrays2, rasterBandValuesArrays3 = self.convert_raster_csv_file_to_array(csvFile, csvFileLocation, rows, columns, 3)
         #print len(rasterBandValuesArrays[0][0]), len(rasterBandValuesArrays[0]), len(rasterBandValuesArrays[1][0]), len(rasterBandValuesArrays[1]), len(rasterBandValuesArrays[2][0]), len(rasterBandValuesArrays[2])
         
@@ -182,6 +182,7 @@ class ManageRasterData:
         outbandR.FlushCache()
         outbandG.FlushCache()
         outbandB.FlushCache()
+        return columns, rows
         
         
     

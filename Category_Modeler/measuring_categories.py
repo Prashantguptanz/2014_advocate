@@ -51,6 +51,7 @@ class TrainingSample:
         for category in unique_categories:
             each_category_with_sample_range = []
             each_category_with_sample_range.append(category)
+             
             index= np.where(unique_categories==category)[0][0]
             each_category_with_sample_range.append(indices[index])
             if index==len(unique_categories)-1:
@@ -85,18 +86,92 @@ class TrainingSample:
         union_of_both_training_samples = np.union1d(ts1, ts2)
         jaccard_index = float(len(common_elements_in_both_samples)/len(union_of_both_training_samples))
         return jaccard_index
+    
+    def create_covariance_matrix(self):
+        categories_with_sample_range = self.split_training_samples_for_each_category()
+        list_of_covariance_matrices = []
+         
+        for each_category_with_sample_range in categories_with_sample_range:
+            each_category_with_matrix=[]
+            category = each_category_with_sample_range[0]
+            each_category_with_matrix.append(category)
+            lowerlimit = each_category_with_sample_range[1]
+            upperlimit = each_category_with_sample_range[2]
+            current_samples = self.samples[lowerlimit:upperlimit+1]
+            raw_matrix = np.matrix(current_samples)
+            no_of_rows = raw_matrix.shape[0]
+            a = np.empty(no_of_rows)
+            a.fill(1)
+            mat = np.matrix(a)
+            deviation_matrix = raw_matrix - (((mat.transpose()*mat)*(raw_matrix))/(no_of_rows))
+            deviation_matrix_transpose = deviation_matrix.transpose()
+            deviation_score_sums_of_square_matrix = deviation_matrix_transpose*deviation_matrix
+            covariance_matrix = deviation_score_sums_of_square_matrix/no_of_rows
+            each_category_with_matrix.append(covariance_matrix)
+            list_of_covariance_matrices.append(each_category_with_matrix)
+        return list_of_covariance_matrices
+    
+    def create_mean_vectors(self):
+        categories_with_sample_range = self.split_training_samples_for_each_category()
+        list_of_mean_vectors = []
+        for each_category_with_sample_range in categories_with_sample_range:
+            each_category_with_mean_vector=[]
+            category = each_category_with_sample_range[0]
+            each_category_with_mean_vector.append(category)
+            lowerlimit = each_category_with_sample_range[1]
+            upperlimit = each_category_with_sample_range[2]
+            current_samples = self.samples[lowerlimit:upperlimit+1]
+            mean = np.mean(current_samples, axis=0)
+            each_category_with_mean_vector.append(np.asarray(mean, dtype=np.float32))
+            list_of_mean_vectors.append(each_category_with_mean_vector)
+        return list_of_mean_vectors
+
+class ClassifiedFile:
+    
+    CLASSIFIED_FILE_LOCATION = 'Category_Modeler/static/predictedvalues/'
+    
+    def __init__(self, file_name):
+        self.predicted_file_name = file_name
         
+    def create_extension(self, columns, rows, trainingfile_name):
+        trainingfile = TrainingSample(trainingfile_name)
+        current_categories = list(np.unique(trainingfile.target))
+        
+        with open('%s%s' % (ClassifiedFile.CLASSIFIED_FILE_LOCATION, self.predicted_file_name), 'rU') as classified_file:
+            datareader = csv.reader(classified_file, delimiter=',')
+            classified_samples = list(datareader)
+        extension = [[0 for i in range(1)] for j in range(len(current_categories))]
+        i=0
+        j=0
+        for row in classified_samples:
+            index = current_categories.index(row[0])
+            extension[index].append([i, j])
+            j=j+1
+            if j==columns:
+                i=i+1
+                j=0
+        for k in range(len(current_categories)):
+            extension[k].pop(0)
+        return extension
+
+            
+        
+        
+                
         
 class NormalDistributionIntensionalModel:
     
     def __init__(self, mean_vector, covariance_matrix):
         self.mean_vector = np.matrix(mean_vector)
-        self.covariance_matrix = np.matrix(covariance_matrix)
+        self.covariance_matrix = covariance_matrix
     
     def jm_distance(self, other):
-        bd = ((float(1/8))*((self.mean_vector-other.mean_vector).getT())*(((self.covariance_matrix+other.covariance_matrix)/2).getI())*(self.mean_vector-other.mean_vector)) + \
-        ((float(1/2))* np.log((np.linalg.det(((self.covariance_matrix+other.covariance_matrix)/2)))/(np.sqrt(np.linalg.det(self.covariance_matrix)*np.linalg.det(other.covariance_matrix)))))
-        jm = np.sqrt(2*(1-(np.exp(-bd))))
+        a = (self.mean_vector-other.mean_vector)*(((self.covariance_matrix+other.covariance_matrix)/2.0).getI())*((self.mean_vector-other.mean_vector).getT())
+        b = (1.0/2)* (np.log((np.linalg.det(((self.covariance_matrix+other.covariance_matrix)/2.0)))/(np.sqrt(np.linalg.det(self.covariance_matrix)*np.linalg.det(other.covariance_matrix)))))
+
+        bd = (1.0/8)*(self.mean_vector-other.mean_vector)*(((self.covariance_matrix+other.covariance_matrix)/2).getI())*((self.mean_vector-other.mean_vector).getT()) + (1.0/2)* np.log((np.linalg.det(((self.covariance_matrix+other.covariance_matrix)/2)))/(np.sqrt(np.linalg.det(self.covariance_matrix)*np.linalg.det(other.covariance_matrix))))
+
+        jm = np.sqrt(2.0*(1.0-(np.exp(-bd))))
         return jm
     
 class DecisionTreeIntensionalModel:
@@ -185,8 +260,14 @@ class StatisticalMethods:
         producersAccuracy=[]
         usersAccuracy = []
         for i, row in enumerate(confusionMatrix):
-            producersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumColumns[i]))))
-            usersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumRows[i]))))
+            if (float(sumColumns[i])) !=0:
+                producersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumColumns[i]))))
+            else:
+                producersAccuracy.insert(i, "undefined")
+            if (float(sumRows[i])) != 0:
+                usersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumRows[i]))))
+            else:
+                usersAccuracy.insert(i, "undefined")
             
         return producersAccuracy, usersAccuracy        
                 
@@ -444,7 +525,8 @@ class ManageRasterData:
         new_file1 = driver2.CreateCopy("test.tif", src_ds1, 0)
         src_ds1 = None
         new_file1 = None
-        
+
+
 #a= ManageRasterData('final3b.tif', 3)
 #a.create_raster()
 #a.create_csv_from_one_band_raster()

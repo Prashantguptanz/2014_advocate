@@ -1,21 +1,29 @@
-new_taxonomy_name
-new_taxonomy_description
-
 _auth_user_id
-
-existing_taxonomy_name
-external_trigger
 
 exploration_chain_id
 exploration_chain_step
 
+new_taxonomy_name
+new_taxonomy_description
+
+existing_taxonomy_name
+external_trigger
+
+view_existing_taxonomies (True or False) - activity option 3
 
 current_training_file_name
 current_training_file_id
 current_training_file_ver
 
+model_type
 current_model_name
 current_model_id
 
+model_score
+producer_accuracies
+user_accuracies
+
 current_test_file_name
 current_predicted_file_name
+current_test_file_columns
+current_test_file_rows
