@@ -3,14 +3,14 @@ from Category_Modeler.models import Confusionmatrix, ExplorationChain, Classific
 from Category_Modeler.models import Extension, Category, HierarchicalRelationship, HorizontalRelationship, MeanVector, CovarianceMatrix
 from datetime import datetime
 import numpy
-from django.db import transaction
+from django.db import transaction, connection
 
 class QueryDatabase:
     
     def __init__(self, request):
         self.authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         self.request = request
-        if not self.request.session['new_taxonomy_name']:
+        if 'new_taxonomy_name' not in self.request.session:
             self.current_taxonomy = self.request.session['existing_taxonomy_name']
         else:
             self.current_taxonomy = self.request.session['new_taxonomy_name']
@@ -103,4 +103,37 @@ class QueryDatabase:
         comp_int.save()
         return comp_int
 
+class CustomQueries:
 
+    def get_trainingset_name_for_previous_version_of_legend(self, legendName):
+        cursor = connection.cursor()
+        
+        cursor.execute("select t.trainingset_name from trainingset t, category c, legend l, legend_concept_combination lcc \
+                        where l.legend_name = %s and c.trainingset_id = t.trainingset_id and c.trainingset_ver = t.trainingset_ver and c.legend_concept_combination_id = lcc.id and \
+                        lcc.id = (select lcc1.id from legend_concept_combination lcc1 where lcc1.legend_id = l.legend_id and lcc1.legend_ver= l.legend_ver order by lcc1.id DESC limit 1)", [legendName])
+        
+        row = cursor.fetchone()
+        return row
+        
+        
+    def get_model_name_and_accuracy_from_a_legend(self, lid, ver):
+        cursor = connection.cursor()
+        
+        cursor.execute("select classifier.classifier_name, classificationmodel.accuracy from classifier, learning_activity, classificationmodel, legend where \
+                        classifier.id = learning_activity.classifier_id and learning_activity.model_id = classificationmodel.id and legend.model_id = classificationmodel.id \
+                        and legend.legend_id = %s and legend.legend_ver = %s", [lid, ver])
+        
+        row = cursor.fetchone()
+        return row
+        
+    
+    def get_concepts_list_for_a_legend(self, lid, ver):
+        cursor = connection.cursor()
+            
+        cursor.execute("select concept.id, concept.concept_name from concept, legend_concept_combination where legend_concept_combination.legend_id = %s and \
+                        legend_concept_combination.legend_ver = %s and legend_concept_combination.concept_id = concept.id and concept_name NOT LIKE 'root%%'", [lid, ver])
+        
+        row = cursor.fetchall()
+        print row
+        return row
+    

@@ -196,21 +196,17 @@ $(function() {
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/trainingsample/')) {
 
-		$('input[name="choosetrainingfile"]').on(
-				'click',
-				function() {
-					var $this = $(this);
-					$this.next().children().removeAttr('disabled');
-					$this.siblings('input').next().children().attr('disabled',
-							'disabled');
+		$('input[name="choosetrainingfile"]').on('click', function() {
+			var $this = $(this);
+			$this.next().children().removeAttr('disabled');
+			$this.siblings('input').next().children().attr('disabled', 'disabled');
+			if ($this.attr('value') == 'option2') {
+				$('#newtrainingdatasetdetails').show();
+			} else {
+				$('#newtrainingdatasetdetails').hide();
+			}
 
-					if ($this.attr('value') == 'option2') {
-						$('#newtrainingdatasetdetails').show();
-					} else {
-						$('#newtrainingdatasetdetails').hide();
-					}
-
-				});
+		});
 
 		function firstRowRenderer(instance, td, row, col, prop, value,
 				cellProperties) {
@@ -245,29 +241,26 @@ $(function() {
 		hot = new Handsontable(trainingdatacontainer, settings1);
 
 		// Script to deal with when the existing training file is selected
-		$('#existingtrainingfiles').on(
-				'change',
-				function() {
-					$('#instanceslabel').show();
-					$('#attributeslabel').show();
+		$('#existingtrainingfiles').on('change', function() {
+			$('#instanceslabel').show();
+			$('#attributeslabel').show();
 
-					var filepkey = this.value;
-					var filename = $('#existingtrainingfiles>option:selected')
-							.text();
-					var data = {};
-					data[1] = filepkey;
-					data[2] = filename;
-					$.post("http://127.0.0.1:8000/AdvoCate/trainingsample/",
-							data, function(response) {
-								var trainingdata = $.csv.toArrays(response);
-								$('#instances').html(trainingdata.length - 1);
-								$('#Attributes').html(trainingdata[0].length);
+			var filepkey = this.value;
+			var filename = $('#existingtrainingfiles>option:selected').text();
+			var data = {};
+			data[1] = filepkey;
+			data[2] = filename;
+			$.post("http://127.0.0.1:8000/AdvoCate/trainingsample/",
+					data, function(response) {
+						var trainingdata = $.csv.toArrays(response);
+						$('#instances').html(trainingdata.length - 1);
+						$('#Attributes').html(trainingdata[0].length);
 
-								$('#trainingdataTable').show();
-								hot.loadData(trainingdata);
-							});
+						$('#trainingdataTable').show();
+						hot.loadData(trainingdata);
+					});
 
-				});
+		});
 
 		// Script to deal with when the training file is uploaded
 		$('#trainingfile').on('change', function() {
@@ -399,6 +392,7 @@ $(function() {
 		$('#createsignaturefile').on('click', function(e) {
 				if ($('#classifiertype').val() != "" && $('input[name=validationoption]:checked').val() != null) {
 					e.preventDefault();
+					$('#suggestions_section').hide();
 					var $this = $('#trainingoptions');
 					var formData = new FormData($this[0]);
 					$.ajax({
@@ -414,7 +408,7 @@ $(function() {
 								if (response['meanvectors']) {
 									$('#DecisionTreemodeldetails').hide();
 									$('#NaiveBayesmodeldetails').show();
-									var a = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Mean Vector </th></tr>";
+									var a = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Mean Vector </th></tr>";
 									for (var i = 0; i < response['listofclasses'].length; i++) {
 										a = a + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
 										var meanvectorarray = response['meanvectors'][i];
@@ -426,7 +420,7 @@ $(function() {
 									a = a + "</table>";
 									$('#meanvectors').html(a);
 	
-									var b = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Variance </th></tr>";
+									var b = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Variance </th></tr>";
 									for (var i = 0; i < response['listofclasses'].length; i++) {
 										b = b + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
 										var variancearray = response['variance'][i];
@@ -442,7 +436,7 @@ $(function() {
 									var c = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['cm'] + "\" />";
 									$('#confusionmatrix1').html(c);
 	
-									var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>";
+									var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>";
 									for (var i = 0; i < response['listofclasses'].length; i++) {
 										d = d + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
 										var producerAccuracy = parseFloat(response['prodacc'][i]);
@@ -453,10 +447,33 @@ $(function() {
 									}
 									d = d + "</table>";
 									$('#ErrorAccuracy').html(d);
+									
+									var e = "<p style=\"font-size: 14px; margin-left: 5px; margin-right: 5px\">Jeffries-Matusita (JM) distance between probability distribution models of various categories:</p><br />";
+									e = e + "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category1 </th><th> Category2 </th><th>JM distance </th></tr>";
+									for (var i = 0; i < response['jmdistances'].length; i++){
+										e = e + "<tr><td>" + response['jmdistances'][i][0] + "</td><td>"
+											+ response['jmdistances'][i][1] + "</td><td>" 
+											+ response['jmdistances'][i][2] + "</td></tr>";
+									}
+									e = e + "</table>";
+									$('#JMDistance').html(e);
+									
+									var f = "<legend style=\"font-size: 18px; background-color: gainsboro\" align=\"center\">Suggestions</legend>";
+									f= f + "<label style=\"font-size: 15px; margin-left: 5px; margin-right: 5px\">List of suggestions to increase the accuracy of classification model:</label>" + 
+										"<ul class=\" list-group\">";
+									for (var i = 0; i < response['suggestion_list'].length; i++){
+										f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
+											"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
+									}
+									f = f + "</ul>";
+									$('#suggestions_section').html(f);
+									$('#suggestions_section').show();
+									
 									$('#meanvectors').hide();
 									$('#variance').hide();
 									$('#confusionmatrix1').hide();
 									$('#ErrorAccuracy').hide();
+									$('#JMDistance').hide();
 								} else {
 									$('#NaiveBayesmodeldetails').hide();
 									$('#DecisionTreemodeldetails').show();
@@ -502,22 +519,32 @@ $(function() {
 						$('#variance').hide();
 						$('#confusionmatrix1').hide();
 						$('#ErrorAccuracy').hide();
+						$('#JMDistance').hide();
 					} else if (detailsoption == '2') {
 						console.log(detailsoption);
 						$('#meanvectors').hide();
 						$('#variance').show();
 						$('#confusionmatrix1').hide();
 						$('#ErrorAccuracy').hide();
+						$('#JMDistance').hide();
 					} else if (detailsoption == '3') {
 						$('#meanvectors').hide();
 						$('#variance').hide();
 						$('#confusionmatrix1').show();
 						$('#ErrorAccuracy').hide();
-					} else {
+						$('#JMDistance').hide();
+					} else if (detailsoption == '4') {
 						$('#meanvectors').hide();
 						$('#variance').hide();
 						$('#confusionmatrix1').hide();
 						$('#ErrorAccuracy').show();
+						$('#JMDistance').hide();
+					} else {
+						$('#meanvectors').hide();
+						$('#variance').hide();
+						$('#confusionmatrix1').hide();
+						$('#ErrorAccuracy').hide();
+						$('#JMDistance').show();
 
 					}
 				});
@@ -567,37 +594,12 @@ $(function() {
 					var c = "<img style=\"width:95%; height:95%\" src=\"/static/maps/" + response['map'] + "\" />";
 					$('#classifiedmap').html(c);
 					var d = "<label>Legend</label>"
-									+ "<table style=\"width:100%\" class=\" table table-bordered\">"
-									+ "<tr><td>"
-									+ "<img src=\"/static/images/artificial_surface.png\" />"
-									+ "</td><td>" + "Artificial surface"
-									+ "</td></tr>"
-									+ "<tr><td>"
-									+ "<img src=\"/static/images/forest.png\" />"
-									+ "</td><td>" + "Forest"
-									+ "</td></tr>"
-									+ "<tr><td>"
-									+ "<img src=\"/static/images/grassland.png\" />"
-									+ "</td><td>" + "Grassland"
-									+ "</td></tr>"
-									+ "<tr><td>"
-									+ "<img src=\"/static/images/water.png\" />"
-									+ "</td><td>" + "Water"
-									+ "</td></tr>"
-									+ "<tr><td>"
-									+ "<img src=\"/static/images/shadow.png\" />"
-									+ "</td><td>" + "Shadow"
-									+ "</td></tr>"
-									+ "<tr><td>"
-									+ "<img src=\"/static/images/inland_water.png\" />"
-									+ "</td><td>" + "Inland Water"
-									+ "</td></tr>"
-									+ "<tr><td>"
-									+ "<img src=\"/static/images/cloud.png\" />"
-									+ "</td><td>" + "Cloud"
-									+ "</td></tr>"
-							
-									+ "</table>";
+							+ "<table style=\"width:100%\" class=\" table table-bordered\">";
+					for (var i = 0; i < response['categories'].length; i++) {
+						d = d + "<tr><td>" + "<img src=\"/static/images/" + response['categories'][i] + ".png\" />" +
+							"</td><td>" + response['categories'][i] + "</td></tr>";
+					}							
+					d = d + "</table>";
 						
 					$('#categorycolors').html(d);
 					
@@ -607,7 +609,7 @@ $(function() {
 
 	}
 
-	// Script for 'Classification' page
+	// Script for 'Change recognition' page
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/changerecognition/')) {
 		
@@ -647,8 +649,48 @@ $(function() {
 		
 	}
 
-	// Script for visualization
+// Script for visualization page
+	if (loc.match('http://127.0.0.1:8000/AdvoCate/visualizer/')) {
+		
+		$('input[name="choosetaxonomyorconcepttovisualize"]').on('click', function() {
+			var $this = $(this);
+			if ($this.attr('value') == 'option2') {
+				$('#chooseoptionsfortaxonomy').hide();
+			} else {
+				$('#chooseoptionsfortaxonomy').show();
+			}
 
+		});
+		
+		
+		
+		$('#ChooseLegend').on('change', function(e) {
+			e.preventDefault();
+			$('#Chooseconcept').attr('disabled','disabled');
+			var legendpkey = this.value;
+			var legendname = $('#ChooseLegend>option:selected').text();
+			var data = {};
+			data[1] = legendpkey;
+			data[2] = legendname;
+			$.post("http://127.0.0.1:8000/AdvoCate/visualizer/", data, function(response) {
+				$('#taxonomy_details').show();
+				var a = "<img style=\"width:100%; height:100%\" src=\"/static/taxonomyimage/" + response['image_name'] + "\" />";				
+				$('#taxonomy_viz').html(a);
+				var b = "<p>" + response['message'] + "</p>";
+				$('#model_details').html(b);
+				$('#Chooseconcept').removeAttr('disabled');
+				
+				var b = "<option value=\"\"> Concepts in the taxonomy</option>";
+				for (var i=0; i<response['concept_list'].length; i++){
+					b = b + "<option id=\"concept" + i + "\" value=\"" + response['concept_list'][i][0] + "\">" + response['concept_list'][i][1] + "</option>";
+				}
+				$('#Chooseconcept').html(b);
+				
+			});
+		});
+		
+		
+	}	
 	/*
 	 * $('#creategraph').on('click', function(){ var G = jsnx.Graph();
 	 * G.add_nodes_from([ ['Built Space', {color: 'red'}, {count: 18}], [2,

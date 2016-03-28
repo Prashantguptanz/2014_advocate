@@ -2,148 +2,86 @@
 
 {% csrf_token %}
 
-<div class="form-group" style="width: 28%; float: left">
-	<legend style="font-size: 16px; font-family:Serif">
-		Choose Options for Visualization
-	</legend>
-
-	<div class="form-group" style="width: 98%; overflow: hidden">
-		<div style="float: left; margin-left: 1%; font-size:14px; font-family:Calibri">
-			<label for="What to Visualize" style="font-weight:normal">Visualize</label>
+<div class="container">
+	<div class="form-group" style="width: 32%; float: left">
+		<legend style="font-size: 18px; background-color: gainsboro" align="center">Visualize taxonomies and/or concepts</legend>
+		
+		
+		<div class="form-group radio" style="margin-left: 5px; margin-right: 5px">					
+			<input type="radio" name="choosetaxonomyorconcepttovisualize" value="option1" id="choosetaxonomy"/>Taxonomy
+			<br /><br />			
+			<input type="radio" name="choosetaxonomyorconcepttovisualize" value="option2" id="chooseconcept"/>Concept			
+			<br /><br />
 		</div>
-		<div style="float: right; margin-left: 1%; font-size:12px; font-family:Calibri">
-			<select class ="form-control" id="WhatToVisualize" name="WhatToVisualize" required >
-				<option value=""> visualize</option>
-				<option value="1">Evoluti Legend</option>
-				<option value="2">Current version</option>
-				<option value="5">Category Evolution</option>
-				<option value="6">Current version</option>
-			</select>
+		
+		<div class="form-group" id = "chooseoptionsfortaxonomy" style="width: 98%; overflow: hidden; display:none">
+			<div style=" margin-left: 1%;  margin-right: 1%">
+				<label for="ChooseLegend" style="font-weight:normal; float: left">Choose a taxonomy</label>
+				<span><select id="ChooseLegend" name="ChooseLegend" style="float: right">
+					<option value=""> Existing taxonomies</option>
+					{% for legend in legend_list %}
+					<option id="legend{{ forloop.counter }}" value="{{ legend.legend_id }}+{{legend.legend_ver}}">{{ legend.legend_name }}</option>
+					{% endfor %}
+				</select></span>
+			</div>
+			<br /><br />
+			<div style=" margin-left: 1%;  margin-right: 1%">
+				<label for="Chooseconcept" style="font-weight:normal; float: left">Choose a concept</label>
+				<span><select id="Chooseconcept" name="Chooseconcept" style="float: right" disabled>
+					<option value=""> Concepts in the taxonomy</option>
+					{% for concept in concept_list %}
+					<option id="concept{{ forloop.counter }}" value="{{ concept.id }}">{{ concept.concept_name }}</option>
+					{% endfor %}
+				</select></span>
+			
+			</div>
 		</div>
+	
+		<div class="form-group" style="width: 98%; overflow: hidden">
+			<div style="float: left; margin-left: 1%; font-size:14px; font-family:Calibri">
+				<label for="WhichLegend" style="font-weight:normal">Select a legend</label>
+			</div>
+			<div style="float: right; margin-left: 1%; font-size:12px; font-family:Calibri">
+				<select class ="form-control" id="WhichLegend" name="WhichLegend" required >
+					<option value="">Select a legend</option>
+					<option value="1">New Zealand land cover</option>
+				</select>
+			</div>
+		</div>
+	
+		<div class="form-group" style="width: 98%; overflow: hidden">
+			<div style="float: left; margin-left: 1%; font-size:14px; font-family:Calibri">
+				<label for="" style="font-weight:normal">Select a category</label>
+			</div>
+			<div style="float: right; margin-left: 1%; font-size:12px; font-family:Calibri">
+				<select class ="form-control" id="WhichCategory" name="WhichCategory" required >
+					<option value="">Select a category</option>
+					<option value="1">Built Space</option>
+				</select>
+			</div>
+		</div>
+		<br />
+		<button id = "creategraph" type="submit" class="btn btn-default" >
+			Submit
+		</button>
+		<br />
 	</div>
+	
+	
+	<div style="float: right; width: 66%">
+	<legend style="font-size: 18px; background-color: gainsboro" align="center">Visualization</legend>
+	
+		<div class="form-group" id="taxonomy_details" style="padding-left: 15px; padding-right: 15px; display:none ">
+			<div id="taxonomy_viz" style="width: 50%; float:left; margin-left:5px">
+			  
+			</div>
+			<div id="model_details" style="width: 45%; float:right; margin-right:5px">
+			  
+			</div>
+		</div>
+		
 
-	<div class="form-group" style="width: 98%; overflow: hidden">
-		<div style="float: left; margin-left: 1%; font-size:14px; font-family:Calibri">
-			<label for="WhichLegend" style="font-weight:normal">Select a legend</label>
-		</div>
-		<div style="float: right; margin-left: 1%; font-size:12px; font-family:Calibri">
-			<select class ="form-control" id="WhichLegend" name="WhichLegend" required >
-				<option value="">Select a legend</option>
-				<option value="1">New Zealand land cover</option>
-			</select>
-		</div>
 	</div>
-
-	<div class="form-group" style="width: 98%; overflow: hidden">
-		<div style="float: left; margin-left: 1%; font-size:14px; font-family:Calibri">
-			<label for="" style="font-weight:normal">Select a category</label>
-		</div>
-		<div style="float: right; margin-left: 1%; font-size:12px; font-family:Calibri">
-			<select class ="form-control" id="WhichCategory" name="WhichCategory" required >
-				<option value="">Select a category</option>
-				<option value="1">Built Space</option>
-			</select>
-		</div>
-	</div>
-	<br />
-	<button id = "creategraph" type="submit" class="btn btn-default" >
-		Submit
-	</button>
-	<br />
 </div>
-
-
-<div style="float: right; width: 70%">
-<legend style="font-size: 16px; font-family:Sans">Evolution of 'Built space' category in NZ land cover legend</legend>
-
-<div style="float: left; overflow:auto; margin-left: 1%">
-
-<table class="table table-bordered " style="width:230px; font-size:13px; font-family:Calibri">
-<caption style="font-size:15px"> Built Space - ver.1	</caption>
-	<tr>
-		<th>ID</th>
-		<td>43</td>
-	</tr>
-	<tr>
-		<th>Creator</th>
-		<td>P. Gupta</td>
-	</tr>
-	<tr>
-		<th>DateStamp</th>
-		<td>Wed: 26/03/2014</td>
-	</tr>
-	<tr>
-		<th>Legend</th>
-		<td>NZ Land Cover Ver.1</td>
-	</tr>
-	<tr>
-		<th>Intension</th>
-		<td>2015_signature_file_id_23</td>
-	</tr>
-	<tr>
-		<th>Extension</th>
-		<td>2015_training_sample_id_21_ver1</td>
-	</tr>
-	<tr>
-		<th>Relationship</th>
-		<td>None</td>
-	</tr>
-	<tr>
-		<th>Change</th>
-		<td>223</td>
-	</tr>
-	<tr>
-		<th>Associated expl_chain</th>
-		<td>2015_exp_chain_id_42</td>
-	</tr>
-</table>
-
-</div>
-
-<div style="float: left; overflow:auto; margin-left: 4%">
-
-<table class="table table-bordered " style="width:250px; font-size:13px; font-family:Calibri">
-<caption style="font-size:15px; "> Built Space - ver.2	</caption>
-	<tr>
-		<th>ID</th>
-		<td>64</td>
-	</tr>
-	<tr>
-		<th>Creator</th>
-		<td>P. Gupta</td>
-	</tr>
-	<tr>
-		<th>DateStamp</th>
-		<td>Fri: 28/03/2014</td>
-	</tr>
-	<tr>
-		<th>Legend</th>
-		<td>NZ_Land_Cover_Ver.1</td>
-	</tr>
-	<tr>
-		<th>Intension</th>
-		<td>2015_signature_file_id_23</td>
-	</tr>
-	<tr>
-		<th>Extension</th>
-		<td>2015_training_sample_id_21_ver2</td>
-	</tr>
-	<tr>
-		<th>Relationship</th>
-		<td>hasChild: Urban</td>
-	</tr>
-		<tr>
-		<th>Relationship</th>
-		<td>hasChild: Suburban</td>
-	</tr>
-	<tr>
-		<th>Change Reason</th>
-		<td>Better training data</td>
-	</tr>
-
-</table>
-
-</div>
-
 
 {% endblock content %}

@@ -46,6 +46,10 @@
 			<br/><br/>
 			<input type="submit" id="createsignaturefile" value="Submit" class="submit button" />
 		</div>
+		<br />
+		<div id = "suggestions_section" class="form-group" style="display:none; width: 98%; overflow: hidden">
+			
+		</div>
 	</form>
 	
 	<div style="width: 61%; float: right;">
@@ -63,7 +67,8 @@
 				<input type="radio" name="NaiveBayesmodeldetails" value="1" style="vertical-align: middle; margin: 0px;"/> Mean vectors &nbsp; &nbsp;  &nbsp; 
 				<input type="radio" name="NaiveBayesmodeldetails" value="2" style="vertical-align: middle; margin: 0px;"/> Variances &nbsp; &nbsp;  &nbsp; 
 				<input type="radio" name="NaiveBayesmodeldetails" value="3" style="vertical-align: middle; margin: 0px;"/> Confusion matrix &nbsp; &nbsp;  &nbsp; 
-				<input type="radio" name="NaiveBayesmodeldetails" value="4" style="vertical-align: middle; margin: 0px;"/> Error/Accuracy &nbsp; &nbsp;  &nbsp; 
+				<input type="radio" name="NaiveBayesmodeldetails" value="4" style="vertical-align: middle; margin: 0px;"/> Error/Accuracy &nbsp; &nbsp;  &nbsp;
+				<input type="radio" name="NaiveBayesmodeldetails" value="5" style="vertical-align: middle; margin: 0px;"/> JM Distance &nbsp; &nbsp;  &nbsp; 
 				<br /><br />
 				<div class="form-group" id="meanvectors" style="padding-left: 15px; padding-right: 15px ">
 			  	</div>
@@ -72,6 +77,8 @@
 				<div class="form-group" id="confusionmatrix1" style="padding-left: 15px; padding-right: 15px; display:none ">
 				</div>
 				<div class="form-group" id="ErrorAccuracy" style="padding-left: 15px; padding-right: 15px; display:none ">
+				</div>
+				<div class="form-group" id="JMDistance" style="padding-left: 15px; padding-right: 15px; display:none ">
 				</div>
 				
 			</div>
@@ -94,7 +101,11 @@
 
 		</div>
 	</div>
-
+	<div id="suggestions" style="display:none; padding-left: 15px; padding-right: 15px">
+	  <legend style="font-size: 18px; background-color: gainsboro" align="center">
+			Suggestion:
+		</legend>
+	</div>
 </div>
 
 {% endblock %}

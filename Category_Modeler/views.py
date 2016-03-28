@@ -2,6 +2,7 @@ import csv, json, numpy, pydot, os
 import matplotlib.pyplot as plt
 from io import FileIO, BufferedWriter
 from datetime import datetime
+from ete3 import Tree, TreeStyle, TextFace
 from django.shortcuts import render, HttpResponse, HttpResponseRedirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
@@ -17,7 +18,7 @@ from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, 
 from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Legend
 from Category_Modeler.measuring_categories import TrainingSample, NormalDistributionIntensionalModel, DecisionTreeIntensionalModel, StatisticalMethods, ClassifiedFile
 from Category_Modeler.data_processing import ManageRasterData
-from Category_Modeler.database_transactions import QueryDatabase
+from Category_Modeler.database_transactions import QueryDatabase, CustomQueries
 
 
 #Different Files Locations
@@ -30,7 +31,7 @@ IMAGE_LOCATION = 'Category_Modeler/static/images/'
 CLASSIFIED_DATA_LOCATION = 'Category_Modeler/static/predictedvalues/'
 CLASSIFIED_DATA_IN_RGB_LOCATION = 'Category_Modeler/static/predictedvaluesRGB/'
 OUTPUT_RASTER_FILE_LOCATION = 'Category_Modeler/static/maps/'
-
+TAXONOMY_IMAGE_LOCATION = 'Category_Modeler/static/taxonomyimage/'
 
 # Login and logout methods
 
@@ -82,7 +83,8 @@ def index(request):
         user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username  # @UndefinedVariable
         if Legend.objects.exists(): # @UndefinedVariable
             legend_list = Legend.objects.all()  # @UndefinedVariable
-        return render(request, 'home.html', {'user_name': user_name, 'legend_list':legend_list})
+            return render(request, 'home.html', {'user_name': user_name, 'legend_list':legend_list})
+        return render(request, 'home.html', {'user_name': user_name})
     form = UserCreationForm()
     return render(request, 'home.html', {'form': form})
 
@@ -151,9 +153,14 @@ def trainingsampleprocessing(request):
     elif request.method == 'POST' and request.is_ajax():
         if request.FILES:
             trainingFilesList = request.FILES.getlist('file')
+            
             if len(trainingFilesList)==1 and trainingFilesList[0].name.split(".")[-1] == "csv":
                 request.session['current_training_file_name'] = trainingFilesList[0].name.split('.', 1)[0] + '.csv'
                 save_csv_training_file(trainingFilesList[0])
+                if 'existing_taxonomy_name'  in request.session:
+                    customeQuery = CustomQueries()
+                    old_taxonomy_name = customeQuery.get_trainingset_name_for_previous_version_of_legend(request.session['existing_taxonomy_name'])[0]
+                    print old_taxonomy_name
                 return HttpResponse("We got the file");
             elif len(trainingFilesList)>1 and trainingFilesList[0].name.split(".")[-1] == "tif":
                 request.session['current_training_file_name'] = 'temp.csv'
@@ -162,6 +169,9 @@ def trainingsampleprocessing(request):
                     rasterFileNameList.append(rasterfile.name)
                 managedata = ManageRasterData()
                 managedata.combine_multiple_raster_files_to_csv_file(rasterFileNameList, request.session['current_training_file_name'], EXISTING_TRAINING_DATA_LOCATION)
+                if 'existing_taxonomy_name'  in request.session:
+                    customeQuery = CustomQueries()
+                    print customeQuery.get_trainingset_name_for_previous_version_of_legend(request.session['existing_taxonomy_name'])
                 fp = file("%s%s" % (EXISTING_TRAINING_DATA_LOCATION, request.session['current_training_file_name']), 'rb')
                 response = HttpResponse( fp, content_type='text/csv')
                 response['Content-Disposition'] = 'attachment; filename="training File"'
@@ -179,6 +189,38 @@ def trainingsampleprocessing(request):
             request.session['current_training_file_name'] = trainingfilename
             trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
             fp = file (trainingfilelocation+trainingfilename, 'rb')
+            if 'existing_taxonomy_name'  in request.session:
+                customeQuery = CustomQueries()
+                old_trainingset_name = customeQuery.get_trainingset_name_for_previous_version_of_legend(request.session['existing_taxonomy_name'])[0]
+                print request.session['current_training_file_name']
+                print old_trainingset_name
+                new_training_sample = TrainingSample(request.session['current_training_file_name'])
+                old_training_sample = TrainingSample(old_trainingset_name)
+                a, b, c = new_training_sample.compare_training_samples(old_training_sample)
+                for x in a:
+                    print x[0]
+                    print x[1]
+                for y in b:
+                    print y
+                for z in c:
+                    print z
+            
+            if 'current_model_id' in request.session:
+                del request.session['model_type']    
+                del request.session['current_model_name']
+                del request.session['current_model_id']
+                del request.session['model_score']
+                del request.session['producer_accuracies']
+                del request.session['user_accuracies']
+                request.session.modified = True
+    
+            if 'current_predicted_file_name' in request.session:
+                del request.session['current_test_file_name']
+                del request.session['current_predicted_file_name']
+                del request.session['current_test_file_columns']
+                del request.session['current_test_file_rows']
+                request.session.modified = True
+            
             response = HttpResponse( fp, content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="temp.csv"'
             return response
@@ -219,18 +261,22 @@ def savetrainingdatadetails(request):
         exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'trainingset collection', activity_instance = current_activity_instance)
         exp_chain.save()
         request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
+        
+    if 'current_model_id' in request.session:
+        del request.session['model_type']    
+        del request.session['current_model_name']
+        del request.session['current_model_id']
+        del request.session['model_score']
+        del request.session['producer_accuracies']
+        del request.session['user_accuracies']
+        request.session.modified = True
     
-    del request.session['model_type']    
-    del request.session['current_model_name']
-    del request.session['current_model_id']
-    del request.session['model_score']
-    del request.session['producer_accuracies']
-    del request.session['user_accuracies']
-    del request.session['current_test_file_name']
-    del request.session['current_predicted_file_name']
-    del request.session['current_test_file_columns']
-    del request.session['current_test_file_rows']
-    request.session.modified = True
+    if 'current_predicted_file_name' in request.session:
+        del request.session['current_test_file_name']
+        del request.session['current_predicted_file_name']
+        del request.session['current_test_file_columns']
+        del request.session['current_test_file_rows']
+        request.session.modified = True
         
     return HttpResponse("");
 
@@ -244,42 +290,48 @@ def saveNewTrainingVersion(request):
         filename= request.session['current_training_file_name']
         version = request.session['current_training_file_ver']
         fileid= request.session['current_training_file_id']
-        newfilename = filename.rpartition('_')[0] + "_ver" + str(int(version)+1) + ".csv"
+        new_tr_ver = Trainingset.objects.filter(trainingset_id = request.session['current_training_file_id']).latest("trainingset_ver").trainingset_ver
+        newfilename = filename.rpartition('_')[0] + "_ver" + str(int(new_tr_ver)+1) + ".csv"
         f1 = open('%s%s' % (EXISTING_TRAINING_DATA_LOCATION, newfilename), 'w')
         writer = csv.writer(f1)
         for i in range(len(data)):
             writer.writerow(data[i])
         f1.close()
         
-        oldversion = Trainingset.objects.get(trainingset_id=int(fileid), trainingset_ver =int(version)) 
-        oldversion.date_expired = datetime.now()
-        oldversion.save()
-        tr = Trainingset(trainingset_id=int(fileid), trainingset_ver =int(version)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation=EXISTING_TRAINING_DATA_LOCATION)
+        oldversion = Trainingset.objects.get(trainingset_id=int(fileid), trainingset_ver =int(version))
+        if  oldversion.date_expired == datetime(9999, 9, 12):
+            oldversion.date_expired = datetime.now()
+            oldversion.save()
+        tr = Trainingset(trainingset_id=int(fileid), trainingset_ver =int(new_tr_ver)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation=EXISTING_TRAINING_DATA_LOCATION)
         tr.save(force_insert=True)
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         
-        tr_activity = ChangeTrainingsetActivity( oldtrainingset_id= int(fileid), oldtrainingset_ver =int(version), newtrainingset_id=int(fileid), newtrainingset_ver=int(version)+1, completed_by=authuser_instance, reason_for_change = change_message)
+        tr_activity = ChangeTrainingsetActivity( oldtrainingset_id= int(fileid), oldtrainingset_ver =int(version), newtrainingset_id=int(fileid), newtrainingset_ver=int(new_tr_ver)+1, completed_by=authuser_instance, reason_for_change = change_message)
         tr_activity.save()
         
         request.session['current_training_file_name'] = newfilename
-        request.session['current_training_file_ver'] = int(version)+1
+        request.session['current_training_file_ver'] = int(new_tr_ver)+1
         
         exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'change trainingset', activity_instance = tr_activity.id)
         exp_chain.save()
         
         request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
         
-    del request.session['model_type']    
-    del request.session['current_model_name']
-    del request.session['current_model_id']
-    del request.session['model_score']
-    del request.session['producer_accuracies']
-    del request.session['user_accuracies']
-    del request.session['current_test_file_name']
-    del request.session['current_predicted_file_name']
-    del request.session['current_test_file_columns']
-    del request.session['current_test_file_rows']
-    request.session.modified = True
+    if 'current_model_id' in request.session:
+        del request.session['model_type']    
+        del request.session['current_model_name']
+        del request.session['current_model_id']
+        del request.session['model_score']
+        del request.session['producer_accuracies']
+        del request.session['user_accuracies']
+        request.session.modified = True
+    
+    if 'current_predicted_file_name' in request.session:
+        del request.session['current_test_file_name']
+        del request.session['current_predicted_file_name']
+        del request.session['current_test_file_columns']
+        del request.session['current_test_file_rows']
+        request.session.modified = True
     
     return HttpResponse("Changes are implemented and new training file is saved as "+ newfilename);
         
@@ -305,8 +357,7 @@ def signaturefile(request):
     
     trainingfile = TrainingSample(request.session['current_training_file_name'])
     features = list(trainingfile.features)
-    
-    
+
     if request.method=='POST':
         data = request.POST;        
         classifiername = data['classifiertype']
@@ -389,15 +440,44 @@ def signaturefile(request):
             request.session.modified = True
         
         if (classifiername=="Naive Bayes"):
-            return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc})
+            covariance_mat = trainingfile.create_covariance_matrix()
+            mean_vectors = trainingfile.create_mean_vectors()
+            jmdistances_list=[]
+            for i in range(len(mean_vectors)):
+                for j in range(i+1, len(mean_vectors)):
+                    jmdistance_for_each_pair =[]
+                    model1 = NormalDistributionIntensionalModel(mean_vectors[i][1], covariance_mat[i][1])
+                    model2 = NormalDistributionIntensionalModel(mean_vectors[j][1], covariance_mat[j][1])
+                    jm = model1.jm_distance(model2)
+                    jmdistance_for_each_pair.append(mean_vectors[i][0])
+                    jmdistance_for_each_pair.append(mean_vectors[j][0])
+                    jmdistance_for_each_pair.append(jm)
+                    jmdistances_list.append(jmdistance_for_each_pair)
+            
+            suggestion_list=[]
+            listofcategories = clf.classes_.tolist()
+            for eachPair in  jmdistances_list:
+                single_suggestion=[]
+                if float(eachPair[2])<1.1:
+                    index1 = listofcategories.index(eachPair[0])
+                    index2 = listofcategories.index(eachPair[1])
+                    if float(prodacc[index1]) + float(useracc[index1]) < float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index1]) + float(useracc[index1])<1.2:
+                        single_suggestion.append(listofcategories[index1])
+                        single_suggestion.append(listofcategories[index2])
+                        suggestion_list.append(single_suggestion)
+                    elif float(prodacc[index1]) + float(useracc[index1]) > float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index2]) + float(useracc[index2]) <1.2:
+                        single_suggestion.append(listofcategories[index2])
+                        single_suggestion.append(listofcategories[index1])
+                        suggestion_list.append(single_suggestion)
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_list, 'suggestion_list': suggestion_list})
         
         elif (classifiername=="C4.5"):
-            #  print clf.tree_.__getstate__()
-            # print clf.tree_.children_left
-            # print clf.tree_.children_right
-            # print clf.tree_.feature
-            # print clf.tree_.threshold
-            # print clf.tree_.value
+            print clf.tree_.__getstate__()
+            print clf.tree_.children_left
+            print clf.tree_.children_right
+            print clf.tree_.feature
+            print clf.tree_.threshold
+            print clf.tree_.value
             newModel = DecisionTreeIntensionalModel(clf)
             dot_data = StringIO()
             tree.export_graphviz(clf, out_file=dot_data)
@@ -425,7 +505,7 @@ def plot_confusion_matrix(cm, targetValueArray, title='Confusion matrix', cmap=p
     plt.colorbar()
     target_values = numpy.unique(targetValueArray)
     tick_marks = numpy.arange(len(target_values))
-    plt.xticks(tick_marks, target_values, rotation=45)
+    plt.xticks(tick_marks, target_values, rotation=90)
     plt.yticks(tick_marks, target_values)   
     plt.tight_layout()
     plt.ylabel('True label')
@@ -442,7 +522,7 @@ def supervised(request):
     if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
         messages.error(request, "Choose an activity before you proceed further")
         return HttpResponseRedirect("/AdvoCate/home/", {'user_name': user_name})
-    
+            
     if request.method == 'POST' and request.is_ajax():
         if request.FILES:
             testfile = request.FILES['testfile']
@@ -467,12 +547,17 @@ def supervised(request):
             exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'classification', activity_instance = tc.id)
             exp_chain.save()
             request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
-            return  JsonResponse({'map': 'test.jpg'});
+            
+            listofcategories = clf.classes_.tolist()
+            
+            return  JsonResponse({'map': 'test.jpg', 'categories': listofcategories});
     
     
-    else : # @UndefinedVariable
-        classificationmodel_list = Classificationmodel.objects.all()  # @UndefinedVariable
-        return render (request, 'supervised.html', {'user_name':user_name, 'classification_models': classificationmodel_list})
+    elif 'current_model_id' not in request.session:
+        error = "Create a classification model before classifying an image"
+        return render(request, 'supervised.html', {'user_name':user_name, 'error': error})
+    else:
+        return render (request, 'supervised.html', {'user_name':user_name})
 
 def savePredictedValues(filename, predictedValue):
     with BufferedWriter( FileIO( '%s%s' % (CLASSIFIED_DATA_LOCATION, filename), "wb" ) ) as csvfile:
@@ -563,8 +648,50 @@ def applyChangeOperations(request):
     request.session.modified = True
     return HttpResponse("The changes are committed and stored in the database. Choose an activity from the Home page to continue further!")
     
-
+@login_required
 def visualizer(request):
-    return render (request, 'visualization.html')
-
+    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
+    legend_list = Legend.objects.all()
+    if request.method == 'POST' and request.is_ajax():
+        data = request.POST
+        legendpkey = data['1']
+        lid, ver = legendpkey.split('+')
+        legend_name = data['2']
+        taxonomy_image = create_taxonomy_visualization()
+        customqueries = CustomQueries()
+        model_type = customqueries.get_model_name_and_accuracy_from_a_legend(lid, ver)
+        concepts_list = customqueries.get_concepts_list_for_a_legend(lid, ver)
+        message = "The taxonomy is modeled using a " + str(model_type[0]) + " classification model with an accuracy of " + str(model_type[1]) + "%"
         
+        return JsonResponse({'image_name': taxonomy_image, 'message':message, 'concept_list': concepts_list});
+    else:
+        
+        return render (request, 'visualization.html', {'user_name':user_name, 'legend_list':legend_list})
+
+def create_taxonomy_visualization():
+    test_taxonomy = "((Sea water, inland water, Estuarine open water)Water_bodies, ((Urban, Suburban)Built space, Open space)artificial_surface, cloud, shadow, forest, grassland)Root;"
+    t1 = Tree(test_taxonomy, format=8)   # @UndefinedVariable
+    t1.add_face(TextFace("Root "), column=0, position = "branch-top")
+    ts = TreeStyle()
+    ts.show_leaf_name = True
+    ts.show_scale = False
+    ts.branch_vertical_margin = 20
+    ts.scale = 25
+    ts.title.add_face(TextFace("Auckland LCDB - Ver1", fsize=15), column=0)
+    for node in t1.traverse():
+        if node.name == "Water_bodies":
+            node.add_face(TextFace("Water_bodies"), column=0, position = "branch-top")
+        elif node.name == "Built space":
+            node.add_face(TextFace("Built space"), column=0, position = "branch-top")
+        elif node.name == "artificial_surface":
+            node.add_face(TextFace("artificial_surface"), column=0, position = "branch-top")
+    
+    
+    taxonomy_image_name = "tree.png"
+    t1.render("%s%s" %(TAXONOMY_IMAGE_LOCATION, "tree.png"), tree_style=ts, dpi=150)
+
+    return taxonomy_image_name
+    
+    
+    
+    

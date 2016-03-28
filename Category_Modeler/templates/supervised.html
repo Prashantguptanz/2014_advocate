@@ -17,6 +17,13 @@
 					Submit
 				</button>
 			</div>
+			<div style="float: left; margin-left: 1%">
+				{% if error %}
+				<p id="signinerror" class="error" style= "color: brown">
+					{{error}}
+				</p>
+				{% endif %}
+			</div>
 		</form>
 	</div>
 	<div style="width: 79%; float: right">
