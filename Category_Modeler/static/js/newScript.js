@@ -674,9 +674,9 @@ $(function() {
 			data[2] = legendname;
 			$.post("http://127.0.0.1:8000/AdvoCate/visualizer/", data, function(response) {
 				$('#taxonomy_details').show();
-				var a = "<img style=\"width:100%; height:100%\" src=\"/static/taxonomyimage/" + response['image_name'] + "\" />";				
+				var a = "<img style=\"width:70%; height:70%\" src=\"/static/taxonomyimage/" + response['image_name'] + "\" />";				
 				$('#taxonomy_viz').html(a);
-				var b = "<p>" + response['message'] + "</p>";
+				var b = "<p><b>" + "Note: </b>" + response['message'] + "</p>";
 				$('#model_details').html(b);
 				$('#Chooseconcept').removeAttr('disabled');
 				
@@ -685,6 +685,19 @@ $(function() {
 					b = b + "<option id=\"concept" + i + "\" value=\"" + response['concept_list'][i][0] + "\">" + response['concept_list'][i][1] + "</option>";
 				}
 				$('#Chooseconcept').html(b);
+				
+			});
+		});
+		
+		$('#Chooseconcept').on('change', function(e) {
+			e.preventDefault();
+			var conceptid = this.value;
+			var conceptname = $('#Chooseconcept>option:selected').text();
+			var data = {};
+			data[1] = conceptid;
+			data[2] = conceptname;
+			$.post("http://127.0.0.1:8000/AdvoCate/getconceptdetails/", data, function(response) {
+				
 				
 			});
 		});

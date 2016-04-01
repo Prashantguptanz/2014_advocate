@@ -134,6 +134,14 @@ class CustomQueries:
                         legend_concept_combination.legend_ver = %s and legend_concept_combination.concept_id = concept.id and concept_name NOT LIKE 'root%%'", [lid, ver])
         
         row = cursor.fetchall()
-        print row
         return row
     
+    def get_concept_details(self, clid):
+        cursor = connection.cursor()
+            
+        cursor.execute("select concept.id, concept.concept_name from concept, legend_concept_combination where legend_concept_combination.legend_id = %s and \
+                        legend_concept_combination.legend_ver = %s and legend_concept_combination.concept_id = concept.id and concept_name NOT LIKE 'root%%'", [lid, ver])
+        
+        row = cursor.fetchall()
+        return row
+        

@@ -661,12 +661,21 @@ def visualizer(request):
         customqueries = CustomQueries()
         model_type = customqueries.get_model_name_and_accuracy_from_a_legend(lid, ver)
         concepts_list = customqueries.get_concepts_list_for_a_legend(lid, ver)
-        message = "The taxonomy is modeled using a " + str(model_type[0]) + " classification model with an accuracy of " + str(model_type[1]) + "%"
+        message = "The taxonomy is modeled using a " + str(model_type[0]) + " classification model with an accuracy of " + str(model_type[1]*100.00) + "%"
         
         return JsonResponse({'image_name': taxonomy_image, 'message':message, 'concept_list': concepts_list});
     else:
         
         return render (request, 'visualization.html', {'user_name':user_name, 'legend_list':legend_list})
+
+def getconceptdetails(request):
+    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
+    if request.method == 'POST' and request.is_ajax():
+        data = request.POST
+        conceptlegendpkey = data['1']
+        concept_name = data['2']
+        customqueries = CustomQueries()
+        concept_details = customqueries.get_concept_details(conceptlegendpkey)
 
 def create_taxonomy_visualization():
     test_taxonomy = "((Sea water, inland water, Estuarine open water)Water_bodies, ((Urban, Suburban)Built space, Open space)artificial_surface, cloud, shadow, forest, grassland)Root;"
@@ -677,14 +686,15 @@ def create_taxonomy_visualization():
     ts.show_scale = False
     ts.branch_vertical_margin = 20
     ts.scale = 25
-    ts.title.add_face(TextFace("Auckland LCDB - Ver1", fsize=15), column=0)
+    ts.title.add_face(TextFace("Auckland LCDB - Ver1", fsize=10), column=0)
+    ts.rotation = 90
     for node in t1.traverse():
         if node.name == "Water_bodies":
-            node.add_face(TextFace("Water_bodies"), column=0, position = "branch-top")
-        elif node.name == "Built space":
+            node.add_face(TextFace(" Water bodies "), column=0, position = "branch-top")
+        elif node.name == " Built space ":
             node.add_face(TextFace("Built space"), column=0, position = "branch-top")
         elif node.name == "artificial_surface":
-            node.add_face(TextFace("artificial_surface"), column=0, position = "branch-top")
+            node.add_face(TextFace(" Artificial Surface "), column=0, position = "branch-top")
     
     
     taxonomy_image_name = "tree.png"
