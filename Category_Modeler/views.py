@@ -571,8 +571,6 @@ def read_test_file_as_array(f):
     with open('Category_Modeler/static/testfiles/%s' % f, 'rU') as datafile:
         dataReader = csv.reader(datafile, delimiter=',', quoting=csv.QUOTE_NONE)
         samples = list(dataReader)
-        print samples[0]
-        #print samples.shape
         datafile.close();
     return samples
 

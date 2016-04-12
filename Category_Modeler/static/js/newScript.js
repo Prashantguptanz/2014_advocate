@@ -458,16 +458,19 @@ $(function() {
 									e = e + "</table>";
 									$('#JMDistance').html(e);
 									
-									var f = "<legend style=\"font-size: 18px; background-color: gainsboro\" align=\"center\">Suggestions</legend>";
-									f= f + "<label style=\"font-size: 15px; margin-left: 5px; margin-right: 5px\">List of suggestions to increase the accuracy of classification model:</label>" + 
-										"<ul class=\" list-group\">";
-									for (var i = 0; i < response['suggestion_list'].length; i++){
-										f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
-											"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
+									if (response['suggestion_list'].length!=0){
+										
+										var f = "<legend style=\"font-size: 18px; background-color: gainsboro\" align=\"center\">Suggestions</legend>";
+										f= f + "<label style=\"font-size: 15px; margin-left: 5px; margin-right: 5px\">List of suggestions to increase the accuracy of classification model:</label>" + 
+											"<ul class=\" list-group\">";
+										for (var i = 0; i < response['suggestion_list'].length; i++){
+											f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
+												"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
+										}
+										f = f + "</ul>";
+										$('#suggestions_section').html(f);
+										$('#suggestions_section').show();
 									}
-									f = f + "</ul>";
-									$('#suggestions_section').html(f);
-									$('#suggestions_section').show();
 									
 									$('#meanvectors').hide();
 									$('#variance').hide();

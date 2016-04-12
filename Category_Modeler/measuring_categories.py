@@ -275,11 +275,11 @@ class StatisticalMethods:
             if (float(sumColumns[i])) !=0:
                 producersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumColumns[i]))))
             else:
-                producersAccuracy.insert(i, "undefined")
+                producersAccuracy.insert(i, 0)
             if (float(sumRows[i])) != 0:
                 usersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumRows[i]))))
             else:
-                usersAccuracy.insert(i, "undefined")
+                usersAccuracy.insert(i, 0)
             
         return producersAccuracy, usersAccuracy        
                 
