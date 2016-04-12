@@ -18,7 +18,7 @@ from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, 
 from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Legend
 from Category_Modeler.measuring_categories import TrainingSample, NormalDistributionIntensionalModel, DecisionTreeIntensionalModel, StatisticalMethods, ClassifiedFile
 from Category_Modeler.data_processing import ManageRasterData
-from Category_Modeler.database_transactions import QueryDatabase, CustomQueries
+from Category_Modeler.database_transactions import UpdateDatabase, CustomQueries
 
 
 #Different Files Locations
@@ -160,7 +160,6 @@ def trainingsampleprocessing(request):
                 if 'existing_taxonomy_name'  in request.session:
                     customeQuery = CustomQueries()
                     old_taxonomy_name = customeQuery.get_trainingset_name_for_previous_version_of_legend(request.session['existing_taxonomy_name'])[0]
-                    print old_taxonomy_name
                 return HttpResponse("We got the file");
             elif len(trainingFilesList)>1 and trainingFilesList[0].name.split(".")[-1] == "tif":
                 request.session['current_training_file_name'] = 'temp.csv'
@@ -472,12 +471,12 @@ def signaturefile(request):
             return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_list, 'suggestion_list': suggestion_list})
         
         elif (classifiername=="C4.5"):
-            print clf.tree_.__getstate__()
-            print clf.tree_.children_left
-            print clf.tree_.children_right
-            print clf.tree_.feature
-            print clf.tree_.threshold
-            print clf.tree_.value
+            #print clf.tree_.__getstate__()
+            #print clf.tree_.children_left
+            #print clf.tree_.children_right
+            #print clf.tree_.feature
+            #print clf.tree_.threshold
+            #print clf.tree_.value
             newModel = DecisionTreeIntensionalModel(clf)
             dot_data = StringIO()
             tree.export_graphviz(clf, out_file=dot_data)
@@ -549,8 +548,8 @@ def supervised(request):
             request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
             
             listofcategories = clf.classes_.tolist()
-            
-            return  JsonResponse({'map': 'test.jpg', 'categories': listofcategories});
+            outputmapName = testfile.name.split('.', 1)[0] + '.jpeg'
+            return  JsonResponse({'map': outputmapName, 'categories': listofcategories});
     
     
     elif 'current_model_id' not in request.session:
@@ -619,7 +618,7 @@ def createChangeEventForNewTaxonomy(request):
 
 @transaction.atomic  
 def applyChangeOperations(request):
-    change_event_queries = QueryDatabase(request)
+    change_event_queries = UpdateDatabase(request)
     change_event_queries.create_legend()
     trainingfile = TrainingSample(request.session['current_training_file_name'])
     concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))

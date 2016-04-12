@@ -1,11 +1,12 @@
 from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity 
 from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Concept, Legend, LegendConceptCombination, ComputationalIntension
-from Category_Modeler.models import Extension, Category, HierarchicalRelationship, HorizontalRelationship, MeanVector, CovarianceMatrix
+from Category_Modeler.models import Extension, Category, HierarchicalRelationship, HorizontalRelationship, MeanVector, CovarianceMatrix, ChangeEvent, ChangeEventOperations
+from Category_Modeler.models import CreateLegendOperation, CreateConceptOperation, AddConceptToALegendOperation
 from datetime import datetime
 import numpy
 from django.db import transaction, connection
 
-class QueryDatabase:
+class UpdateDatabase:
     
     def __init__(self, request):
         self.authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
@@ -14,6 +15,13 @@ class QueryDatabase:
             self.current_taxonomy = self.request.session['existing_taxonomy_name']
         else:
             self.current_taxonomy = self.request.session['new_taxonomy_name']
+        self.change_event = self.__create_change_event()
+    
+    def __create_change_event(self):
+        exp_chain = self.request.session['exploration_chain_id']
+        change_event = ChangeEvent(exploration_chain_id = exp_chain, created_by= self.authuser_instance)
+        change_event.save()
+        return change_event
     
     def create_legend(self):
         if Legend.objects.all().exists():
@@ -21,24 +29,34 @@ class QueryDatabase:
         else:
             legendId =0
         model_instance = Classificationmodel.objects.get(id = int(self.request.session['current_model_id']))
-        legend = Legend(legend_id = legendId, legend_ver = 1, legend_name= self.current_taxonomy, date_expired = datetime(9999, 9, 12), description = self.request.session['new_taxonomy_description'], created_by = self.authuser_instance, model = model_instance)
+        legend = Legend(legend_id = legendId, legend_ver = 1, legend_name= self.current_taxonomy, date_expired = datetime(9999, 9, 12), description = self.request.session['new_taxonomy_description'], created_by = self.authuser_instance, model = model_instance, change_event_id = self.change_event)
         legend.save()
+        createLegend = CreateLegendOperation(legend_name = legend.legend_name, legend_id = legend.legend_id, legend_ver = legend.legend_ver)
+        createLegend.save()
         self.__create_root_concept(legendId, 1)
     
     def __create_root_concept(self, legendId, legendVer):
         details = "Root concept to legend " + self.current_taxonomy
-        root_concept = Concept(concept_name = "root_"+self.current_taxonomy, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance)
+        root_concept = Concept(concept_name = "root_"+self.current_taxonomy, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance, change_event_id = self.change_event)
         root_concept.save()
-        connectToLegend = LegendConceptCombination(legend_id = legendId, legend_ver = legendVer, concept = root_concept)
+        createConcept = CreateConceptOperation(concept_name = root_concept.concept_name)
+        createConcept.save()
+        connectToLegend = LegendConceptCombination(legend_id = legendId, legend_ver = legendVer, concept = root_concept, change_event_id = self.change_event)
         connectToLegend.save()
+        conceptLegendCombination = AddConceptToALegendOperation(legend_concept_combination_id = connectToLegend)
+        conceptLegendCombination.save()
     
        
     def create_concept(self, conceptName, mean_vector, covariance_matrix, extension, parentName="", details=""):
         current_concept = Concept(concept_name = conceptName, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance)
         current_concept.save()
+        createConcept = CreateConceptOperation(concept_name = conceptName)
+        createConcept.save()
         legend = Legend.objects.get(legend_name =self.current_taxonomy)
         connectToLegend = LegendConceptCombination(legend_id = legend.legend_id, legend_ver = legend.legend_ver, concept = current_concept)
         connectToLegend.save()
+        conceptLegendCombination = AddConceptToALegendOperation(legend_concept_combination_id = connectToLegend)
+        conceptLegendCombination.save()
         if parentName == "":
             parentName = "root_"+self.current_taxonomy
         parent_concept_connection_to_legend = LegendConceptCombination.objects.get(concept__concept_name = parentName,  legend_id = legend.legend_id, legend_ver = legend.legend_ver)
@@ -55,7 +73,6 @@ class QueryDatabase:
         if Category.objects.all().exists():
             CId = Category.objects.latest("category_id").category_id + 1
         else:
-            print "inside"
             CId =0
         cat = Category(category_id = CId, category_ver=1, date_expired= datetime(9999, 9, 12), trainingset_id= self.request.session['current_training_file_id'], trainingset_ver=self.request.session['current_training_file_ver'], creator= self.authuser_instance, legend_concept_combination_id = legend_concept_id, computational_intension_id= comp_int_id, extension_id= ext_id)
         

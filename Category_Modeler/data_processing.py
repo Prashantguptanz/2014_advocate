@@ -143,8 +143,6 @@ class ManageRasterData:
         config = open('Category_Modeler/%s' % configFile, 'r')
         findList = config.readline().split(";")
         replaceList = config.readline().split(";")
-        print findList
-        print replaceList
         config.close()
         
         inputfile = open('%s%s' % (srcFileLocation, srcFile), 'rb')
@@ -159,7 +157,6 @@ class ManageRasterData:
     
     def create_raster_from_csv_file(self, csvFile, referenceRasterFile, csvFileLocation, outputRasterFileName, outputRasterFileLocation):
         columns, rows, noOfBands, driver, originX, originY, pixelWidth, pixelHeight, prj = self.extract_raster_info(referenceRasterFile)
-        print columns, rows, noOfBands, driver, originX, originY, pixelWidth, pixelHeight, prj
         rasterBandValuesArrays1, rasterBandValuesArrays2, rasterBandValuesArrays3 = self.convert_raster_csv_file_to_array(csvFile, csvFileLocation, rows, columns, 3)
         #print len(rasterBandValuesArrays[0][0]), len(rasterBandValuesArrays[0]), len(rasterBandValuesArrays[1][0]), len(rasterBandValuesArrays[1]), len(rasterBandValuesArrays[2][0]), len(rasterBandValuesArrays[2])
         
@@ -177,8 +174,8 @@ class ManageRasterData:
         outbandG.WriteArray(np.array(rasterBandValuesArrays2, dtype=np.uint8))
         outbandB.WriteArray(np.array(rasterBandValuesArrays3, dtype=np.uint8))
         outRaster.SetProjection(prj)
-        
-        driver1.CreateCopy('Category_Modeler/static/maps/test.jpg', outRaster, 0)
+        map = outputRasterFileName.split('.', 1)[0] + '.jpeg'
+        driver1.CreateCopy('Category_Modeler/static/maps/%s'%map, outRaster, 0)
         outbandR.FlushCache()
         outbandG.FlushCache()
         outbandB.FlushCache()

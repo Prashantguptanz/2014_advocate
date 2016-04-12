@@ -47,7 +47,6 @@ class TrainingSample:
     
         
     def split_training_samples_for_each_category(self):
-        print self.training_file_name
         unique_categories, indices = np.unique(self.target, return_index=True)
         catgeories_with_sample_range = []
         for category in unique_categories:

@@ -78,6 +78,16 @@ class AuthUserUserPermissions(models.Model):
         managed = False
         db_table = 'auth_user_user_permissions'
 
+
+class ChangeEvent(models.Model):
+    exploration_chain_id = models.IntegerField()
+    created_by = models.ForeignKey(AuthUser, db_column='created_by')
+    date_created = models.DateTimeField(default=datetime.now)
+
+    class Meta:
+        managed = False
+        db_table = 'change_event'
+
 class Confusionmatrix(models.Model):
     confusionmatrix_name = models.CharField(max_length=256)
     confusionmatrix_location = models.CharField(max_length=1024)
@@ -99,6 +109,7 @@ class Concept(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     date_expired = models.DateTimeField()
     created_by = models.ForeignKey(AuthUser, db_column='created_by')
+    change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id')
     
     class Meta:
         managed = False
@@ -143,6 +154,7 @@ class Legend(models.Model):
     description = models.TextField(blank=True)
     created_by = models.ForeignKey(AuthUser, db_column='created_by')
     model = models.ForeignKey(Classificationmodel)
+    change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id')
 
     def __unicode__(self):
         return self.legend_name
@@ -156,6 +168,7 @@ class LegendConceptCombination(models.Model):
     legend_id = models.IntegerField()
     legend_ver = models.IntegerField()
     concept = models.ForeignKey(Concept)
+    change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id')
 
     class Meta:
         managed = False
@@ -191,6 +204,7 @@ class Extension(models.Model):
     class Meta:
         managed = False
         db_table = 'extension'
+
        
 class Category(models.Model):
     category_id = models.IntegerField(primary_key=True)
@@ -204,6 +218,7 @@ class Category(models.Model):
     legend_concept_combination_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_combination_id')
     computational_intension_id = models.ForeignKey(ComputationalIntension, db_column='computational_intension_id')
     extension_id = models.IntegerField()
+    change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id')
     
     class Meta:
         managed = False
@@ -463,3 +478,44 @@ class CovarianceMatrix(models.Model):
     class Meta:
         managed = False
         db_table = 'covariance_matrix'
+
+
+
+class ChangeEventOperations(models.Model):
+    change_operation_type = (
+        ('create_legend_operation', 'create_legend_operation'),
+        ('create_concept_operation', 'create_concept_operation'),
+        ('add_concept_to_a_legend_operation', 'add_concept_to_a_legend_operation')
+        
+    )
+    change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id')
+    change_operation_id = models.IntegerField()
+    change_operation = models.CharField(choices=change_operation_type, max_length=256)  # This field type is a guess.
+
+    class Meta:
+        managed = False
+        db_table = 'change_event_operations'
+        
+class AddConceptToALegendOperation(models.Model):
+    legend_concept_combination_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_combination_id')
+
+    class Meta:
+        managed = False
+        db_table = 'add_concept_to_a_legend_operation'
+
+class CreateConceptOperation(models.Model):
+    concept_name = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'create_concept_operation'
+        
+class CreateLegendOperation(models.Model):
+    legend_name = models.CharField(max_length=100)
+    legend_id = models.IntegerField()
+    legend_ver = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'create_legend_operation'
+        unique_together = ("legend_id", "legend_ver")
