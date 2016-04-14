@@ -33,6 +33,8 @@ class UpdateDatabase:
         legend.save()
         createLegend = CreateLegendOperation(legend_name = legend.legend_name, legend_id = legend.legend_id, legend_ver = legend.legend_ver)
         createLegend.save()
+        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createLegend.id, change_operation='create_legend_operation')
+        newOperationForChangeEvent.save()
         self.__create_root_concept(legendId, 1)
     
     def __create_root_concept(self, legendId, legendVer):
@@ -41,22 +43,30 @@ class UpdateDatabase:
         root_concept.save()
         createConcept = CreateConceptOperation(concept_name = root_concept.concept_name)
         createConcept.save()
+        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createConcept.id, change_operation='create_concept_operation')
+        newOperationForChangeEvent.save()
         connectToLegend = LegendConceptCombination(legend_id = legendId, legend_ver = legendVer, concept = root_concept, change_event_id = self.change_event)
         connectToLegend.save()
         conceptLegendCombination = AddConceptToALegendOperation(legend_concept_combination_id = connectToLegend)
         conceptLegendCombination.save()
+        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = conceptLegendCombination.id, change_operation='add_concept_to_a_legend_operation')
+        newOperationForChangeEvent.save()
     
        
     def create_concept(self, conceptName, mean_vector, covariance_matrix, extension, parentName="", details=""):
-        current_concept = Concept(concept_name = conceptName, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance)
+        current_concept = Concept(concept_name = conceptName, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance, change_event_id = self.change_event)
         current_concept.save()
         createConcept = CreateConceptOperation(concept_name = conceptName)
         createConcept.save()
+        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createConcept.id, change_operation='create_concept_operation')
+        newOperationForChangeEvent.save()
         legend = Legend.objects.get(legend_name =self.current_taxonomy)
-        connectToLegend = LegendConceptCombination(legend_id = legend.legend_id, legend_ver = legend.legend_ver, concept = current_concept)
+        connectToLegend = LegendConceptCombination(legend_id = legend.legend_id, legend_ver = legend.legend_ver, concept = current_concept, change_event_id = self.change_event)
         connectToLegend.save()
         conceptLegendCombination = AddConceptToALegendOperation(legend_concept_combination_id = connectToLegend)
         conceptLegendCombination.save()
+        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = conceptLegendCombination.id, change_operation='add_concept_to_a_legend_operation')
+        newOperationForChangeEvent.save()
         if parentName == "":
             parentName = "root_"+self.current_taxonomy
         parent_concept_connection_to_legend = LegendConceptCombination.objects.get(concept__concept_name = parentName,  legend_id = legend.legend_id, legend_ver = legend.legend_ver)
@@ -74,7 +84,7 @@ class UpdateDatabase:
             CId = Category.objects.latest("category_id").category_id + 1
         else:
             CId =0
-        cat = Category(category_id = CId, category_ver=1, date_expired= datetime(9999, 9, 12), trainingset_id= self.request.session['current_training_file_id'], trainingset_ver=self.request.session['current_training_file_ver'], creator= self.authuser_instance, legend_concept_combination_id = legend_concept_id, computational_intension_id= comp_int_id, extension_id= ext_id)
+        cat = Category(category_id = CId, category_ver=1, date_expired= datetime(9999, 9, 12), trainingset_id= self.request.session['current_training_file_id'], trainingset_ver=self.request.session['current_training_file_ver'], creator= self.authuser_instance, legend_concept_combination_id = legend_concept_id, computational_intension_id= comp_int_id, extension_id= ext_id, change_event_id = self.change_event)
         
         cat.save(force_insert=True)
             

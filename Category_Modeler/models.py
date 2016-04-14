@@ -488,9 +488,9 @@ class ChangeEventOperations(models.Model):
         ('add_concept_to_a_legend_operation', 'add_concept_to_a_legend_operation')
         
     )
-    change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id')
-    change_operation_id = models.IntegerField()
-    change_operation = models.CharField(choices=change_operation_type, max_length=256)  # This field type is a guess.
+    change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id', primary_key=True)
+    change_operation_id = models.IntegerField(primary_key=True)
+    change_operation = models.CharField(choices=change_operation_type, max_length=256, primary_key=True)  # This field type is a guess.
 
     class Meta:
         managed = False
