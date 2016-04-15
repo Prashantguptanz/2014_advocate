@@ -158,8 +158,8 @@ def trainingsampleprocessing(request):
                 request.session['current_training_file_name'] = trainingFilesList[0].name.split('.', 1)[0] + '.csv'
                 save_csv_training_file(trainingFilesList[0])
                 if 'existing_taxonomy_name'  in request.session:
-                    customeQuery = CustomQueries()
-                    old_taxonomy_name = customeQuery.get_trainingset_name_for_previous_version_of_legend(request.session['existing_taxonomy_name'])[0]
+                    customQuery = CustomQueries()
+                    old_taxonomy_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
                 return HttpResponse("We got the file");
             elif len(trainingFilesList)>1 and trainingFilesList[0].name.split(".")[-1] == "tif":
                 request.session['current_training_file_name'] = 'temp.csv'
@@ -169,8 +169,8 @@ def trainingsampleprocessing(request):
                 managedata = ManageRasterData()
                 managedata.combine_multiple_raster_files_to_csv_file(rasterFileNameList, request.session['current_training_file_name'], EXISTING_TRAINING_DATA_LOCATION)
                 if 'existing_taxonomy_name'  in request.session:
-                    customeQuery = CustomQueries()
-                    print customeQuery.get_trainingset_name_for_previous_version_of_legend(request.session['existing_taxonomy_name'])
+                    customQuery = CustomQueries()
+                    print customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])
                 fp = file("%s%s" % (EXISTING_TRAINING_DATA_LOCATION, request.session['current_training_file_name']), 'rb')
                 response = HttpResponse( fp, content_type='text/csv')
                 response['Content-Disposition'] = 'attachment; filename="training File"'
@@ -189,20 +189,20 @@ def trainingsampleprocessing(request):
             trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
             fp = file (trainingfilelocation+trainingfilename, 'rb')
             if 'existing_taxonomy_name'  in request.session:
-                customeQuery = CustomQueries()
-                old_trainingset_name = customeQuery.get_trainingset_name_for_previous_version_of_legend(request.session['existing_taxonomy_name'])[0]
+                customQuery = CustomQueries()
+                old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
                 print request.session['current_training_file_name']
                 print old_trainingset_name
                 new_training_sample = TrainingSample(request.session['current_training_file_name'])
                 old_training_sample = TrainingSample(old_trainingset_name)
-                a, b, c = new_training_sample.compare_training_samples(old_training_sample)
-                for x in a:
-                    print x[0]
-                    print x[1]
-                for y in b:
-                    print y
-                for z in c:
-                    print z
+                common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
+                if isinstance(common_categories[0], list)==False:
+                    common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
+                    request.session['common_categories_message'] = common_categories_message
+                request.session['common_categories'] = common_categories
+                request.session['new_categories'] = new_categories
+                request.session['deprecated_categories'] = deprecated_categories
+                
             
             if 'current_model_id' in request.session:
                 del request.session['model_type']    
@@ -222,6 +222,7 @@ def trainingsampleprocessing(request):
             
             response = HttpResponse( fp, content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="temp.csv"'
+            
             return response
 
     else:

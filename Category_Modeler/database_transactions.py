@@ -126,13 +126,13 @@ class UpdateDatabase:
         return CM_id
     
     def create_computational_intension(self, meanvector_id, cov_mat_id):
-        comp_int = ComputationalIntension(mean_vector_id = meanvector_id, confusion_matrix_id = cov_mat_id)
+        comp_int = ComputationalIntension(mean_vector_id = meanvector_id, covariance_matrix_id = cov_mat_id)
         comp_int.save()
         return comp_int
 
 class CustomQueries:
 
-    def get_trainingset_name_for_previous_version_of_legend(self, legendName):
+    def get_trainingset_name_for_current_version_of_legend(self, legendName):
         cursor = connection.cursor()
         
         cursor.execute("select t.trainingset_name from trainingset t, category c, legend l, legend_concept_combination lcc \

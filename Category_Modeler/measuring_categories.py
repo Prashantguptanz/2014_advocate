@@ -73,12 +73,14 @@ class TrainingSample:
         categories_not_in_new_training_sample = []
         for each_category_with_range_1 in categories_with_sample_range_1:
             if each_category_with_range_1[0] in categories_with_sample_range_2[:, 0]:
-                print each_category_with_range_1[0]
-                print categories_with_sample_range_2[:, 0]
                 index = np.where(categories_with_sample_range_2==each_category_with_range_1[0])[0][0]
-                jaccard_index = self.__compare_training_sample_for_single_category(self.samples[int(each_category_with_range_1[1]):int(each_category_with_range_1[2])+1], \
-                                                                old_training_sample.samples[int(categories_with_sample_range_2[index][1]):int(categories_with_sample_range_2[index][2])+1])
-                common_categories_comparison.append([each_category_with_range_1[0], jaccard_index])
+                new_samples = self.samples[int(each_category_with_range_1[1]):int(each_category_with_range_1[2])+1]
+                old_samples = old_training_sample.samples[int(categories_with_sample_range_2[index][1]):int(categories_with_sample_range_2[index][2])+1]
+                if new_samples.shape[1] == old_samples.shape[1]:
+                    jaccard_index = self.__compare_training_sample_for_single_category(new_samples, old_samples)
+                    common_categories_comparison.append([each_category_with_range_1[0], jaccard_index])
+                else:
+                    common_categories_comparison.append(each_category_with_range_1[0])
             else:
                 new_categories_in_new_training_sample.append(each_category_with_range_1[0])
         for each_category_with_range_2 in categories_with_sample_range_2:
@@ -89,6 +91,7 @@ class TrainingSample:
     
     def __compare_training_sample_for_single_category(self, ts1, ts2):
         common_elements_in_both_samples = np.intersect1d(ts1, ts2)
+        print common_elements_in_both_samples
         union_of_both_training_samples = np.union1d(ts1, ts2)
         jaccard_index = float(len(common_elements_in_both_samples)/len(union_of_both_training_samples))
         return jaccard_index

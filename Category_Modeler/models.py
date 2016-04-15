@@ -177,7 +177,7 @@ class LegendConceptCombination(models.Model):
         
 class ComputationalIntension(models.Model):
     mean_vector_id = models.IntegerField(blank=True, null=True)
-    confusion_matrix_id = models.IntegerField(blank=True, null=True)
+    covariance_matrix_id = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
