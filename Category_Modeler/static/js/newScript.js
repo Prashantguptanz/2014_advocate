@@ -46,10 +46,9 @@ $(function() {
 		var headerHeight = $('#top-part').outerHeight();
 		var totalHeight = $(window).height();
 		$('#signaturefiledetails').css({
-			'height' : totalHeight - headerHeight - 140 + 'px'
+			'height' : totalHeight - headerHeight - 180 + 'px'
 		});
-	}
-	;
+	};
 	// Script for navbar
 
 	var loc = window.location.href;
@@ -103,34 +102,24 @@ $(function() {
 		$('#register-dropdown').hide();
 	});
 
-	$('#Signin')
-			.on(
-					'click',
-					function(e) {
-						if ($('#username').val() != ""
-								&& $('#password').val() != "") {
-							e.preventDefault();
-							var $this = $('#signindetails');
-							$
-									.post(
-											"http://127.0.0.1:8000/AdvoCate/accounts/auth/",
-											$this.serialize(),
-											function(response) {
-												if ('error' in response) {
-													$('p#signinerror').html(
-															response['error']);
-												} else {
-													$('div#topnav')
-															.html(
-																	"<div id=\"logoutsession\"><strong>Welcome "
-																			+ response['user_name']
-																			+ " &nbsp; &nbsp;</strong><a id=\"logout-link\" href=\"/AdvoCate/accounts/logout/\"> Sign out </a></div>");
-												}
+	$('#Signin').on('click', function(e) {
+		if ($('#username').val() != "" && $('#password').val() != "") {
+			e.preventDefault();
+			var $this = $('#signindetails');
+			$.post("http://127.0.0.1:8000/AdvoCate/accounts/auth/", $this.serialize(), function(response) {
+				if ('error' in response) {
+					$('p#signinerror').html(response['error']);
+				} 
+				else {
+					$('div#topnav').html("<div id=\"logoutsession\"><strong>Welcome " + response['user_name']
+										+ " &nbsp; &nbsp;</strong><a id=\"logout-link\" href=\"/AdvoCate/accounts/logout/\">"
+										+ "Sign out </a></div>");
+				}
 
-											});
-						}
+			});
+		}
 
-					});
+	});
 
 	// Script for 'Home' page
 
@@ -160,8 +149,16 @@ $(function() {
 
 		$('#savetaxonomynameandexternaltrigger').on('click', function(e) {
 			e.preventDefault();
-			var $this = $('#existingtaxonomydetails');
-			$.post("http://127.0.0.1:8000/AdvoCate/saveexistingtaxonomydetails/", $this.serialize(), function(response) {
+			var legendpkey = $('#existingtaxonomies').val();
+			console.log(legendpkey);
+			var legendname = $('#existingtaxonomies>option:selected').text();
+			console.log(legendname);
+			var Etrigger = $('#externaltriggers>option:selected').text();
+			var data = {};
+			data[1] = legendpkey;
+			data[2] = legendname;
+			data[3] = Etrigger;
+			$.post("http://127.0.0.1:8000/AdvoCate/saveexistingtaxonomydetails/", data, function(response) {
 				$('#savetaxonomynameandexternaltrigger').attr('disabled','disabled');
 				$('#messageforexploringchanges').html(response);
 				$('#chooseanactivitymessage').hide();
@@ -235,11 +232,22 @@ $(function() {
 			}
 
 		};
+		
+		var no_of_concepts =1;
+		
+		$('#addmorecategoriesorsubmit').on('click', function(e) {
+			e.preventDefault();
+			no_of_concepts +=1;
+			a = "</br><form id=\"concept" + no_of_concepts + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
+			$('#categoriesandsamples').append(a);
+			b = $('#concept1details').html();
+			$('#categoriesandsamples form:last').html(b);
+			
+		});
 
-		var trainingdatacontainer = document
-				.getElementById('trainingdataTable'), hot;
+		var trainingdatacontainer = document.getElementById('trainingdataTable'), hot;
 		hot = new Handsontable(trainingdatacontainer, settings1);
-
+		
 		// Script to deal with when the existing training file is selected
 		$('#existingtrainingfiles').on('change', function() {
 			$('#instanceslabel').show();
@@ -250,15 +258,13 @@ $(function() {
 			var data = {};
 			data[1] = filepkey;
 			data[2] = filename;
-			$.post("http://127.0.0.1:8000/AdvoCate/trainingsample/",
-					data, function(response) {
-						var trainingdata = $.csv.toArrays(response);
-						$('#instances').html(trainingdata.length - 1);
-						$('#Attributes').html(trainingdata[0].length);
-
-						$('#trainingdataTable').show();
-						hot.loadData(trainingdata);
-					});
+			$.post("http://127.0.0.1:8000/AdvoCate/trainingsample/", data, function(response) {
+				var trainingdata = $.csv.toArrays(response);
+				$('#instances').html(trainingdata.length - 1);
+				$('#Attributes').html(trainingdata[0].length);
+				$('#trainingdataTable').show();
+				hot.loadData(trainingdata);
+			});
 
 		});
 
@@ -338,6 +344,75 @@ $(function() {
 			e.preventDefault();
 			var $this = $('#newtrainingdatasetdetails');
 			$.post("http://127.0.0.1:8000/AdvoCate/savetrainingdatadetails/", $this.serialize(), function(response) {
+				if (response['common_categories_message']){
+					$('#newtrainingdatasetdetails').hide();
+					$('#trainingsetcomparison').show();
+					var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
+							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+					a = a + " <div class=\"panel-body\"> <p><em> Note:" + response['common_categories_message'] + "</em></p></div>";
+					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+				
+					for (var i = 0; i < response['common_categories'].length; i++){
+						a = a + "<li class=\"list-group-item\">" + response['common_categories'][i] + "</li>";
+					}
+					a = a + "</ul></div>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+				
+					for (var i = 0; i < response['new_categories'].length; i++){
+						a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
+					}
+					a = a + "</ul></div>";
+					
+					if (response['deprecated_categories'].length!=0){
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+					
+						for (var i = 0; i < response['deprecated_categories'].length; i++){
+							a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
+						}
+						a = a + "</ul></div>";
+					}
+					$('#trainingsetcomparisondetails').html(a);
+					
+				}
+				else if (response['common_categories']){
+					$('#newtrainingdatasetdetails').hide();
+					$('#trainingsetcomparison').show();
+					var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
+							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+					a = a + "<table class=\"table\"><tr><th> Category</th><th> J-Index </th></tr>";
+
+					for (var i = 0; i < response['common_categories'].length; i++){
+						a = a + "<tr><td>" + response['common_categories'][i][0] + "</td><td>" + response['common_categories'][i][1] + "</td></tr>";
+					}
+					a = a + "</table></div>";
+					
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+				
+					for (var i = 0; i < response['new_categories'].length; i++){
+						a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
+					}
+					a = a + "</ul></div>";
+					
+					if (response['deprecated_categories'].length!=0){
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+					
+						for (var i = 0; i < response['deprecated_categories'].length; i++){
+							a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
+						}
+						a = a + "</ul></div>";
+					}
+					$('#trainingsetcomparisondetails').html(a);
+					
+				}
+				else{
+					$('#newtrainingdatasetdetails').hide();
+				}
 			});
 		});
 
@@ -360,6 +435,70 @@ $(function() {
 					$('#changedtrainingdata').hide();
 					$('#newversionstoredsuccessfully').show();
 					$('#successmessage').html(response);
+					if (response['common_categories_message']){
+						$('#trainingsetcomparison').show();
+						var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
+								"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+						a = a + " <div class=\"panel-body\"> <p><em> Note:" + response['common_categories_message'] + "</em></p></div>";
+						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+					
+						for (var i = 0; i < response['common_categories'].length; i++){
+							a = a + "<li class=\"list-group-item\">" + response['common_categories'][i] + "</li>";
+						}
+						a = a + "</ul></div>";
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+					
+						for (var i = 0; i < response['new_categories'].length; i++){
+							a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
+						}
+						a = a + "</ul></div>";
+						
+						if (response['deprecated_categories'].length!=0){
+							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+							a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+						
+							for (var i = 0; i < response['deprecated_categories'].length; i++){
+								a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
+							}
+							a = a + "</ul></div>";
+						}
+						$('#trainingsetcomparisondetails').html(a);
+						
+					}
+				else if (response['common_categories']){
+					$('#trainingsetcomparison').show();
+					var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
+							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+					a = a + "<table class=\"table\"><tr><th> Category</th><th> J-Index </th></tr>";
+
+					for (var i = 0; i < response['common_categories'].length; i++){
+						a = a + "<tr><td>" + response['common_categories'][i][0] + "</td><td>" + response['common_categories'][i][1] + "</td></tr>";
+					}
+					a = a + "</table></div>";
+					
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+				
+					for (var i = 0; i < response['new_categories'].length; i++){
+						a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
+					}
+					a = a + "</ul></div>";
+					
+					if (response['deprecated_categories'].length!=0){
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+					
+						for (var i = 0; i < response['deprecated_categories'].length; i++){
+							a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
+						}
+						a = a + "</ul></div>";
+					}
+					$('#trainingsetcomparisondetails').html(a);
+					
+					}
 				}
 
 			});
@@ -462,7 +601,7 @@ $(function() {
 										
 										var f = "<legend style=\"font-size: 18px; background-color: gainsboro\" align=\"center\">Suggestions</legend>";
 										f= f + "<label style=\"font-size: 15px; margin-left: 5px; margin-right: 5px\">List of suggestions to increase the accuracy of classification model:</label>" + 
-											"<ul class=\" list-group\">";
+											"<ul class=\" list-group\" style=\" margin-left: 5px; margin-right: 5px; margin-bottom: 5px\">";
 										for (var i = 0; i < response['suggestion_list'].length; i++){
 											f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
 												"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
@@ -471,6 +610,8 @@ $(function() {
 										$('#suggestions_section').html(f);
 										$('#suggestions_section').show();
 									}
+									
+									
 									
 									$('#meanvectors').hide();
 									$('#variance').hide();
@@ -497,9 +638,52 @@ $(function() {
 									$('#accuracies').html(d);
 									$('#accuracies').hide();
 									$('#decisiontree').hide();
-									$('#confusionmatrix2')
-											.hide();
+									$('#confusionmatrix2').hide();
 	
+								}
+								if (response['common_categories_comparison']) {
+									if (response['common_categories_comparison'][0].length==9){
+										var a = "<legend style=\"font-size: 18px; background-color: gainsboro\" align=\"center\">Comparison between existing categories and the new modelled categories</legend>";
+										a =	a + "<table style=\"width:95%\" align=\"center\"class=\" table table-bordered\"><tr><th>Category</th><th>Model type</th><th>Validation</th>" +
+												"<th>Prod accuracy</th><th>User accuracy</th><th>Model type (new)</th><th>Validation (new)</th><th>Prod accuracy (new)</th><th>User accuracy (new)</th></tr>";
+										for (var i=0; i< response['common_categories_comparison'].length; i++){
+											a = a + "<tr><td>" + response['common_categories_comparison'][i][0] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][6] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][5] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][7] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][8] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][1] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][2] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][3] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][4] + "</td></tr>";
+										}
+										a = a + "</table>";
+										
+										$('#signaturefilecomparison').html(a);
+										$('#signaturefilecomparison').show();
+									}
+									else{
+										var a = "<legend style=\"font-size: 18px; background-color: gainsboro\" align=\"center\">Comparison between existing categories and the new modelled categories</legend>";
+										a =	a + "<table style=\"width:95%\" align=\"center\"class=\" table table-bordered\"><tr><th>Category</th><th>Validation</th>" +
+												"<th>Prod accuracy</th><th>User accuracy</th><th>Validation (new)</th><th>Prod accuracy (new)</th><th>User accuracy (new)</th><th>JM distance</th></tr>";
+										for (var i=0; i< response['common_categories_comparison'].length; i++){
+											a = a + "<tr><td>" + response['common_categories_comparison'][i][0] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][6] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][5] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][7] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][8] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][1] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][2] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][3] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][4] + "</td>";
+											a = a + "<td>" + response['common_categories_comparison'][i][9] + "</td></tr>";
+										}
+										a = a + "</table>";
+										
+										$('#signaturefilecomparison').html(a);
+										$('#signaturefilecomparison').show();
+										
+									}
 								}
 	
 							}

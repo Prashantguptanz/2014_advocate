@@ -119,6 +119,7 @@ class Classificationmodel(models.Model):
     model_name = models.CharField(max_length=256)
     model_location = models.CharField(max_length=1024)
     accuracy = models.FloatField(blank=True, null=True)
+    model_type = models.CharField(max_length=256)
 
     class Meta:
         managed = False
@@ -178,17 +179,34 @@ class LegendConceptCombination(models.Model):
 class ComputationalIntension(models.Model):
     mean_vector_id = models.IntegerField(blank=True, null=True)
     covariance_matrix_id = models.IntegerField(blank=True, null=True)
+    learning_activity_id = models.ForeignKey(LearningActivity, db_column='learning_activity_id')
 
     class Meta:
         managed = False
         db_table = 'computational_intension'
 
+class SatelliteImage(models.Model):
+    name = models.CharField(max_length=256)
+    location = models.CharField(max_length=256)
+    columns = models.IntegerField()
+    rows = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'satellite_image'
+
+class ClassifiedSatelliteImage(models.Model):
+    name = models.CharField(max_length=256)
+    location = models.CharField(max_length=256)
+
+    class Meta:
+        managed = False
+        db_table = 'classified_satellite_image'
+
 class ClassificationActivity(models.Model):
     model = models.ForeignKey(Classificationmodel)
-    testfile_location = models.CharField(max_length=1024)
-    testfile_name = models.CharField(max_length=100)
-    classifiedfile_location = models.CharField(max_length=1024)
-    classifiedfile_name = models.CharField(max_length=100)
+    satellite_image_id  = models.ForeignKey(SatelliteImage, db_column='satellite_image_id')
+    classified_satellite_image_id  = models.ForeignKey(ClassifiedSatelliteImage, db_column='classified_satellite_image_id')
     completed = models.DateTimeField(default=datetime.now)
     completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
 
@@ -196,10 +214,19 @@ class ClassificationActivity(models.Model):
         managed = False
         db_table = 'classification_activity'
 
+class SetOfOccurences(models.Model):
+    id = models.IntegerField(primary_key=True)
+    x_coordinate = models.IntegerField(primary_key=True)
+    y_coordinate = models.IntegerField(primary_key=True)
+
+    class Meta:
+        managed = False
+        db_table = 'set_of_occurences'
+
 class Extension(models.Model):
     id = models.IntegerField(primary_key=True)
-    x = models.IntegerField(primary_key=True, db_column='X')  # Field name made lowercase.
-    y = models.IntegerField(primary_key=True, db_column='Y')  # Field name made lowercase.
+    set_of_occurences_id = models.IntegerField()
+    classification_activity_id = models.ForeignKey(ClassificationActivity, db_column='classification_activity_id')
 
     class Meta:
         managed = False
@@ -208,7 +235,8 @@ class Extension(models.Model):
        
 class Category(models.Model):
     category_id = models.IntegerField(primary_key=True)
-    category_ver = models.IntegerField(primary_key=True)
+    category_evol_ver = models.IntegerField(primary_key=True)
+    category_comp_ver = models.IntegerField(primary_key=True)
     date_created = models.DateTimeField(default=datetime.now)
     date_expired = models.DateTimeField()
     description = models.TextField(blank=True)
@@ -217,7 +245,7 @@ class Category(models.Model):
     creator = models.ForeignKey(AuthUser, db_column='creator')
     legend_concept_combination_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_combination_id')
     computational_intension_id = models.ForeignKey(ComputationalIntension, db_column='computational_intension_id')
-    extension_id = models.IntegerField()
+    extension_id = models.ForeignKey(Extension, db_column='extension_id')
     change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id')
     
     class Meta:
@@ -361,15 +389,17 @@ class HorizontalRelationship(models.Model):
     relationship_name = models.CharField(choices=horizontal_relationship_type, max_length=256)
     expired = models.NullBooleanField()
     category1_id = models.IntegerField()
-    category1_ver = models.IntegerField()
+    category1_evol_ver = models.IntegerField()
+    category1_comp_ver = models.IntegerField()
     category2_id = models.IntegerField()
-    category2_ver = models.IntegerField()
+    category2_evol_ver = models.IntegerField()
+    category2_comp_ver = models.IntegerField()
     
     class Meta:
         managed = False
         db_table = 'horizontal_relationship'
-        unique_together = ("category1_id", "category1_ver")
-        unique_together = ("category2_id", "category2_ver")
+        unique_together = ("category1_id", "category1_evol_ver", "category1_comp_ver")
+        unique_together = ("category2_id", "category2_evol_ver", "category2_comp_ver")
 
 
 

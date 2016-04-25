@@ -13,7 +13,7 @@
 				<select id="classifiertype" name="classifiertype" required >
 				<option value="">Select Classifier</option>
 				<option value="Naive Bayes">NaiveBayes</option>
-				<option value="C4.5">Decision Trees (C4.5)</option>
+				<option value="Decision Tree">Decision Tree (C4.5)</option>
 				<option value="SVM">Support Vector Machine</option>
 				</select>
 		    </div>
@@ -48,12 +48,13 @@
 			<input type="submit" id="createsignaturefile" value="Submit" class="submit button" />
 		</div>
 		<br />
-		<div id = "suggestions_section" class="form-group" style="display:none; width: 98%; overflow: hidden">
+		<div id = "suggestions_section" class="form-group" style="display:none; overflow: hidden">
 			
 		</div>
+
 	</form>
 	
-	<div style="width: 60%; float: right; border-style: solid; border-width: 1px; overflow: auto; border-color: #E5E5E5">
+	<div style="width: 60%; margin-bottom: 10 px; float: right; border-style: solid; border-width: 1px; overflow: scroll; border-color: #E5E5E5">
 		<legend style="font-size: 18px; background-color: gainsboro" align="center">
 			Signature file details
 		</legend>
@@ -97,16 +98,13 @@
 				</div>
 				
 			</div>			
-
-			  
-
 		</div>
 	</div>
-	<div id="suggestions" style="display:none; padding-left: 15px; padding-right: 15px">
-	  <legend style="font-size: 18px; background-color: gainsboro" align="center">
-			Suggestion:
-		</legend>
+	<br /><br />
+	<div id = "signaturefilecomparison" class="form-group" style="display:none; margin-left: 10px; margin-right: 10px; width: 100%; float: center; border-style: solid; border-width: 1px; overflow: auto; border-color: #E5E5E5 ">
+
 	</div>
+	
 </div>
 
 {% endblock %}

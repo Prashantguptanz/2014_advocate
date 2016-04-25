@@ -53,7 +53,7 @@ class UpdateDatabase:
         newOperationForChangeEvent.save()
     
        
-    def create_concept(self, conceptName, mean_vector, covariance_matrix, extension, parentName="", details=""):
+    def create_concept(self, conceptName, mean_vector, covariance_matrix, extension, producer_accuracy, user_accuracy, parentName="", details=""):
         current_concept = Concept(concept_name = conceptName, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance, change_event_id = self.change_event)
         current_concept.save()
         createConcept = CreateConceptOperation(concept_name = conceptName)
@@ -75,7 +75,7 @@ class UpdateDatabase:
         extension_id = self.create_extension(extension)
         cov_mat_id = self.create_covariance_matrix(covariance_matrix)
         vector_id = self.create_mean_vector(mean_vector)
-        comp_int = self.create_computational_intension(vector_id, cov_mat_id)
+        comp_int = self.create_computational_intension(vector_id, cov_mat_id, producer_accuracy, user_accuracy)
         self.create_categories(connectToLegend, comp_int, extension_id)
         
         
@@ -125,8 +125,8 @@ class UpdateDatabase:
         CovarianceMatrix.objects.bulk_create(cm)
         return CM_id
     
-    def create_computational_intension(self, meanvector_id, cov_mat_id):
-        comp_int = ComputationalIntension(mean_vector_id = meanvector_id, covariance_matrix_id = cov_mat_id)
+    def create_computational_intension(self, meanvector_id, cov_mat_id, prodacc, useracc):
+        comp_int = ComputationalIntension(mean_vector_id = meanvector_id, covariance_matrix_id = cov_mat_id, producer_accuracy=prodacc, user_accuracy = useracc)
         comp_int.save()
         return comp_int
 
@@ -167,8 +167,34 @@ class CustomQueries:
         cursor = connection.cursor()
             
         cursor.execute("select concept.id, concept.concept_name from concept, legend_concept_combination where legend_concept_combination.legend_id = %s and \
-                        legend_concept_combination.legend_ver = %s and legend_concept_combination.concept_id = concept.id and concept_name NOT LIKE 'root%%'", [lid, ver])
+                        legend_concept_combination.legend_ver = %s and legend_concept_combination.concept_id = concept.id and concept_name NOT LIKE 'root%%'", [clid])
         
         row = cursor.fetchall()
         return row
+        
+    def get_accuracies_and_validation_method_of_a_category(self, lid, ver, concept):
+        cursor = connection.cursor()
+            
+        cursor.execute("select ci.producer_accuracy, ci.user_accuracy, la.validation, cl.classifier_name from computational_intension ci, category ca, concept c, legend l, \
+                        legend_concept_combination lcc, classificationmodel cm, learning_activity la, classifier cl where l.legend_id = %s and l.legend_ver = %s and \
+                        c.concept_name= %s and c.id = lcc.concept_id and lcc.legend_id = l.legend_id and lcc.legend_ver=l.legend_ver and \
+                        ca.legend_concept_combination_id = lcc.id and ca.computational_intension_id = ci.id and l.model_id = cm.id and \
+                        l.model_id = la.model_id and cl.id = la.classifier_id", [lid, ver, concept])
+        
+        row = cursor.fetchall()
+        return row
+        
+    def getExtension(self, concept_name, lid, ver):
+        cursor = connection.cursor()
+        
+        cursor.execute("select e.\"X\", e.\"Y\" from concept c, legend l, legend_concept_combination lcc, \
+                        category ca, extension e where lcc.concept_id = c.id and lcc.legend_id = %s and lcc.legend_ver = %s \
+                        and c.concept_name = %s and ca.legend_concept_combination_id = lcc.id and  \
+                        ca.extension_id = e.id", [lid, ver, concept_name])
+        
+        row = cursor.fetchall()
+        return row
+        
+        
+        
         

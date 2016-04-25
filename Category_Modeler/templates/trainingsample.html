@@ -4,13 +4,13 @@
 	{% csrf_token %}
 
 	<div class="container">
-		<div style="width: 43%; float: left; border-style: solid; border-width: 1px; border-color: #E5E5E5">
-			<form class="form-group" enctype="multipart/form-data" name="trainingFileWithName">
-				<legend style="font-size: 18px; background-color: gainsboro" align="center">Choose/Upload training dataset</legend>
-				<div class="form-group radio" style="margin-left: 5px; margin-right: 5px">		
+		<div style="border-style: solid; border-width: 1px; border-color: #E5E5E5">
+			
+				<legend style="font-size: 16px; background-color: gainsboro" align="center">Choose existing training sample or create a new one</legend>
+				<div class="form-group radio" style="margin-left: 10px">		
 								
 					<input type="radio" name="choosetrainingfile" value="option1" id="existingtrainingset"/>Existing
-					<span style="float: right">
+					<span style = "margin: 50px">
 						<select name="existingtrainingfiles" id="existingtrainingfiles"  disabled>
 							<option>Existing training files</option>
 							{% for train in training_set_list %}
@@ -21,18 +21,67 @@
 					<br /><br />
 					
 					<input type="radio" name="choosetrainingfile" value="option2" id="newtrainingset"/>New
-					<span style="float: right">
+					<!--<span style = "">
 						<input type="file" id="trainingfile" name="trainingfile" accept=".csv,.xls,.tif,.png,.adf" multiple disabled/>
-					</span>
-					
+					</span>-->
 					<br /><br />
 				</div>
-				<div style="margin-left: 5px; margin-right: 5px">	
-					<p id="trainingfileformatError" style= "color: red"> <em> </em> </p>
-				</div>
+				<div  id="newconceptsanddetails" >
+					<legend style="font-size: 14px; background-color: gainsboro" align="center">Enter details of concepts to be modelled</legend>
+
+					<div class="form-group" id="categoriesandsamples" style="margin-left: 10px; margin-right: 10px">
+						<form id="concept1details" enctype="multipart/form-data" action="#" >
+
+							<div class="form-group" >
+								<span><label for="catgeoryName" style ="font-weight:normal">Concept name</label></span>
+								<span style = "margin-left: 100px">
+								<input id="catgeoryName" type="text" size="20" placeholder="Enter concept name"  required /></span>
+								<span style = "margin-left: 50px">
+								<label for="trainingfile1" style ="font-weight:normal">Upload training samples</label></span>
+								<span style = "margin-right: 250px; float:right">					
+							  	<input type="file" id="trainingfile1" name="trainingfile1" accept=".csv,.xls,.tif,.png,.adf" multiple /></span>
+						  	</div>
+						  	<div class="form-group">
+								<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
+								<span style = "margin-left: 43px">
+								<input type="text" name="FieldResearcherName" value="" id="FieldResearcherName" placeholder="Enter Name"/></span>
+								<span style = "margin-left: 50px">
+								<label for="Location" style ="font-weight:normal">Training Location</label></span>
+								<span style = "margin-right: 351px; float:right">
+								<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location"/></span>
+							</div>
+							<div class="form-group">
+								<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
+								<span style = "margin-left: 78px">
+								<input type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate"/></span>
+								<span style = "margin-left: 62px">
+								<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
+								<span style = "margin-right: 360px; float:right">
+								<input type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate"/></span>
+							</div>
+							
+							<div class="form-group">
+								<span><label for="Description" style ="font-weight:normal">Other details</label></span>
+								<span style = "margin-left: 110px">
+								<textarea name="OtherDetails" rows="1" cols="70" id="Description" placeholder="Enter any more relevant details"> </textarea></span>
+							</div>
+						</form>
+					</div>
+					<br />	
+					<div class="form-group" id="addmorecategoriesorsubmit" style = "margin-left: 10px; margin-right: 10px; margin-bottom:15px">
+						<button id="addmorecategories" class="btn btn-default" style = "float: left" >Add another concept</button>
+						<span style="margin-left: 70px">
+					  		<button id="submittrainingsamples" class="btn btn-default" >Submit</button>
+					  	</span>
+						
+					</div>
 					
-				
-			</form>
+					<div style="margin-left: 5px; margin-right: 5px">	
+						<p id="trainingfileformatError" style= "color: red"> <em> </em> </p>
+					</div>
+				</div>
+
+
 			<form  id="newtrainingdatasetdetails" style="display:none" enctype="multipart/form-data" action="#">
 				<legend style="font-size: 16px; background-color: gainsboro" align="center">Enter new training dataset details</legend>
 				<div style=" margin-left: 5px; margin-right: 5px" >
@@ -63,9 +112,15 @@
 					<button id="savetrainingdatadetails" class="btn btn-default">Save dataset details</button>
 				</div>
 			</form>
+			<form  id="trainingsetcomparison" style="display:none" enctype="multipart/form-data" action="#">
+				<legend style="font-size: 18px; background-color: gainsboro" align="center">Training samples comparison</legend>
+				<div id = "trainingsetcomparisondetails" style=" margin-left: 5px; margin-right: 5px; margin-bottom:5px" >
+
+				</div>
+			</form>
 		</div>
 
-		<div style="float: right; width: 55%; border-style: solid; border-width: 1px; border-color: #E5E5E5">
+		<div style=" border-style: solid; border-width: 1px; border-color: #E5E5E5">
 			<legend style="font-size: 18px; background-color: gainsboro" align="center">View/Edit training samples</legend>
 			<div style = "margin-left:5px"> 
 				<label for="instances" id = "instanceslabel" style="font-weight: normal; display:none">Instances: <span	id="instances"> </span></label>

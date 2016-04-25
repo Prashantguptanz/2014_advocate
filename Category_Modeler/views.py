@@ -91,8 +91,14 @@ def index(request):
 def saveexistingtaxonomydetails(request):
     if request.method == 'POST':
         data = request.POST
-        request.session['existing_taxonomy_name'] = data['existingtaxonomies']
-        request.session['external_trigger'] = data['externaltriggers']
+        legendpkey = data['1']
+        lid, ver = legendpkey.split('+')
+        legend_name = data['2']
+        etrigger = data['3']
+        request.session['existing_taxonomy_name'] = legend_name
+        request.session['external_trigger'] = etrigger
+        request.session['existing_taxonomy_id'] = lid
+        request.session['existing_taxonomy_ver'] = ver
         if ExplorationChain.objects.all().exists():
             request.session['exploration_chain_id'] = ExplorationChain.objects.latest("id").id + 1
         else:
@@ -157,9 +163,6 @@ def trainingsampleprocessing(request):
             if len(trainingFilesList)==1 and trainingFilesList[0].name.split(".")[-1] == "csv":
                 request.session['current_training_file_name'] = trainingFilesList[0].name.split('.', 1)[0] + '.csv'
                 save_csv_training_file(trainingFilesList[0])
-                if 'existing_taxonomy_name'  in request.session:
-                    customQuery = CustomQueries()
-                    old_taxonomy_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
                 return HttpResponse("We got the file");
             elif len(trainingFilesList)>1 and trainingFilesList[0].name.split(".")[-1] == "tif":
                 request.session['current_training_file_name'] = 'temp.csv'
@@ -168,9 +171,6 @@ def trainingsampleprocessing(request):
                     rasterFileNameList.append(rasterfile.name)
                 managedata = ManageRasterData()
                 managedata.combine_multiple_raster_files_to_csv_file(rasterFileNameList, request.session['current_training_file_name'], EXISTING_TRAINING_DATA_LOCATION)
-                if 'existing_taxonomy_name'  in request.session:
-                    customQuery = CustomQueries()
-                    print customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])
                 fp = file("%s%s" % (EXISTING_TRAINING_DATA_LOCATION, request.session['current_training_file_name']), 'rb')
                 response = HttpResponse( fp, content_type='text/csv')
                 response['Content-Disposition'] = 'attachment; filename="training File"'
@@ -188,21 +188,6 @@ def trainingsampleprocessing(request):
             request.session['current_training_file_name'] = trainingfilename
             trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
             fp = file (trainingfilelocation+trainingfilename, 'rb')
-            if 'existing_taxonomy_name'  in request.session:
-                customQuery = CustomQueries()
-                old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
-                print request.session['current_training_file_name']
-                print old_trainingset_name
-                new_training_sample = TrainingSample(request.session['current_training_file_name'])
-                old_training_sample = TrainingSample(old_trainingset_name)
-                common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
-                if isinstance(common_categories[0], list)==False:
-                    common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
-                    request.session['common_categories_message'] = common_categories_message
-                request.session['common_categories'] = common_categories
-                request.session['new_categories'] = new_categories
-                request.session['deprecated_categories'] = deprecated_categories
-                
             
             if 'current_model_id' in request.session:
                 del request.session['model_type']    
@@ -261,23 +246,34 @@ def savetrainingdatadetails(request):
         exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'trainingset collection', activity_instance = current_activity_instance)
         exp_chain.save()
         request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
-        
-    if 'current_model_id' in request.session:
-        del request.session['model_type']    
-        del request.session['current_model_name']
-        del request.session['current_model_id']
-        del request.session['model_score']
-        del request.session['producer_accuracies']
-        del request.session['user_accuracies']
-        request.session.modified = True
+ 
+        if 'current_model_id' in request.session:
+            del request.session['model_type']    
+            del request.session['current_model_name']
+            del request.session['current_model_id']
+            del request.session['model_score']
+            del request.session['producer_accuracies']
+            del request.session['user_accuracies']
+            request.session.modified = True
     
-    if 'current_predicted_file_name' in request.session:
-        del request.session['current_test_file_name']
-        del request.session['current_predicted_file_name']
-        del request.session['current_test_file_columns']
-        del request.session['current_test_file_rows']
-        request.session.modified = True
-        
+        if 'current_predicted_file_name' in request.session:
+            del request.session['current_test_file_name']
+            del request.session['current_predicted_file_name']
+            del request.session['current_test_file_columns']
+            del request.session['current_test_file_rows']
+            request.session.modified = True    
+        if 'existing_taxonomy_name' in request.session:
+            customQuery = CustomQueries()
+            old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
+            new_training_sample = TrainingSample(request.session['current_training_file_name'])
+            old_training_sample = TrainingSample(old_trainingset_name)
+            common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
+            if isinstance(common_categories[0], list)==False:
+                common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
+                return JsonResponse({'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories, 'common_categories_message':common_categories_message})
+    
+            return JsonResponse({'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories})
+       
     return HttpResponse("");
 
 
@@ -317,22 +313,34 @@ def saveNewTrainingVersion(request):
         
         request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
         
-    if 'current_model_id' in request.session:
-        del request.session['model_type']    
-        del request.session['current_model_name']
-        del request.session['current_model_id']
-        del request.session['model_score']
-        del request.session['producer_accuracies']
-        del request.session['user_accuracies']
-        request.session.modified = True
+        if 'current_model_id' in request.session:
+            del request.session['model_type']    
+            del request.session['current_model_name']
+            del request.session['current_model_id']
+            del request.session['model_score']
+            del request.session['producer_accuracies']
+            del request.session['user_accuracies']
+            request.session.modified = True
+        
+        if 'current_predicted_file_name' in request.session:
+            del request.session['current_test_file_name']
+            del request.session['current_predicted_file_name']
+            del request.session['current_test_file_columns']
+            del request.session['current_test_file_rows']
+            request.session.modified = True
+        
+        if 'existing_taxonomy_name' in request.session:
+            customQuery = CustomQueries()
+            old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
+            new_training_sample = TrainingSample(request.session['current_training_file_name'])
+            old_training_sample = TrainingSample(old_trainingset_name)
+            common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
+            if isinstance(common_categories[0], list)==False:
+                common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
+                return JsonResponse({'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories, 'common_categories_message':common_categories_message})
     
-    if 'current_predicted_file_name' in request.session:
-        del request.session['current_test_file_name']
-        del request.session['current_predicted_file_name']
-        del request.session['current_test_file_columns']
-        del request.session['current_test_file_rows']
-        request.session.modified = True
-    
+            return JsonResponse({'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories})
+       
     return HttpResponse("Changes are implemented and new training file is saved as "+ newfilename);
         
 # create a file with similar name as provided in the static folder and copy all the contents    
@@ -469,9 +477,63 @@ def signaturefile(request):
                         single_suggestion.append(listofcategories[index2])
                         single_suggestion.append(listofcategories[index1])
                         suggestion_list.append(single_suggestion)
+            
+            if 'existing_taxonomy_name' in request.session:
+                customQuery = CustomQueries()
+                old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
+                old_trainingfile = TrainingSample(old_trainingset_name)
+                old_covariance_mat = old_trainingfile.create_covariance_matrix()
+                old_mean_vectors = old_trainingfile.create_mean_vectors()
+                new_categories = list(numpy.unique(trainingfile.target))
+                old_categories = list(numpy.unique(old_trainingfile.target))
+                common_categories = numpy.intersect1d(new_categories, old_categories)
+                common_categories_comparison = []
+                if len(old_mean_vectors[0][1]) != len(mean_vectors[0][1]):
+                    for common_category in common_categories:
+                        single_category_comparison = []
+                        index_of_common_category_in_accuracy_list = new_categories.index(common_category)
+                        producerAccuracy = prodacc[index_of_common_category_in_accuracy_list]
+                        userAccuracy = useracc[index_of_common_category_in_accuracy_list]
+                        single_category_comparison.append(common_category)
+                        single_category_comparison.append("Naive bayes")
+                        single_category_comparison.append(validationtype)
+                        single_category_comparison.append(producerAccuracy)
+                        single_category_comparison.append(userAccuracy)
+                        old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category)
+                        single_category_comparison.append(old_category_details[0][2])
+                        single_category_comparison.append(old_category_details[0][3])
+                        single_category_comparison.append(old_category_details[0][0])
+                        single_category_comparison.append(old_category_details[0][1])
+                        common_categories_comparison.append(single_category_comparison)
+                    return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
+                else:
+                    for common_category in common_categories:
+                        single_category_comparison = []
+                        index_of_common_category_in_accuracy_list = new_categories.index(common_category)
+                        producerAccuracy = prodacc[index_of_common_category_in_accuracy_list]
+                        userAccuracy = useracc[index_of_common_category_in_accuracy_list]
+                        single_category_comparison.append(common_category)
+                        single_category_comparison.append("Naive bayes")
+                        single_category_comparison.append(validationtype)
+                        single_category_comparison.append(producerAccuracy)
+                        single_category_comparison.append(userAccuracy)
+                        old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category)
+                        single_category_comparison.append(old_category_details[0][2])
+                        single_category_comparison.append(old_category_details[0][3])
+                        single_category_comparison.append(old_category_details[0][0])
+                        single_category_comparison.append(old_category_details[0][1])
+                        new_index = numpy.where(mean_vectors = common_category)[0][0]
+                        old_index = numpy.where(old_mean_vectors = common_category)[0][0]
+                        model1 = NormalDistributionIntensionalModel(mean_vectors[new_index][1], covariance_mat[new_index][1])
+                        model2 = NormalDistributionIntensionalModel(old_mean_vectors[old_index][1], old_covariance_mat[old_index][1])
+                        jm = model1.jm_distance(model2)
+                        single_category_comparison.append(jm)
+                        common_categories_comparison.append(single_category_comparison)
+                    return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
+               
             return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_list, 'suggestion_list': suggestion_list})
         
-        elif (classifiername=="C4.5"):
+        elif (classifiername=="Decision Tree"):
             #print clf.tree_.__getstate__()
             #print clf.tree_.children_left
             #print clf.tree_.children_right
@@ -484,6 +546,32 @@ def signaturefile(request):
             graph = pydot.graph_from_dot_data(dot_data.getvalue())
             tree_name = modelname + "_tree.png"
             graph.write_png('%s%s' %(IMAGE_LOCATION, tree_name))
+            if 'existing_taxonomy_name' in request.session:
+                customQuery = CustomQueries()
+                old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
+                old_trainingfile = TrainingSample(old_trainingset_name)
+                new_categories = list(numpy.unique(trainingfile.target))
+                old_categories = list(numpy.unique(old_trainingfile.target))
+                common_categories = numpy.intersect1d(new_categories, old_categories)
+                common_categories_comparison = []
+                for common_category in common_categories:
+                    single_category_comparison = []
+                    index_of_common_category_in_accuracy_list = new_categories.index(common_category)
+                    producerAccuracy = prodacc[index_of_common_category_in_accuracy_list]
+                    userAccuracy = useracc[index_of_common_category_in_accuracy_list]
+                    single_category_comparison.append(common_category)
+                    single_category_comparison.append("Decision tree")
+                    single_category_comparison.append(validationtype)
+                    single_category_comparison.append(producerAccuracy)
+                    single_category_comparison.append(userAccuracy)
+                    old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category)
+                    single_category_comparison.append(old_category_details[0][2])
+                    single_category_comparison.append(old_category_details[0][3])
+                    single_category_comparison.append(old_category_details[0][0])
+                    single_category_comparison.append(old_category_details[0][1])
+                    common_categories_comparison.append(single_category_comparison)
+                return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc, 'common_categories_comparison':common_categories_comparison})
+                
             return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc})
         else:
             return ""   
@@ -493,7 +581,7 @@ def signaturefile(request):
 def chooseClassifier(classifiername):
     if classifiername=='Naive Bayes':
         clf= GaussianNB()  
-    elif classifiername=='C4.5':
+    elif classifiername=='Decision Tree':
         clf=tree.DecisionTreeClassifier()
     else:
         clf = svm.SVC()
@@ -540,6 +628,9 @@ def supervised(request):
             columns, rows = manageData.create_raster_from_csv_file(request.session['current_predicted_file_name'], testfile.name, CLASSIFIED_DATA_IN_RGB_LOCATION, outputMap, OUTPUT_RASTER_FILE_LOCATION)
             request.session['current_test_file_columns'] = columns
             request.session['current_test_file_rows'] = rows
+            
+            
+            
             authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
             model_instance = Classificationmodel.objects.get(model_name=request.session['current_model_name'])
             tc = ClassificationActivity(model=model_instance, testfile_location = 'Category_Modeler/static/testfiles/', testfile_name = request.session['current_test_file_name'], classifiedfile_location = 'Category_Modeler/static/predictedvalues/', classifiedfile_name = request.session['current_predicted_file_name'], completed_by= authuser_instance)
@@ -550,6 +641,11 @@ def supervised(request):
             
             listofcategories = clf.classes_.tolist()
             outputmapName = testfile.name.split('.', 1)[0] + '.jpeg'
+            
+            if 'existing_taxonomy_name' in request.session:
+                oldCategories = ['artificial_surface', 'cloud', 'forest', 'grassland', 'shadow', 'water']
+                change_matrix = create_change_matrix(oldCategories, predictedValue, rows, columns)
+            
             return  JsonResponse({'map': outputmapName, 'categories': listofcategories});
     
     
@@ -574,6 +670,36 @@ def read_test_file_as_array(f):
         datafile.close();
     return samples
 
+def create_change_matrix(oldCategories, newPredictedValues, rows, columns):
+    list_of_new_categories = list(numpy.unique(newPredictedValues))
+    print len(list_of_new_categories)
+    print list_of_new_categories
+    print oldCategories
+    change_in_individual_matrix = [[0 for a in range(len(list_of_new_categories))] for x in range(len(oldCategories))]
+    print change_in_individual_matrix
+    customQuery = CustomQueries()
+    
+    for index, category in enumerate(oldCategories):
+        category_extension = customQuery.getExtension(category, '0', '1')
+        for coordinates in category_extension:
+            #print coordinates
+            
+            ind = coordinates[0]*columns + coordinates[1] #coordinates[0]==row no
+            #print index
+            new_category = newPredictedValues[ind]
+            #print new_category
+            #new_category_index = numpy.where(list_of_new_categories == new_category)
+            new_category_index = list_of_new_categories.index(new_category)
+            #print new_category_index
+            change_in_individual_matrix[index][new_category_index] += 1
+    print change_in_individual_matrix
+    return change_in_individual_matrix
+        
+def calculate_J_index_for_catgeory_extension(ext1, ext2):
+        common_elements_in_both_extensions = numpy.intersect1d(ext1, ext2)
+        union_of_both_extensions = numpy.union1d(ext1, ext2)
+        jaccard_index = float(len(common_elements_in_both_extensions)/len(union_of_both_extensions))
+        return jaccard_index
 
 @login_required
 def changeRecognizer(request):
@@ -598,7 +724,9 @@ def changeRecognizer(request):
             producer_accuracies = request.session['producer_accuracies']
             model_type = request.session['model_type']
             return render(request, 'changerecognition.html', {'user_name':user_name, 'existing_taxonomyName': new_taxonomy, 'conceptsList':concepts_in_current_taxonomy, 'modelType': model_type, 'modelScore': model_accuracy, 'userAccuracies': user_accuracies, 'producerAccuracies': producer_accuracies})
-           
+   # else:
+        
+        
     return render (request, 'changerecognition.html', {'user_name':user_name})
 
 def createChangeEventForNewTaxonomy(request):
@@ -626,9 +754,11 @@ def applyChangeOperations(request):
     covariance_mat = trainingfile.create_covariance_matrix()
     mean_vectors = trainingfile.create_mean_vectors()
     predicted_file = ClassifiedFile(request.session['current_predicted_file_name'])
+    producer_accuracies = request.session['producer_accuracies']
+    user_accuracies = request.session['user_accuracies']
     extension = predicted_file.create_extension(request.session['current_test_file_columns'], request.session['current_test_file_rows'], request.session['current_training_file_name'])
     for i in range(len(concepts_in_current_taxonomy)):
-        change_event_queries.create_concept(concepts_in_current_taxonomy[i], mean_vectors[i][1], covariance_mat[i][1],  extension[i])
+        change_event_queries.create_concept(concepts_in_current_taxonomy[i], mean_vectors[i][1], covariance_mat[i][1],  extension[i], producer_accuracies[i], user_accuracies[i])
     
     del request.session['new_taxonomy_name']
     del request.session['new_taxonomy_description']

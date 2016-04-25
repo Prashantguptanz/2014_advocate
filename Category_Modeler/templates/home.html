@@ -41,7 +41,7 @@
 						<select name="existingtaxonomies" id="existingtaxonomies" required>
 							<option>Existing taxonomies</option>
 							{% for legend in legend_list %}
-							<option id="legend{{ forloop.counter }}" value="{{ legend.legend_name }}">{{ legend.legend_name }}</option>
+							<option id="legend{{ forloop.counter }}" value="{{legend.legend_id}}+{{legend.legend_ver}}">{{ legend.legend_name }}</option>
 							{% endfor %}
 						</select> </span> </label>
 			</div>
