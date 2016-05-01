@@ -37,7 +37,10 @@ $(function() {
 		var headerHeight = $('#top-part').outerHeight();
 		var totalHeight = $(window).height();
 		$('#trainingdataTable').css({
-			'height' : totalHeight - headerHeight - 140 + 'px'
+			'height' : totalHeight - headerHeight - 240 + 'px'
+		});
+		$('#edittrainingset').css({
+			'height' : totalHeight - headerHeight - 176 + 'px'
 		});
 	}
 	;
@@ -198,9 +201,10 @@ $(function() {
 			$this.next().children().removeAttr('disabled');
 			$this.siblings('input').next().children().attr('disabled', 'disabled');
 			if ($this.attr('value') == 'option2') {
-				$('#newtrainingdatasetdetails').show();
+				$('#newconceptsanddetails').show();
 			} else {
 				$('#newtrainingdatasetdetails').hide();
+				$('#newconceptsanddetails').hide();
 			}
 
 		});
@@ -233,23 +237,114 @@ $(function() {
 
 		};
 		
+		
+		//Script to deal when a new training set is created
 		var no_of_concepts =1;
 		
-		$('#addmorecategoriesorsubmit').on('click', function(e) {
+		$('#addmorecategories').on('click', function(e) {
 			e.preventDefault();
+			
+			var $this = $('#categoriesandsamples form:last');
+			newtrainingdatasets = $this[0][1].files;
+			
+			var formdata = new FormData();
+			
+			$.each(newtrainingdatasets, function(i, file){
+				formdata.append('file', file);
+			});
+			
+			formdata.append('conceptName', $this[0][0].value);
+			formdata.append('FieldResearcherName', $this[0][2].value);
+			formdata.append('TrainingLocation', $this[0][3].value);
+			formdata.append('TrainingTimePeriodStartDate', $this[0][4].value);
+			formdata.append('TrainingTimePeriodEndDate', $this[0][5].value);
+			formdata.append('OtherDetails', $this[0][6].value);
+			formdata.append('IsFinalSample', 'False');
+			$.ajax({
+				type : "POST",
+				url : "http://127.0.0.1:8000/AdvoCate/trainingsample/",
+				async : true,
+				processData : false,
+				contentType : false,
+				data : formdata,
+				success : function(response) {
+					
+				}
+			});
+			
+			
+			
 			no_of_concepts +=1;
+			console.log($('#categoriesandsamples form:last'));
 			a = "</br><form id=\"concept" + no_of_concepts + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
 			$('#categoriesandsamples').append(a);
 			b = $('#concept1details').html();
 			$('#categoriesandsamples form:last').html(b);
 			
 		});
+		
+		$('#submittrainingsamples').on('click', function(e) {
+			e.preventDefault();
+			$('#trainingsetname').show();
+			$('#savetrainingset').show();
+			$('#submittrainingsamples').attr('disabled','disabled');
+			$('#addmorecategories').attr('disabled','disabled');
+			
+			
+			
+		});
+		
+		$('#savetrainingset').on('click', function(e) {
+			e.preventDefault();
+			var $this = $('#categoriesandsamples form:last');
+			newtrainingdatasets = $this[0][1].files;
+			console.log($('#trainingsetfilename'));
+			console.log($('#trainingsetfilename').val());
+			var formdata = new FormData();
+			
+			$.each(newtrainingdatasets, function(i, file){
+				formdata.append('file', file);
+			});
+			
+			formdata.append('conceptName', $this[0][0].value);
+			formdata.append('FieldResearcherName', $this[0][2].value);
+			formdata.append('TrainingLocation', $this[0][3].value);
+			formdata.append('TrainingTimePeriodStartDate', $this[0][4].value);
+			formdata.append('TrainingTimePeriodEndDate', $this[0][5].value);
+			formdata.append('OtherDetails', $this[0][6].value);
+			formdata.append('IsFinalSample', 'True');
+			formdata.append('TrainingsetName', $('#trainingsetfilename').val());
+			$.ajax({
+				type : "POST",
+				url : "http://127.0.0.1:8000/AdvoCate/trainingsample/",
+				async : true,
+				processData : false,
+				contentType : false,
+				data : formdata,
+				success : function(response) {
+					$('#newconceptsanddetails').hide();
+					$('#viewandedittrainingset').show();
+					var trainingdata = $.csv.toArrays(response);
+					$('#instances').html(trainingdata.length - 1);
+					$('#Attributes').html(trainingdata[0].length);
+
+					$('#trainingdataTable').show();
+					hot.loadData(trainingdata);
+					
+					
+				}
+			});
+			
+		});
+		
+
 
 		var trainingdatacontainer = document.getElementById('trainingdataTable'), hot;
 		hot = new Handsontable(trainingdatacontainer, settings1);
 		
 		// Script to deal with when the existing training file is selected
 		$('#existingtrainingfiles').on('change', function() {
+			$('#viewandedittrainingset').show();
 			$('#instanceslabel').show();
 			$('#attributeslabel').show();
 
@@ -259,11 +354,30 @@ $(function() {
 			data[1] = filepkey;
 			data[2] = filename;
 			$.post("http://127.0.0.1:8000/AdvoCate/trainingsample/", data, function(response) {
-				var trainingdata = $.csv.toArrays(response);
+			//	var trainingdata = $.csv.toArrays(response);
+			//	console.log(trainingdata);
+				var trainingdata = response['trainingset'];
+				var classes = response['classes'];
 				$('#instances').html(trainingdata.length - 1);
 				$('#Attributes').html(trainingdata[0].length);
 				$('#trainingdataTable').show();
 				hot.loadData(trainingdata);
+				
+				a = "<option>Choose a concept</option>";
+				b = "<option>Choose first concept to merge</option>";
+				c = "<option>Choose second concept to merge</option>";
+				d = "<option>Choose the concept to be split</option>";
+				for (var i = 0; i < classes.length; i++){
+					a = a + "<option>" + classes[i] + "</option>";
+					b = b + "<option>" + classes[i] + "</option>";
+					c = c + "<option>" + classes[i] + "</option>";
+					d = d + "<option>" + classes[i] + "</option>";
+				}
+				$('#concepttoremove').html(a);
+				$('#firstconcepttomerge').html(b);
+				$('#secondconcepttomerge').html(c);
+				$('#concepttosplit').html(d);
+				
 			});
 
 		});
@@ -503,6 +617,122 @@ $(function() {
 
 			});
 		});
+		
+		$('input[name="chooseeditoperation"]').on('click', function() {
+			var $this = $(this);
+			$this.next().show();
+			$this.next().children().show();
+			$this.siblings('input').next().hide();
+			$this.siblings('input').children().hide();
+			$('#addtoeditoperationslist').show();
+			$('#listofeditingoperations').show();
+			
+		});
+		
+		$('#addtoeditoperationslist').on('click', function(e) {
+			e.preventDefault();
+			if ($('input[name=chooseeditoperation]:checked').val() == "option1"){
+				nodatavalue = $('#nodatavalue').val();
+				editoperation = 1;
+				var data = {};
+				data[1] = editoperation;
+				data[2] = nodatavalue;
+				$.post("http://127.0.0.1:8000/AdvoCate/edittrainingset/", data, function(response) {
+					var a = $('#editop').html();
+					a = a + "<li class=\"list-group-item\">" + "Remove <em>No data</em> values" + "</li>";
+					$('#editop').html(a);
+					
+				});
+				
+			}
+			else if ($('input[name=chooseeditoperation]:checked').val() == "option2"){
+				concepttoremove = $('#concepttoremove>option:selected').text();
+				console.log(concepttoremove);
+				editoperation = 2;
+				var data = {};
+				data[1] = editoperation;
+				data[2] = concepttoremove;
+				$.post("http://127.0.0.1:8000/AdvoCate/edittrainingset/", data, function(response) {
+					var a = $('#editop').html();
+					a = a + "<li class=\"list-group-item\">" + "Remove concept <em>" + data[2]  + "</em></li>";
+					$('#editop').html(a);
+				});
+				
+			}
+			else if ($('input[name=chooseeditoperation]:checked').val() == "option3"){
+				firstconcepttomerge = $('#firstconcepttomerge>option:selected').text();
+				secondconcepttomerge = $('#secondconcepttomerge>option:selected').text();
+				mergedconceptname = $('#mergedconceptname').val();
+				editoperation = 3;
+				var data = {};
+				data[1] = editoperation;
+				data[2] = firstconcepttomerge;
+				data[3] = secondconcepttomerge;
+				data[4] = mergedconceptname;
+				$.post("http://127.0.0.1:8000/AdvoCate/edittrainingset/", data, function(response) {
+					var a = $('#editop').html();
+					a = a + "<li class=\"list-group-item\">" + "Merge concepts <em>" + firstconcepttomerge  + "</em> and <em>" + secondconcepttomerge + "</em> and create <em>" + mergedconceptname + "</em></li>";
+					$('#editop').html(a);
+					
+				});
+				
+			}
+			else{
+				concepttosplit = $('#concepttosplit>option:selected').text();
+				concept1 = $('#firstsplitconcept').val();
+				concept2 = $('#secondsplitconcept').val();
+				
+				var samplesforconcept1 = $('#samplesforfirstsplitconcept')[0].files;
+				console.log($('#samplesforfirstsplitconcept'));
+				console.log(samplesforconcept1);
+				var samplesforconcept2 = $('#samplesforsecondsplitconcept')[0].files;
+				
+				var formdata = new FormData();				
+				
+				$.each(samplesforconcept1, function(i, file){
+					formdata.append('filesforconcept1', file);
+				});
+				
+				$.each(samplesforconcept2, function(i, file){
+					formdata.append('filesforconcept2', file);
+				});
+				formdata.append('1', '4');
+				formdata.append('concepttosplit', concepttosplit);
+				formdata.append('concept1', concept1);
+				formdata.append('concept2', concept2);
+				
+				$.ajax({
+					type : "POST",
+					url : "http://127.0.0.1:8000/AdvoCate/edittrainingset/",
+					async : true,
+					processData : false,
+					contentType : false,
+					data : formdata,
+					success : function(response) {
+						var a = $('#editop').html();
+						a = a + "<li class=\"list-group-item\">" + "Split concept <em>" + concepttosplit  + "</em> into <em>" + concept1 + "</em> and <em>" + concept2 + "</em></li>";
+						$('#editop').html(a);
+						
+					}
+				});
+				
+			}
+			var $this = $('input[name="chooseeditoperation"]');
+			$this.next().children().val('');
+			$this.next().children().next().children().val('');
+			$('#concepttoremove').prop('selectedIndex', 0);
+			$('#firstconcepttomerge').prop('selectedIndex', 0);
+			$('#secondconcepttomerge').prop('selectedIndex', 0);
+			$('#concepttosplit').prop('selectedIndex', 0);
+			$('#applyeditoperations').show();
+		});
+		
+		$('#applyeditoperations').on('click', function(e) {
+			e.preventDefault();
+			$.get("http://127.0.0.1:8000/AdvoCate/applyeditoperations/", function(){
+			
+			});
+		});
 
 	}
 
@@ -518,15 +748,13 @@ $(function() {
 
 		$('.dropdown-toggle').dropdown();
 
-		$('input[name="validationoption"]').on(
-				'click',
-				function() {
-					var $this = $(this);
-					$this.next().children().removeAttr('disabled');
-					$this.siblings('input').next().children().attr('disabled',
-							'disabled');
+		$('input[name="validationoption"]').on('click', function() {
+			var $this = $(this);
+			$this.next().children().removeAttr('disabled');
+			$this.siblings('input').next().children().attr('disabled',
+					'disabled');
 
-				});
+		});
 
 		$('#createsignaturefile').on('click', function(e) {
 				if ($('#classifiertype').val() != "" && $('input[name=validationoption]:checked').val() != null) {

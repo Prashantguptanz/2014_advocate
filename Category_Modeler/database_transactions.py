@@ -1,4 +1,4 @@
-from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity 
+from Category_Modeler.models import Trainingset, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity 
 from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Concept, Legend, LegendConceptCombination, ComputationalIntension
 from Category_Modeler.models import Extension, Category, HierarchicalRelationship, HorizontalRelationship, MeanVector, CovarianceMatrix, ChangeEvent, ChangeEventOperations
 from Category_Modeler.models import CreateLegendOperation, CreateConceptOperation, AddConceptToALegendOperation
@@ -194,6 +194,32 @@ class CustomQueries:
         
         row = cursor.fetchall()
         return row
+        
+    def getTrainingSampleForTrainingset(self, id, ver):
+        cursor = connection.cursor()
+        
+        cursor.execute("select tsc.trainingsample_id, tsc.trainingsample_ver, tsc.samplefile_name from trainingset_trainingsamples tts, trainingsample_for_category tsc \
+                        where tts.trainingsample_id = tsc.trainingsample_id and tts.trainingsample_ver = tsc.trainingsample_ver and tts.trainingset_id = %s and \
+                        tts.trainingset_ver = %s", [id, ver])
+        
+        row = cursor.fetchall()
+        return row
+        
+        
+        
+    def getTrainingSampleIdAndVersionForAGivenConceptInATrainingSet(self, id, ver, name):
+        cursor = connection.cursor()
+        
+        cursor.execute("select tsc.trainingsample_id, tsc.trainingsample_ver from trainingset_trainingsamples tts, trainingsample_for_category tsc where \
+                        tts.trainingsample_id = tsc.trainingsample_id and tts.trainingsample_ver = tsc.trainingsample_ver and tts.trainingset_id = %s and \
+                        tts.trainingset_ver = %s and tsc.concept_name = %s", [id, ver, name])
+        
+        row = cursor.fetchall()
+        return row
+    
+    
+    
+    
         
         
         

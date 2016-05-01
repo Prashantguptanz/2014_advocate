@@ -2,7 +2,7 @@ import csv, json, numpy, pydot, os
 import matplotlib.pyplot as plt
 from io import FileIO, BufferedWriter
 from datetime import datetime
-from ete3 import Tree, TreeStyle, TextFace
+from ete3 import Tree, TreeStyle, TextFace # @UndefinedVariable
 from django.shortcuts import render, HttpResponse, HttpResponseRedirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
@@ -14,18 +14,18 @@ from sklearn import tree, svm, cross_validation, metrics
 from sklearn.externals import joblib
 from sklearn.naive_bayes import GaussianNB
 from sklearn.externals.six import StringIO
-from Category_Modeler.models import Trainingset, TrainingsetCollectionActivity, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity
-from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Legend
-from Category_Modeler.measuring_categories import TrainingSample, NormalDistributionIntensionalModel, DecisionTreeIntensionalModel, StatisticalMethods, ClassifiedFile
-from Category_Modeler.data_processing import ManageRasterData
+from Category_Modeler.models import Trainingset, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity, TrainingsampleForCategory, ChangeTrainingsetActivityDetails
+from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Legend, TrainingsetTrainingsamples, TrainingsampleCollection, CreateTrainingsetActivity, CreateTrainingsetActivityOperations
+from Category_Modeler.measuring_categories import TrainingSet, NormalDistributionIntensionalModel, DecisionTreeIntensionalModel, StatisticalMethods, ClassifiedFile
+from Category_Modeler.data_processing import ManageRasterData, ManageCSVData
 from Category_Modeler.database_transactions import UpdateDatabase, CustomQueries
 
 
 #Different Files Locations
-NEW_TRAINING_DATA_LOCATION = 'Category_Modeler/static/data/'
+TRAINING_SAMPLES_IMAGES_LOCATION = 'Category_Modeler/static/data/'
+EXISTING_TRAINING_SAMPLES_LOCATION = 'Category_Modeler/static/trainingsamples/'
 EXISTING_TRAINING_DATA_LOCATION = 'Category_Modeler/static/trainingfiles/'
 CLASSIFICATION_MODEL_LOCATION = 'Category_Modeler/static/classificationmodel/'
-CLASSIFIED_DATA_LOCATION = 'Category_Modeler/static/predictedvalues/'
 VALIDATION_DATA_LOCATION = 'Category_Modeler/static/validationfiles/'
 IMAGE_LOCATION = 'Category_Modeler/static/images/'
 CLASSIFIED_DATA_LOCATION = 'Category_Modeler/static/predictedvalues/'
@@ -151,12 +151,168 @@ def compareexistingtaxonomies(request):
 # The method allow user to upload the training data file, which is then saved on the server and displayed in a tabular format on the page
 
 @login_required
+@transaction.atomic
 def trainingsampleprocessing(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
+    authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
+    #Check the activity type. If none selected, request the user to select one
     if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
             messages.error(request, "Choose an activity before you proceed further")
             return HttpResponseRedirect("/AdvoCate/home/", {'user_name': user_name})
+    
+    #Save training samples
     elif request.method == 'POST' and request.is_ajax():
+        data = request.POST
+        if 'IsFinalSample' in data:
+            trainingFilesList = request.FILES.getlist('file')
+            conceptName = data['conceptName']
+            researcherName = data['FieldResearcherName'];
+            trainingstart = data['TrainingTimePeriodStartDate'];
+            trainingend = data['TrainingTimePeriodEndDate'];
+            location = data['TrainingLocation'];
+            otherDetails = data['OtherDetails'];
+            isitfinalsample = data['IsFinalSample'];
+            
+            #Combine multiple samples and save it as a csv file
+            samplefilename = conceptName + str(datetime.now()) + ".csv"
+            trainingSamplesFileList = []
+            for trainingSamples in trainingFilesList:
+                trainingSamplesFileList.append(trainingSamples.name)
+            managedata = ManageRasterData()
+            managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList, samplefilename, EXISTING_TRAINING_SAMPLES_LOCATION, conceptName)
+            
+            #Save trainingsample, training sample collection activity and adds an entry in create trainingset activity
+            if TrainingsampleForCategory.objects.all().exists():
+                latestid = int(TrainingsampleForCategory.objects.latest("trainingsample_id").trainingsample_id) + 1
+            else:
+                latestid = 0
+            ts = TrainingsampleForCategory(trainingsample_id=latestid, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefilename, filelocation=EXISTING_TRAINING_SAMPLES_LOCATION, concept_name = conceptName)
+            ts.save(force_insert=True)
+            currentSampleIdAndVer = []
+            currentSampleIdAndVer.append(ts.trainingsample_id)
+            currentSampleIdAndVer.append(ts.trainingsample_ver)
+            
+            if 'current_samples_id_and_version' in request.session:
+                current_samples_id_and_version = request.session['current_samples_id_and_version']
+                current_samples_id_and_version.append(currentSampleIdAndVer)
+                request.session['current_samples_id_and_version'] = current_samples_id_and_version
+            else:
+                current_samples_id_and_version = []
+                current_samples_id_and_version.append(currentSampleIdAndVer)
+                request.session['current_samples_id_and_version'] = current_samples_id_and_version
+                if 'create_trainingset_activity_id' in request.session:
+                    del request.session['create_trainingset_activity_id']
+                    request.session.modified = True
+            
+            
+            ts_collection = TrainingsampleCollection( trainingsample_id= ts.trainingsample_id, trainingsample_ver =ts.trainingsample_ver, trainingsample_location = location, collector=researcherName, description= otherDetails, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'))
+            ts_collection.save()
+            if 'new_taxonomy_name' in request.session:
+                if 'create_trainingset_activity_id' not in request.session:
+                    create_tset_activity = CreateTrainingsetActivity(creator_id = authuser_instance)
+                    create_tset_activity.save()
+                    request.session['create_trainingset_activity_id'] = create_tset_activity.id
+                
+                create_ts_activity_instance = CreateTrainingsetActivity.objects.get(id = int(request.session['create_trainingset_activity_id']))
+                create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'add new', trainingsample_for_category1_id = ts.trainingsample_id, trainingsample_for_category1_ver = ts.trainingsample_ver)
+                create_tset_activity_ops.save()
+    
+          
+            if isitfinalsample=='True':
+                filename = data['TrainingsetName'];
+                current_samples_id_and_version = request.session['current_samples_id_and_version']
+                current_samples_filenames = []
+                
+                for sample_id_and_ver in current_samples_id_and_version:
+                    sample_filename = TrainingsampleForCategory.objects.get(trainingsample_id = sample_id_and_ver[0], trainingsample_ver = sample_id_and_ver[1]).samplefile_name
+                    current_samples_filenames.append(sample_filename)
+                
+                manageCsvData = ManageCSVData()
+                manageCsvData.combine_multiple_csv_files(current_samples_filenames, EXISTING_TRAINING_SAMPLES_LOCATION, EXISTING_TRAINING_DATA_LOCATION, filename)
+                request.session['current_training_file_name'] = filename
+    
+                if Trainingset.objects.all().exists():
+                    latestid = int (Trainingset.objects.latest("trainingset_id").trainingset_id) + 1
+                else:
+                    latestid = 0
+                tr = Trainingset(trainingset_id=latestid, trainingset_ver =1, trainingset_name=request.session['current_training_file_name'], date_expired=datetime(9999, 9, 12), filelocation=EXISTING_TRAINING_DATA_LOCATION)
+                tr.save(force_insert=True)
+                request.session['current_training_file_id'] = tr.trainingset_id
+                request.session['current_training_file_ver'] = tr.trainingset_ver
+                
+                if 'new_taxonomy_name' in request.session:
+                    create_ts_activity_instance.trainingset_id = request.session['current_training_file_id']
+                    create_ts_activity_instance.trainingset_id = request.session['current_training_file_ver']
+                    create_ts_activity_instance.save()
+                
+                for sample_id_and_ver in current_samples_id_and_version:
+                    trainingset_trainingsamples_instance = TrainingsetTrainingsamples(trainingset_id = request.session['current_training_file_id'], trainingset_ver = request.session['current_training_file_ver'], trainingsample_id = sample_id_and_ver[0], trainingsample_ver = sample_id_and_ver[1])
+                    trainingset_trainingsamples_instance.save(force_insert=True)
+                
+                exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'create trainingset', activity_instance = create_ts_activity_instance)
+                exp_chain.save()
+                request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
+                
+                fp = file("%s%s" % (EXISTING_TRAINING_DATA_LOCATION, request.session['current_training_file_name']), 'rb')
+                response = HttpResponse( fp, content_type='text/csv')
+                response['Content-Disposition'] = 'attachment; filename="training File"'
+                return response
+                
+            
+            return HttpResponse("")
+        else:
+            trainingfilepkey = data['1']
+            trid, ver = trainingfilepkey.split('+')
+            request.session['current_training_file_id'] = trid
+            request.session['current_training_file_ver'] = ver
+            trainingfilename = data['2']
+            request.session['current_training_file_name'] = trainingfilename
+            trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
+            trainingsetasArray = []
+            trs = TrainingSet(request.session['current_training_file_name'])
+            classes = list(numpy.unique(trs.target))
+            with open('%s%s' % (trainingfilelocation, trainingfilename), 'rU') as trainingset:
+                datareader = csv.reader(trainingset, delimiter=',')
+                trainingsetasArray = list(datareader)
+                trainingset.close()
+                
+            if 'currenteditoperations' in request.session:
+                del request.session['currenteditoperations']
+                request.session.modified = True
+            
+            if 'current_model_id' in request.session:
+                del request.session['model_type']    
+                del request.session['current_model_name']
+                del request.session['current_model_id']
+                del request.session['model_score']
+                del request.session['producer_accuracies']
+                del request.session['user_accuracies']
+                request.session.modified = True
+    
+            if 'current_predicted_file_name' in request.session:
+                del request.session['current_test_file_name']
+                del request.session['current_predicted_file_name']
+                del request.session['current_test_file_columns']
+                del request.session['current_test_file_rows']
+                request.session.modified = True
+
+            return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes})             
+            #   fp = file (trainingfilelocation+trainingfilename, 'rb')
+            #   response = HttpResponse( fp, content_type='text/csv')
+            #   response['Content-Disposition'] = 'attachment; filename="temp.csv"'            
+            
+            
+    
+    else:
+        if Trainingset.objects.exists(): # @UndefinedVariable
+            training_set_list = Trainingset.objects.all()  # @UndefinedVariable
+            return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name})
+        else:
+            return render(request, 'trainingsample.html', {'user_name': user_name})
+        
+        
+    '''  
+            
         if request.FILES:
             trainingFilesList = request.FILES.getlist('file')
             
@@ -208,15 +364,146 @@ def trainingsampleprocessing(request):
             response = HttpResponse( fp, content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="temp.csv"'
             
-            return response
+            return response'''
 
-    else:
-        if Trainingset.objects.exists(): # @UndefinedVariable
-            training_set_list = Trainingset.objects.all()  # @UndefinedVariable
-            return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name})
+def edittrainingset(request):
+    if request.method=='POST':
+        data = request.POST
+        editoperation_no = data['1']
+        editoperaiton_details = []
+        editoperaiton_details.append(editoperation_no)
+        if editoperation_no=='1':
+            nodata_value = data['2'];
+            editoperaiton_details.append(nodata_value)
+        elif editoperation_no=='2':
+            concept_to_remove = data['2'];
+            editoperaiton_details.append(concept_to_remove)
+        elif editoperation_no=='3':
+            firstconcepttomerge = data['2'];
+            secondconcepttomerge = data['3'];
+            mergedconceptname = data['4'];
+            editoperaiton_details.append(firstconcepttomerge)
+            editoperaiton_details.append(secondconcepttomerge)
+            editoperaiton_details.append(mergedconceptname)
         else:
-            return render(request, 'trainingsample.html', {'user_name': user_name})
+            trainingsamplesforfirstconcept = request.FILES.getlist('filesforconcept1')
+            trainingsamplesforsecondconcept = request.FILES.getlist('filesforconcept2')
+            concepttosplit = data['concepttosplit']
+            concept1 = data['concept1']
+            concept2 = data['concept2']
+            
+            #Combine multiple samples and save it as a csv file
+            samplefilenameforfirstconcept = concept1 + str(datetime.now()) + ".csv"
+            samplefilenameforsecondconcept = concept2 + str(datetime.now()) + ".csv"
+            trainingSamplesFileList1 = []
+            trainingSamplesFileList2 = []
+            for trainingSamples in trainingsamplesforfirstconcept:
+                trainingSamplesFileList1.append(trainingSamples.name)
+            for trainingSamples in trainingsamplesforsecondconcept:
+                trainingSamplesFileList2.append(trainingSamples.name)
+                
+            managedata = ManageRasterData()
+            managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList1, samplefilenameforfirstconcept, EXISTING_TRAINING_SAMPLES_LOCATION, concept1)
+            managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList2, samplefilenameforsecondconcept, EXISTING_TRAINING_SAMPLES_LOCATION, concept2)
+            
+            editoperaiton_details.append(concepttosplit)
+            editoperaiton_details.append(concept1)
+            editoperaiton_details.append(samplefilenameforfirstconcept)
+            editoperaiton_details.append(concept2)
+            editoperaiton_details.append(samplefilenameforsecondconcept)
+            
+        
+        if 'currenteditoperations' in request.session:
+            currenteditoperations = request.session['currenteditoperations']
+            currenteditoperations.append(editoperaiton_details)
+            request.session['currenteditoperations'] = currenteditoperations
+        else:
+            currenteditoperations = []
+            currenteditoperations.append(editoperaiton_details)
+            request.session['currenteditoperations'] = currenteditoperations
 
+    
+    return HttpResponse("");
+
+@transaction.atomic 
+def applyeditoperations(request):
+    
+    currenteditoperations = request.session['currenteditoperations']
+    trid = request.session['current_training_file_id']
+    ver = request.session['current_training_file_ver']
+    trainingfilename = request.session['current_training_file_name']
+    manageCsvData = ManageCSVData()
+    fname = "temp.csv"
+    customQuery = CustomQueries()
+    
+    newfilename = trainingfilename.rpartition('_')[0] + "_VER" + str(int(ver)+1) + ".csv"
+    oldversion = Trainingset.objects.get(trainingset_id=int(trid), trainingset_ver =int(ver))
+    if  oldversion.date_expired == datetime(9999, 9, 12):
+        oldversion.date_expired = datetime.now()
+        oldversion.save()
+    tr = Trainingset(trainingset_id=int(trid), trainingset_ver =int(ver)+1, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation=EXISTING_TRAINING_DATA_LOCATION)
+    tr.save(force_insert=True)
+    authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
+    
+    tr_activity = ChangeTrainingsetActivity( oldtrainingset_id= int(trid), oldtrainingset_ver =int(ver), newtrainingset_id=int(trid), newtrainingset_ver=int(ver)+1, completed_by=authuser_instance)
+    tr_activity.save()
+    
+    for editoperation in currenteditoperations:
+        if os.path.isfile(EXISTING_TRAINING_DATA_LOCATION + "temp.csv"):
+            trainingfilename = fname
+        if editoperation[0] == '1':
+            nodata_value = editoperation[1]
+            manageCsvData.remove_no_data_value(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", nodata_value)
+            #trainingSamplesForCurrentTrainingset = customQuery.getTrainingSampleForTrainingset(trid, ver)            
+            tr_activity_details = ChangeTrainingsetActivityDetails(activity_id = tr_activity, operation = 'remove no data')
+            tr_activity_details.save(force_insert=True)
+            
+        elif editoperation[0] == '2':
+            concept_to_remove = editoperation[1]
+            manageCsvData.removeConcept(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", concept_to_remove)
+            id_and_ver_of_sample = customQuery.getTrainingSampleIdAndVersionForAGivenConceptInATrainingSet(trid, ver, concept_to_remove)
+            print id_and_ver_of_sample[0]
+            tr_activity_details = ChangeTrainingsetActivityDetails(activity_id = tr_activity, operation = 'remove', trainingsample_for_category1_id= id_and_ver_of_sample[0], trainingsample_for_category1_ver= id_and_ver_of_sample[1])
+            tr_activity_details.save(force_insert=True)
+            
+        elif editoperation[0] == '3':
+            firstconcepttomerge = editoperation[1];
+            secondconcepttomerge = editoperation[2];
+            mergedconceptname = editoperation[3];
+            merged_sample_details = manageCsvData.mergeConcepts(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", firstconcepttomerge, secondconcepttomerge, mergedconceptname)
+            
+            trainingset_trainingsamples_instance = TrainingsetTrainingsamples(trainingset_id = tr.trainingset_id, trainingset_ver = tr.trainingset_ver, trainingsample_id = merged_sample_details[0], trainingsample_ver = merged_sample_details[1])
+            trainingset_trainingsamples_instance.save(force_insert=True)
+            
+        else:
+            concepttosplit = editoperation[1];
+            concept1 = editoperation[2];
+            samplefilenameforfirstconcept = editoperation[3];
+            concept2 = editoperation[4];
+            samplefilenameforsecondconcept = editoperation[5];
+            manageCsvData.splitconcept(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", concepttosplit, concept1, samplefilenameforfirstconcept, concept2, samplefilenameforsecondconcept, EXISTING_TRAINING_SAMPLES_LOCATION)
+    
+
+    os.rename(EXISTING_TRAINING_DATA_LOCATION + fname, EXISTING_TRAINING_DATA_LOCATION + newfilename)
+        
+
+    
+    request.session['current_training_file_name'] = newfilename
+    request.session['current_training_file_ver'] = int(new_tr_ver)+1
+    
+    exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'change trainingset', activity_instance = tr_activity.id)
+    exp_chain.save()
+    
+    request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
+    
+    return HttpResponse("")
+            
+    
+    
+    #trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
+    #current_trainingset = 
+    
+   
 
 def savetrainingdatadetails(request):
     if request.method=='POST':
@@ -265,8 +552,8 @@ def savetrainingdatadetails(request):
         if 'existing_taxonomy_name' in request.session:
             customQuery = CustomQueries()
             old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
-            new_training_sample = TrainingSample(request.session['current_training_file_name'])
-            old_training_sample = TrainingSample(old_trainingset_name)
+            new_training_sample = TrainingSet(request.session['current_training_file_name'])
+            old_training_sample = TrainingSet(old_trainingset_name)
             common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
             if isinstance(common_categories[0], list)==False:
                 common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
@@ -332,8 +619,8 @@ def saveNewTrainingVersion(request):
         if 'existing_taxonomy_name' in request.session:
             customQuery = CustomQueries()
             old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
-            new_training_sample = TrainingSample(request.session['current_training_file_name'])
-            old_training_sample = TrainingSample(old_trainingset_name)
+            new_training_sample = TrainingSet(request.session['current_training_file_name'])
+            old_training_sample = TrainingSet(old_trainingset_name)
             common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
             if isinstance(common_categories[0], list)==False:
                 common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
@@ -363,7 +650,7 @@ def signaturefile(request):
     if 'current_training_file_name' not in request.session:
         return render (request, 'signaturefile.html', {'user_name':user_name})
     
-    trainingfile = TrainingSample(request.session['current_training_file_name'])
+    trainingfile = TrainingSet(request.session['current_training_file_name'])
     features = list(trainingfile.features)
 
     if request.method=='POST':
@@ -481,7 +768,7 @@ def signaturefile(request):
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
                 old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
-                old_trainingfile = TrainingSample(old_trainingset_name)
+                old_trainingfile = TrainingSet(old_trainingset_name)
                 old_covariance_mat = old_trainingfile.create_covariance_matrix()
                 old_mean_vectors = old_trainingfile.create_mean_vectors()
                 new_categories = list(numpy.unique(trainingfile.target))
@@ -549,7 +836,7 @@ def signaturefile(request):
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
                 old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
-                old_trainingfile = TrainingSample(old_trainingset_name)
+                old_trainingfile = TrainingSet(old_trainingset_name)
                 new_categories = list(numpy.unique(trainingfile.target))
                 old_categories = list(numpy.unique(old_trainingfile.target))
                 common_categories = numpy.intersect1d(new_categories, old_categories)
@@ -717,7 +1004,7 @@ def changeRecognizer(request):
             return render (request, 'changerecognition.html', {'user_name':user_name, 'error_message': exp_incomplete})
         else:
             new_taxonomy = request.session['new_taxonomy_name']
-            trainingfile = TrainingSample(request.session['current_training_file_name'])
+            trainingfile = TrainingSet(request.session['current_training_file_name'])
             concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
             model_accuracy = request.session['model_score']
             user_accuracies = request.session['user_accuracies']
@@ -733,7 +1020,7 @@ def createChangeEventForNewTaxonomy(request):
     changeOperation = []
     changeOperation.append('Create new taxonomy ' + request.session['new_taxonomy_name'])
     changeOperation.append('Create root concept of the legend ' + request.session['new_taxonomy_name'])
-    trainingfile = TrainingSample(request.session['current_training_file_name'])
+    trainingfile = TrainingSet(request.session['current_training_file_name'])
     concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
     for concept in concepts_in_current_taxonomy:
         changeOperation.append('Create new concept ' + concept)
@@ -749,7 +1036,7 @@ def createChangeEventForNewTaxonomy(request):
 def applyChangeOperations(request):
     change_event_queries = UpdateDatabase(request)
     change_event_queries.create_legend()
-    trainingfile = TrainingSample(request.session['current_training_file_name'])
+    trainingfile = TrainingSet(request.session['current_training_file_name'])
     concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
     covariance_mat = trainingfile.create_covariance_matrix()
     mean_vectors = trainingfile.create_mean_vectors()

@@ -11,9 +11,16 @@ external_trigger
 
 view_existing_taxonomies (True or False) - activity option 3
 
+
+create_trainingset_activity_id
+current_samples_id_and_version
+
+
 current_training_file_name
 current_training_file_id
 current_training_file_ver
+
+currenteditoperations
 
 model_type
 current_model_name

@@ -6,140 +6,204 @@
 	<div class="container">
 		<div style="border-style: solid; border-width: 1px; border-color: #E5E5E5">
 			
-				<legend style="font-size: 16px; background-color: gainsboro" align="center">Choose existing training sample or create a new one</legend>
-				<div class="form-group radio" style="margin-left: 10px">		
-								
-					<input type="radio" name="choosetrainingfile" value="option1" id="existingtrainingset"/>Existing
-					<span style = "margin: 50px">
-						<select name="existingtrainingfiles" id="existingtrainingfiles"  disabled>
-							<option>Existing training files</option>
-							{% for train in training_set_list %}
-							<option id="trainingset{{ forloop.counter }}" value="{{ train.trainingset_id }}+{{train.trainingset_ver}}">{{ train.trainingset_name }}</option>
-							{% endfor %}
-	 					</select>
-					</span>
-					<br /><br />
-					
-					<input type="radio" name="choosetrainingfile" value="option2" id="newtrainingset"/>New
-					<!--<span style = "">
-						<input type="file" id="trainingfile" name="trainingfile" accept=".csv,.xls,.tif,.png,.adf" multiple disabled/>
-					</span>-->
-					<br /><br />
-				</div>
-				<div  id="newconceptsanddetails" >
-					<legend style="font-size: 14px; background-color: gainsboro" align="center">Enter details of concepts to be modelled</legend>
-
-					<div class="form-group" id="categoriesandsamples" style="margin-left: 10px; margin-right: 10px">
-						<form id="concept1details" enctype="multipart/form-data" action="#" >
-
-							<div class="form-group" >
-								<span><label for="catgeoryName" style ="font-weight:normal">Concept name</label></span>
-								<span style = "margin-left: 100px">
-								<input id="catgeoryName" type="text" size="20" placeholder="Enter concept name"  required /></span>
-								<span style = "margin-left: 50px">
-								<label for="trainingfile1" style ="font-weight:normal">Upload training samples</label></span>
-								<span style = "margin-right: 250px; float:right">					
-							  	<input type="file" id="trainingfile1" name="trainingfile1" accept=".csv,.xls,.tif,.png,.adf" multiple /></span>
-						  	</div>
-						  	<div class="form-group">
-								<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
-								<span style = "margin-left: 43px">
-								<input type="text" name="FieldResearcherName" value="" id="FieldResearcherName" placeholder="Enter Name"/></span>
-								<span style = "margin-left: 50px">
-								<label for="Location" style ="font-weight:normal">Training Location</label></span>
-								<span style = "margin-right: 351px; float:right">
-								<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location"/></span>
-							</div>
-							<div class="form-group">
-								<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
-								<span style = "margin-left: 78px">
-								<input type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate"/></span>
-								<span style = "margin-left: 62px">
-								<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
-								<span style = "margin-right: 360px; float:right">
-								<input type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate"/></span>
-							</div>
+			<legend style="font-size: 16px; background-color: gainsboro" align="center">Choose existing trainingset or create a new one</legend>
+			<div class="form-group radio" style="margin-left: 10px">		
 							
-							<div class="form-group">
-								<span><label for="Description" style ="font-weight:normal">Other details</label></span>
-								<span style = "margin-left: 110px">
-								<textarea name="OtherDetails" rows="1" cols="70" id="Description" placeholder="Enter any more relevant details"> </textarea></span>
-							</div>
-						</form>
-					</div>
-					<br />	
-					<div class="form-group" id="addmorecategoriesorsubmit" style = "margin-left: 10px; margin-right: 10px; margin-bottom:15px">
-						<button id="addmorecategories" class="btn btn-default" style = "float: left" >Add another concept</button>
-						<span style="margin-left: 70px">
-					  		<button id="submittrainingsamples" class="btn btn-default" >Submit</button>
-					  	</span>
+				<input type="radio" name="choosetrainingfile" value="option1" id="existingtrainingset"/>Choose existing
+				<span style = "margin: 50px">
+					<select name="existingtrainingfiles" id="existingtrainingfiles"  disabled>
+						<option>Existing trainingset</option>
+						{% for train in training_set_list %}
+						<option id="trainingset{{ forloop.counter }}" value="{{ train.trainingset_id }}+{{train.trainingset_ver}}">{{ train.trainingset_name }}</option>
+						{% endfor %}
+					</select>
+				</span>
+				<br /><br />
+				
+				<input type="radio" name="choosetrainingfile" value="option2" id="newtrainingset"/>Create a new trainingset
+				<br /><br />
+			</div>
+			<div  id="newconceptsanddetails" style="display:none">
+				<legend style="font-size: 14px; background-color: gainsboro" align="center">Concepts in the new trainingset</legend>
+	
+				<div class="form-group" id="categoriesandsamples" style="margin-left: 10px; margin-right: 10px">
+					<form id="concept1details" enctype="multipart/form-data" action="#" >
+	
+						<div class="form-group" >
+							<span><label for="conceptName" style ="font-weight:normal">Concept name</label></span>
+							<span style = "margin-left: 100px">
+							<input id="conceptName" type="text" size="20" placeholder="Enter concept name"  required /></span>
+							<span style = "margin-left: 50px">
+							<label for="trainingfile1" style ="font-weight:normal">Upload training samples</label></span>
+							<span style = "margin-right: 250px; float:right">					
+						  	<input type="file" id="trainingfile1" name="trainingfile1" accept=".csv,.xls,.tif,.png,.adf" multiple /></span>
+					  	</div>
+					  	<div class="form-group">
+							<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
+							<span style = "margin-left: 43px">
+							<input type="text" name="FieldResearcherName" value="" id="FieldResearcherName" placeholder="Enter Name"/></span>
+							<span style = "margin-left: 50px">
+							<label for="Location" style ="font-weight:normal">Training Location</label></span>
+							<span style = "margin-right: 351px; float:right">
+							<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location"/></span>
+						</div>
+						<div class="form-group">
+							<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
+							<span style = "margin-left: 78px">
+							<input type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate"/></span>
+							<span style = "margin-left: 62px">
+							<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
+							<span style = "margin-right: 360px; float:right">
+							<input type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate"/></span>
+						</div>
 						
+						<div class="form-group">
+							<span><label for="Description" style ="font-weight:normal">Other details</label></span>
+							<span style = "margin-left: 110px">
+							<textarea name="OtherDetails" rows="1" cols="70" id="Description" placeholder="Enter any more relevant details"> </textarea></span>
+						</div>
+					</form>
+				</div>
+				<br />	
+				<div class="form-group" id="addmorecategoriesorsubmit" style = "margin-left: 10px; margin-right: 10px; margin-bottom:15px">
+					<div id="trainingsetname" style="display:none" class="form-group" >
+						<label for="trainingsetfilename" >Combine training samples and save trainingset as</label>
+						<span style = "margin-left: 65px">
+						<input type="text" name="trainingsetfilename" value="" id="trainingsetfilename" placeholder="Enter file name"/></span>							  
+					</div>
+					<button id="addmorecategories" class="btn btn-default" style = "float: left" >Add another concept</button>
+					<span style="margin-left: 70px">
+				  		<button id="submittrainingsamples" class="btn btn-default" >Submit</button>
+				  	</span>
+					<span style="margin-left: 70px">
+				  		<button id="savetrainingset" class="btn btn-default" style="display:none">Save trainingset</button>
+				  	</span>
+				</div>
+				
+				<div style="margin-left: 5px; margin-right: 5px">	
+					<p id="trainingfileformatError" style= "color: red"> <em> </em> </p>
+				</div>
+			</div>
+
+
+		<div id = "viewandedittrainingset" style=" border-style: solid; border-width: 1px; border-color: #E5E5E5; display:none">
+			<legend style="font-size: 14px; background-color: gainsboro; margin-bottom: 0px" align="center">View/Edit trainingset</legend>
+			<div id="viewtrainingset" style="width: 50%; float: left; border-style: solid; border-width: 1px; border-color: #E5E5E5">
+				<div style = "margin-left:10px"> 
+					<br />
+					<label for="instances" id = "instanceslabel" style="font-weight: normal">Instances: <span	id="instances"> </span></label>
+					&nbsp; &nbsp; &nbsp; 
+					<label for="Attributes" id = "attributeslabel" style="font-weight: normal">No of attributes: <span id="Attributes"> </span> </label>
+				</div>
+				<br />
+				<div id= "trainingdataTable" class="handsontable" style="overflow: scroll; margin-left: 10px; display:none" >
+				</div>
+			</div>
+			<div id="edittrainingset" style="width: 50%; float: right; border-style: solid; border-width: 1px; border-color: #E5E5E5; overflow: scroll">
+				<br />
+				<p style="margin-left: 10px; margin-right:10px">If you wish to edit the trainingset, use the below editing operations. Otherwise, you may also edit the trainingset manually in the table on the LHS.</p>
+				<br />
+				
+				<div id= "editingoperations" class="form-group radio" style="margin-left: 10px">
+					<input type="radio" name="chooseeditoperation" value="option1" id="removenodatavalue"/>Remove 'No data' values
+					<span  style = "margin-left: 25px"> 
+						<label id = "labelfornodatavalue" style="font-weight: normal; display:none"> Enter 'No data' value:</label>
+						<input id="nodatavalue" style="display:none; margin-left: 10px" type="text" size="10" required />	
+					</span>
+					
+					<br /><br />
+					
+					<input type="radio" name="chooseeditoperation" value="option2" id="removeconcept"/>Remove a concept
+					<span  style = "margin-left: 50px">
+						<select name="concepttoremove" id="concepttoremove"  style="display:none">
+						</select>
+					</span>
+	
+					<br /><br />
+					
+					<input type="radio" name="chooseeditoperation" value="option3" id="mergetwoconcepts"/>Merge two concepts
+					<div id="mergetwoconceptdetails" style="display: none">
+						<br />
+						<label style="font-weight: normal; margin-left: 25px"> Concept 1:</label>
+						<span style = "margin-left: 85px">
+							<select name="firstconcepttomerge" id="firstconcepttomerge" >
+							</select>
+						</span>
+						<br /><br />
+						<label style="font-weight: normal; margin-left: 25px"> Concept 2:</label>
+						<span style = "margin-left: 85px"> 
+							<select name="secondconcepttomerge" id="secondconcepttomerge" >
+							</select>	
+						</span>
+						<br /><br />
+						<label style="font-weight: normal; margin-left: 25px"> Merged concept name:</label>
+						<span style = "margin-left: 10px"> 
+							<input id="mergedconceptname" type="text" size="20" required />	
+						</span>
+					</div>
+					<br /><br />
+					
+					<input type="radio" name="chooseeditoperation" value="option4" id="splitaconcept"/>Split a concept
+					<div id="splitaconceptdetails" style="display: none">
+						<br />
+						<label style="font-weight: normal; float: left"> concept to split:</label>
+						<span style = "margin-left: 10px">
+							<select name="concepttosplit" id="concepttosplit" >
+							</select>	
+						</span>
+						<br /><br />
+						<label style="font-weight: normal; float: left"> concept 1:</label>
+						<span style = "margin-left: 45px"> 
+							<input id="firstsplitconcept" type="text" size="10" required />	
+						</span>
+						<span style="float: right">
+							<input type="file" id="samplesforfirstsplitconcept" name="samplesforfirstsplitconcept" accept=".csv,.xls,.tif,.png,.adf" multiple />
+						</span>
+						
+						<br /><br />
+						<label style="font-weight: normal; float: left"> concept 2:</label>
+						<span style = "margin-left: 45px"> 
+							<input id="secondsplitconcept" type="text" size="10" required />	
+						</span>
+						<span  style="float: right">
+							<input type="file" id="samplesforsecondsplitconcept" name="samplesforsecondsplitconcept" accept=".csv,.xls,.tif,.png,.adf" multiple />
+						</span>
 					</div>
 					
-					<div style="margin-left: 5px; margin-right: 5px">	
-						<p id="trainingfileformatError" style= "color: red"> <em> </em> </p>
-					</div>
 				</div>
+				<br />
+				<button id="addtoeditoperationslist" style="display:none; margin-left:15px" class="btn btn-default">Add the above operation to the list</button>
+				<br /><br />
+				<div id="listofeditingoperations" style="border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-left:15px; margin-right:15px;  display:none">
+					<legend style="font-size: 14px; background-color: gainsboro; margin-bottom: 0px" align="center">List of editing operations</legend>
+					<br />
+					<ul id = "editop" class=" list-group" style=" margin-left: 5px; margin-right: 5px; margin-bottom: 5px">
+					</ul>
+					<br />
+					<button id="applyeditoperations" style="display:none; margin-left:20px; margin-bottom: 15px" class="btn btn-default">Apply the edit operations</button>
 
-
-			<form  id="newtrainingdatasetdetails" style="display:none" enctype="multipart/form-data" action="#">
-				<legend style="font-size: 16px; background-color: gainsboro" align="center">Enter new training dataset details</legend>
-				<div style=" margin-left: 5px; margin-right: 5px" >
-				  	<div class="form-group">
-						<label for="TrainingFileName" style ="font-weight:normal">Save training data as</label><br />
-						<input type="text" name="TrainingFileName" value="" id="TrainingFileName" placeholder="Enter Name"/>
-					</div>
-					<div class="form-group">
-						<label for="FieldResearcherName" style ="font-weight:normal">Field Researcher's Name</label><br />
-						<input type="text" name="FieldResearcherName" value="" id="FieldResearcherName" placeholder="Enter Name"/>
-					</div>
-					<div class="form-group">
-						<label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training Time Period - Start date</label><br />
-						<input type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate"/>
-					</div>
-					<div class="form-group">
-						<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training Time Period - End date</label><br />
-						<input type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate"/>
-					</div>
-					<div class="form-group">
-						<label for="Location" style ="font-weight:normal">Enter Training Location</label><br />
-						<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location"/>
-					</div>
-					<div class="form-group">
-						<label for="Description" style ="font-weight:normal">Other details</label><br />
-						<textarea name="OtherDetails" rows="8" cols="40" id="Description" placeholder="Enter any more relevant details"> </textarea>
-					</div>
-					<button id="savetrainingdatadetails" class="btn btn-default">Save dataset details</button>
 				</div>
-			</form>
+				
+				<div id = "changedtrainingdata" style="margin-left: 5px; display:none" >
+					<label for="reasonchange" style ="font-weight:normal">Enter details of change</label><br />
+					<textarea name="reasonchange" rows="8" cols="40" id="reasonforchange" placeholder="Enter any more relevant details"> </textarea>
+				</div>
+				<div id = "newversionstoredsuccessfully" style="margin-left: 5px; display:none" >
+					<p id="successmessage" style= "color: green"> <em> </em> </p><br />
+				</div>
+				<button id="saveChanges" style="display:none" class="btn btn-default">Save changes </button>
+				
+			</div>
+		</div>
+		
+		
+	
 			<form  id="trainingsetcomparison" style="display:none" enctype="multipart/form-data" action="#">
 				<legend style="font-size: 18px; background-color: gainsboro" align="center">Training samples comparison</legend>
 				<div id = "trainingsetcomparisondetails" style=" margin-left: 5px; margin-right: 5px; margin-bottom:5px" >
 
 				</div>
 			</form>
-		</div>
-
-		<div style=" border-style: solid; border-width: 1px; border-color: #E5E5E5">
-			<legend style="font-size: 18px; background-color: gainsboro" align="center">View/Edit training samples</legend>
-			<div style = "margin-left:5px"> 
-				<label for="instances" id = "instanceslabel" style="font-weight: normal; display:none">Instances: <span	id="instances"> </span></label>
-				&nbsp; &nbsp; &nbsp; &nbsp;
-				<label for="Attributes" id = "attributeslabel" style="font-weight: normal; display:none">No of attributes: <span id="Attributes"> </span> </label>
-			</div>
-			<br />
-			<div id= "trainingdataTable" class="handsontable" style="overflow: scroll; margin-left: 5px; display:none" >
-			</div>
-			<br/>
-			<div id = "changedtrainingdata" style="margin-left: 5px; display:none" >
-				<label for="reasonforchange" style ="font-weight:normal">Enter details of change</label><br />
-				<textarea name="reasonforchange" rows="8" cols="40" id="reasonforchange" placeholder="Enter any more relevant details"> </textarea>
-			</div>
-			<div id = "newversionstoredsuccessfully" style="margin-left: 5px; display:none" >
-				<p id="successmessage" style= "color: green"> <em> </em> </p><br />
-			</div>
-			<button id="saveChanges" style="display:none" class="btn btn-default">Save changes </button>
-		</div>
 	</div>
 
 {% endblock content %}

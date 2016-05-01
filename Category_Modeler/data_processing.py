@@ -2,17 +2,19 @@ import gdal
 import numpy as np
 from gdalconst import *
 from io import FileIO, BufferedWriter
-import csv
+import csv, os
+from shutil import copyfile
+from datetime import datetime
+from Category_Modeler.models import TrainingsampleForCategory
 
 class ManageRasterData:
-    
-    RASTER_DATA_LOCATION = 'Category_Modeler/static/data/'
-    
+
+    TRAINING_SAMPLES_IMAGES_LOCATION = 'Category_Modeler/static/data/'
     #def __init__(self, files):
     #    self.raster_files = files
 
     def extract_raster_info(self, filename):
-        dataset = gdal.Open('%s%s' %(ManageRasterData.RASTER_DATA_LOCATION, filename), GA_ReadOnly)
+        dataset = gdal.Open('%s%s' %(ManageRasterData.TRAINING_SAMPLES_IMAGES_LOCATION, filename), GA_ReadOnly)
         columns = dataset.RasterXSize
         rows = dataset.RasterYSize
         noOfBands = dataset.RasterCount
@@ -29,7 +31,7 @@ class ManageRasterData:
 # If raster file has a single band, the numpy array will be a 2D array, where each cell contains a single value. However, if the raster file has multiple bands, each cell of the array
 # has a tuple containing the pixel values from each band
     def convert_raster_to_array(self, fileName, className=""):
-        dataset = gdal.Open('%s%s' %(ManageRasterData.RASTER_DATA_LOCATION, fileName), GA_ReadOnly)
+        dataset = gdal.Open('%s%s' %(ManageRasterData.TRAINING_SAMPLES_IMAGES_LOCATION, fileName), GA_ReadOnly)
         columns = dataset.RasterXSize
         rows = dataset.RasterYSize
         noOfBands = dataset.RasterCount
@@ -70,7 +72,7 @@ class ManageRasterData:
 
 # The method combines multiple training raster files to create a csv file. Here we assume that each file has same number of bands. 
 # Each pixel is stored as a row in the csv file along with its class attribute. The class name is taken from the raster file name.         
-    def combine_multiple_raster_files_to_csv_file(self, raster_files, targetFileName, targetFileLocation):
+    def combine_multiple_raster_files_to_csv_file(self, raster_files, targetFileName, targetFileLocation, className=""):
         
         columns, rows, noOfBands, driver, originX, originY, pixelWidth, pixelHeight, prj = self.extract_raster_info(raster_files[0])
         
@@ -85,8 +87,9 @@ class ManageRasterData:
         
     
             for eachFile in raster_files:
-                tempclassName = eachFile.split('.', 1)[0]
-                className = ''.join([i for i in tempclassName if not i.isdigit()])
+                if className =="":
+                    tempclassName = eachFile.split('.', 1)[0]
+                    className = ''.join([i for i in tempclassName if not i.isdigit()])
                 rasterArray = self.convert_raster_to_array(eachFile, className)
                   
                 with BufferedWriter( FileIO( '%s%s' % (targetFileLocation, targetFileName), "a" ) ) as csvfile:
@@ -175,15 +178,132 @@ class ManageRasterData:
         outbandB.WriteArray(np.array(rasterBandValuesArrays3, dtype=np.uint8))
         outRaster.SetProjection(prj)
         map = outputRasterFileName.split('.', 1)[0] + '.jpeg'
-        driver1.CreateCopy('Category_Modeler/static/maps/%s'%map, outRaster, 0)
+        driver1.CreateCopy('Category_Modeler/static/maps/%s'% map, outRaster, 0)
         outbandR.FlushCache()
         outbandG.FlushCache()
         outbandB.FlushCache()
         return columns, rows
         
         
+class ManageCSVData:
     
+    TRAINING_SAMPLES_LOCATION = 'Category_Modeler/static/trainingsamples/'
+    TRAINING_SET_LOCATION = 'Category_Modeler/static/trainingfiles/'
+    
+    def combine_multiple_csv_files(self, files_list, files_location, target_location, trainingset_name):
+        with open('%s%s' % (target_location, trainingset_name), 'a') as trainingset_file:
+            with open('%s%s' % (files_location, files_list[0]), 'rU') as sample1:
+                for eachSample in sample1:
+                    trainingset_file.write(eachSample)
+            sample1.close()
+            files_list.pop(0)
+            for file in files_list:
+                with open('%s%s' % (files_location, file), 'rU') as sample:
+                    sample.next()
+                    for eachSample in sample:
+                        trainingset_file.write(eachSample)
+                sample.close()
+            trainingset_file.close()
+    
+    def remove_no_data_value(self, file_name, file_location, targetfile_name, nodata_value):
+        reader = csv.reader(open('%s%s' %(file_location, file_name), "rb"), delimiter = ',')
+        targetfile = targetfile_name
+        if file_name == targetfile_name:
+            targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
+            
+        f = csv.writer(open('%s%s' %(file_location, targetfile), "wb"))
         
+        features = next(reader)
+        f.writerow(features)
+        
+        if len(features) == 4:
+            for line in reader:
+                if line[0] != nodata_value or line[1] != nodata_value or line[2] != nodata_value:
+                    f.writerow(line)
+        else:
+            for line in reader:
+                if line[0] != nodata_value or line[1] != nodata_value or line[2] != nodata_value or line[3] != nodata_value or line[4] != nodata_value or line[5] != nodata_value or line[6] != nodata_value or line[7] != nodata_value:
+                    f.writerow(line)
+        if file_name == targetfile_name:
+            os.remove(file_location + file_name)
+            os.rename(file_location + targetfile, file_location + file_name) 
+    
+    
+    
+    def removeConcept(self, file_name, file_location, targetfile_name, concept_to_remove):
+        reader = csv.reader(open('%s%s' %(file_location, file_name), "rb"), delimiter = ',')
+        targetfile = targetfile_name
+        if file_name == targetfile_name:
+            targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
+        f = csv.writer(open('%s%s' %(file_location, targetfile), "wb"))
+        
+        for line in reader:
+            if concept_to_remove not in line:
+                f.writerow(line)
+        
+        if file_name == targetfile_name:
+            os.remove(file_location + file_name)
+            os.rename(file_location + targetfile, file_location + file_name)
+    
+    def mergeConcepts(self, file_name, file_location, targetfile_name, firstconcepttomerge, secondconcepttomerge, mergedconceptname):
+        reader = csv.reader(open('%s%s' %(file_location, file_name), "rb"), delimiter = ',')
+        targetfile = targetfile_name
+        if file_name == targetfile_name:
+            targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
+        f = csv.writer(open('%s%s' %(file_location, targetfile), "wb"))
+        
+        for line in reader:
+            if firstconcepttomerge in line or secondconcepttomerge in line:
+                line[-1] = mergedconceptname
+                f.writerow(line)
+            else:
+                f.writerow(line)
+        
+        if file_name == targetfile_name:
+            os.remove(file_location + file_name)
+            os.rename(file_location + targetfile, file_location + file_name)
+        
+        #Create new merged sample and save it
+        reader1 = csv.reader(open('%s%s' %(file_location, targetfile_name), "rb"), delimiter = ',')
+        merged_sample_name = mergedconceptname + str(datetime.now()) + ".csv"
+        f1 = csv.writer(open('%s%s' %(self.TRAINING_SAMPLES_LOCATION, merged_sample_name), "wb"))
+        for line in reader1:
+            if mergedconceptname in line:
+                f1.writerow(line)
+
+        latestid = int(TrainingsampleForCategory.objects.latest("trainingsample_id").trainingsample_id) + 1
+
+        ts = TrainingsampleForCategory(trainingsample_id=latestid, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=merged_sample_name, filelocation=self.TRAINING_SAMPLES_LOCATION, concept_name = mergedconceptname)
+        ts.save(force_insert=True)
+        merged_sample_details = []
+        merged_sample_details.append(ts.trainingsample_id)
+        merged_sample_details.append(ts.trainingsample_ver)
+        return merged_sample_details
+        
+        
+    
+    def splitconcept(self, file_name, file_location, targetfile_name, concepttosplit, concept1, samplefile1, concept2, samplefile2, sample_files_location):
+        reader = csv.reader(open('%s%s' %(file_location, file_name), "rb"), delimiter = ',')
+        targetfile = targetfile_name
+        if file_name == targetfile_name:
+            targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
+        f = csv.writer(open('%s%s' %(file_location, targetfile), "wb"))
+        
+        for line in reader:
+            if concepttosplit not in line:
+                f.writerow(line)
+        
+        copyfile(file_location + targetfile, sample_files_location + targetfile)
+        os.remove(file_location + targetfile)
+        files_list = []
+        files_list.append(targetfile)
+        files_list.append(samplefile1)
+        files_list.append(samplefile2)
+        self.combine_multiple_csv_files(files_list, sample_files_location, file_location, targetfile)
+        os.remove(sample_files_location + targetfile)
+        if file_name == targetfile_name:
+            os.remove(file_location + file_name)
+            os.rename(file_location + targetfile, file_location + file_name)
 
 #b= ManageRasterData("final3b.tif")
 #b.convert_raster_csv_file_to_array("final3b.csv", "static/predictedvaluesinnumbers/", 865, 1171, 3)

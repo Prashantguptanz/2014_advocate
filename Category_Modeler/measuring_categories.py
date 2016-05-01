@@ -6,7 +6,7 @@ from gdalconst import *
 from io import FileIO, BufferedWriter
 
 
-class TrainingSample:
+class TrainingSet:
     
     TRAINING_FILE_LOCATION = 'Category_Modeler/static/trainingfiles/'
     #TRAINING_FILE_LOCATION = 'static/trainingfiles/'
@@ -19,7 +19,7 @@ class TrainingSample:
         return self.csv_file_name
     
     def __csv_file_conversion_to_numpy_arrays(self):
-        with open('%s%s' % (TrainingSample.TRAINING_FILE_LOCATION, self.training_file_name), 'rU') as training_file:
+        with open('%s%s' % (TrainingSet.TRAINING_FILE_LOCATION, self.training_file_name), 'rU') as training_file:
             datareader = csv.reader(training_file, delimiter=',')
             features = next(datareader)
             training_samples = list(datareader)
@@ -32,6 +32,7 @@ class TrainingSample:
             for sample in training_samples:
                 target.append(sample[-1])
                 samples.append(sample[0:-1])
+            
             features_as_nparray = np.asarray(features)
             target_as_nparray = np.asarray(target)
             samples_as_nparray = np.asarray(samples, dtype=np.float32)
@@ -148,7 +149,7 @@ class ClassifiedFile:
         self.predicted_file_name = file_name
         
     def create_extension(self, columns, rows, trainingfile_name):
-        trainingfile = TrainingSample(trainingfile_name)
+        trainingfile = TrainingSet(trainingfile_name)
         current_categories = list(np.unique(trainingfile.target))
         
         with open('%s%s' % (ClassifiedFile.CLASSIFIED_FILE_LOCATION, self.predicted_file_name), 'rU') as classified_file:
@@ -557,7 +558,7 @@ class ManageRasterData:
 #a= ManageRasterData(['arti1_1.tif', 'arti1_2.tif', 'cloud1_3.tif', 'cloud1_2.tif', 'forest1.tif', 'grass1.tif', 'shado1_1.tif', 'shado1_2.tif', 'water1_1.tif', 'water1_2.tif', 'water1_3.tif', 'water1_4.tif'], 3)  
 #a.combine_raster_files('akl_cbd_ts1_3bands.csv')
        
-#a=TrainingSample("AKL_LCDB1_TS_ver3.csv")
+#a=TrainingSet("AKL_LCDB_TS1_VER1.csv")
 #a.create_covariance_matrix()
 #print a.training_samples_as_nparray.dtype
 #a.split_training_samples_for_each_category()
