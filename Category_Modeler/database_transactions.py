@@ -218,7 +218,16 @@ class CustomQueries:
         return row
     
     
-    
+    def get_latest_version_of_a_trainingset(self, id):
+        cursor = connection.cursor()
+        
+        cursor.execute("select trainingset_ver from trainingset where trainingset_id = %s  order by trainingset_ver desc limit 1", [id])
+        
+        row = cursor.fetchone()
+        
+        return row[0]
+        
+        
     
         
         

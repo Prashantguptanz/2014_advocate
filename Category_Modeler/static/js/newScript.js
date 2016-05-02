@@ -324,12 +324,28 @@ $(function() {
 				success : function(response) {
 					$('#newconceptsanddetails').hide();
 					$('#viewandedittrainingset').show();
-					var trainingdata = $.csv.toArrays(response);
+					var trainingdata = response['trainingset'];
+					var classes = response['classes'];
 					$('#instances').html(trainingdata.length - 1);
 					$('#Attributes').html(trainingdata[0].length);
 
 					$('#trainingdataTable').show();
 					hot.loadData(trainingdata);
+					
+					a = "<option>Choose a concept</option>";
+					b = "<option>Choose first concept to merge</option>";
+					c = "<option>Choose second concept to merge</option>";
+					d = "<option>Choose the concept to be split</option>";
+					for (var i = 0; i < classes.length; i++){
+						a = a + "<option>" + classes[i] + "</option>";
+						b = b + "<option>" + classes[i] + "</option>";
+						c = c + "<option>" + classes[i] + "</option>";
+						d = d + "<option>" + classes[i] + "</option>";
+					}
+					$('#concepttoremove').html(a);
+					$('#firstconcepttomerge').html(b);
+					$('#secondconcepttomerge').html(c);
+					$('#concepttosplit').html(d);
 					
 					
 				}
@@ -729,7 +745,13 @@ $(function() {
 		
 		$('#applyeditoperations').on('click', function(e) {
 			e.preventDefault();
-			$.get("http://127.0.0.1:8000/AdvoCate/applyeditoperations/", function(){
+			$.get("http://127.0.0.1:8000/AdvoCate/applyeditoperations/", function(response){
+				var trainingdata = response['trainingset'];
+				$('#updatedtrainingsetmessage').html("Trainingset updated!");
+				$('#instances').html(trainingdata.length - 1);
+				$('#Attributes').html(trainingdata[0].length);
+				hot.loadData(trainingdata);
+				$('#applyeditoperations').attr('disabled', 'disabled');
 			
 			});
 		});
@@ -751,8 +773,7 @@ $(function() {
 		$('input[name="validationoption"]').on('click', function() {
 			var $this = $(this);
 			$this.next().children().removeAttr('disabled');
-			$this.siblings('input').next().children().attr('disabled',
-					'disabled');
+			$this.siblings('input').next().children().attr('disabled', 'disabled');
 
 		});
 

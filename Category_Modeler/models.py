@@ -279,12 +279,9 @@ class ChangeTrainingsetActivityDetails(models.Model):
     
     activity_id = models.ForeignKey(ChangeTrainingsetActivity, db_column='activity_id')
     operation = models.CharField(choices=edit_trainingset_activity_type, max_length=256) # This field type is a guess.
-    trainingsample_for_category1_id = models.IntegerField(blank=True, null=True)
-    trainingsample_for_category1_ver = models.IntegerField(blank=True, null=True)
-    trainingsample_for_category2_id = models.IntegerField(blank=True, null=True)
-    trainingsample_for_category2_ver = models.IntegerField(blank=True, null=True)
-    trainingsample_for_category3_id = models.IntegerField(blank=True, null=True)
-    trainingsample_for_category3_ver = models.IntegerField(blank=True, null=True)
+    concept1 = models.CharField(max_length=256, blank=True, null=True)
+    concept2 = models.CharField(max_length=256, blank=True, null=True)
+    concept3 = models.CharField(max_length=256, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -340,7 +337,7 @@ class DjangoSession(models.Model):
 
 class ExplorationChain(models.Model):
     activity_type = (
-        ('trainingset collection', 'trainingset collection'),
+        ('create trainingset', 'create trainingset'),
         ('change trainingset', 'change trainingset'),
         ('learning', 'learning'),
         ('classification', 'classification')
@@ -554,17 +551,13 @@ class CreateTrainingsetActivityOperations(models.Model):
     )
     create_trainingset_activity_id = models.ForeignKey(CreateTrainingsetActivity, db_column= 'create_trainingset_activity_id')
     operation = models.CharField(choices=create_trainingset_activity_type, max_length=256) 
-    trainingsample_for_category1_id = models.IntegerField()
-    trainingsample_for_category1_ver = models.IntegerField()
-    trainingsample_for_category2_id = models.IntegerField(blank=True, null=True)
-    trainingsample_for_category2_ver = models.IntegerField(blank=True, null=True)
-    trainingsample_for_category3_id = models.IntegerField(blank=True, null=True)
-    trainingsample_for_category3_ver = models.IntegerField(blank=True, null=True)
+    concept1 = models.CharField(max_length=256)
+    concept2 = models.CharField(max_length=256, blank=True, null=True)
+    concept3 = models.CharField(max_length=256, blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'create_trainingset_activity_operations'
-        unique_together = ("trainingsample_for_category1_id", "trainingsample_for_category1_ver")
 
 
 class MeanVector(models.Model):

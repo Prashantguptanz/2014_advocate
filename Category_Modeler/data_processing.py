@@ -191,7 +191,7 @@ class ManageCSVData:
     TRAINING_SET_LOCATION = 'Category_Modeler/static/trainingfiles/'
     
     def combine_multiple_csv_files(self, files_list, files_location, target_location, trainingset_name):
-        with open('%s%s' % (target_location, trainingset_name), 'a') as trainingset_file:
+        with open('%s%s' % (target_location, trainingset_name), 'wb') as trainingset_file:
             with open('%s%s' % (files_location, files_list[0]), 'rU') as sample1:
                 for eachSample in sample1:
                     trainingset_file.write(eachSample)
@@ -206,7 +206,7 @@ class ManageCSVData:
             trainingset_file.close()
     
     def remove_no_data_value(self, file_name, file_location, targetfile_name, nodata_value):
-        reader = csv.reader(open('%s%s' %(file_location, file_name), "rb"), delimiter = ',')
+        reader = csv.reader(open('%s%s' %(file_location, file_name), 'rU'), delimiter = ',')
         targetfile = targetfile_name
         if file_name == targetfile_name:
             targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
@@ -231,7 +231,7 @@ class ManageCSVData:
     
     
     def removeConcept(self, file_name, file_location, targetfile_name, concept_to_remove):
-        reader = csv.reader(open('%s%s' %(file_location, file_name), "rb"), delimiter = ',')
+        reader = csv.reader(open('%s%s' %(file_location, file_name), "rU"), delimiter = ',')
         targetfile = targetfile_name
         if file_name == targetfile_name:
             targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
@@ -246,7 +246,7 @@ class ManageCSVData:
             os.rename(file_location + targetfile, file_location + file_name)
     
     def mergeConcepts(self, file_name, file_location, targetfile_name, firstconcepttomerge, secondconcepttomerge, mergedconceptname):
-        reader = csv.reader(open('%s%s' %(file_location, file_name), "rb"), delimiter = ',')
+        reader = csv.reader(open('%s%s' %(file_location, file_name), "rU"), delimiter = ',')
         targetfile = targetfile_name
         if file_name == targetfile_name:
             targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
@@ -264,7 +264,7 @@ class ManageCSVData:
             os.rename(file_location + targetfile, file_location + file_name)
         
         #Create new merged sample and save it
-        reader1 = csv.reader(open('%s%s' %(file_location, targetfile_name), "rb"), delimiter = ',')
+        reader1 = csv.reader(open('%s%s' %(file_location, targetfile_name), "rU"), delimiter = ',')
         merged_sample_name = mergedconceptname + str(datetime.now()) + ".csv"
         f1 = csv.writer(open('%s%s' %(self.TRAINING_SAMPLES_LOCATION, merged_sample_name), "wb"))
         for line in reader1:
@@ -283,31 +283,74 @@ class ManageCSVData:
         
     
     def splitconcept(self, file_name, file_location, targetfile_name, concepttosplit, concept1, samplefile1, concept2, samplefile2, sample_files_location):
-        reader = csv.reader(open('%s%s' %(file_location, file_name), "rb"), delimiter = ',')
+        files_list = []
+        files_list.append(samplefile1)
+        files_list.append(samplefile2)
         targetfile = targetfile_name
         if file_name == targetfile_name:
             targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
-        f = csv.writer(open('%s%s' %(file_location, targetfile), "wb"))
+        with open('%s%s' % (file_location, targetfile), 'wb') as trainingset_file:
+            with open('%s%s' % (file_location, file_name), 'rU') as sample1:
+                for eachSample in sample1:
+                    if concepttosplit not in eachSample:
+                        trainingset_file.write(eachSample)
+            sample1.close()
+            for file in files_list:
+                with open('%s%s' % (sample_files_location, file), 'rU') as sample:
+                    sample.next()
+                    for eachSample in sample:
+                        trainingset_file.write(eachSample)
+                sample.close()
+        trainingset_file.close()         
+            
+        #reader = csv.reader(open('%s%s' %(file_location, file_name), 'rU'), delimiter = ',')
+
+        #f = csv.writer(open('%s%s' %(file_location, targetfile), 'wb'))
         
-        for line in reader:
-            if concepttosplit not in line:
-                f.writerow(line)
+        #for line in reader:
+         #   if concepttosplit not in line:
+          #      f.writerow(line)
+
+
+
         
-        copyfile(file_location + targetfile, sample_files_location + targetfile)
-        os.remove(file_location + targetfile)
-        files_list = []
-        files_list.append(targetfile)
-        files_list.append(samplefile1)
-        files_list.append(samplefile2)
-        self.combine_multiple_csv_files(files_list, sample_files_location, file_location, targetfile)
-        os.remove(sample_files_location + targetfile)
+       # files_list = []
+       # files_list.append(samplefile1)
+       # files_list.append(samplefile2)
+       # self.combine_multiple_csv_files(files_list, sample_files_location, file_location, "test1.csv")
+        
+       # reader1 = csv.reader(open('%s%s' %(sample_files_location, samplefile2), 'rU'), delimiter = ',')
+        
+       # f1 = csv.writer(open('%s%s' %(file_location, targetfile), 'ab'))
+       # reader1.next()
+        #with open('%s%s' % (file_location, targetfile), "ab") as trainingset_file:
+        #    for eachSample in reader1:
+        #        trainingset_file.write(eachSample)
+        
+        
+        #print a
+        #print reader1
+        #f1.writerows(reader1)
+
         if file_name == targetfile_name:
             os.remove(file_location + file_name)
-            os.rename(file_location + targetfile, file_location + file_name)
+        os.rename(file_location + targetfile, file_location + targetfile_name)
+        
+        latestid = int(TrainingsampleForCategory.objects.latest("trainingsample_id").trainingsample_id) + 1
+        ts1 = TrainingsampleForCategory(trainingsample_id=latestid, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefile1, filelocation=self.TRAINING_SAMPLES_LOCATION, concept_name = concept1)
+        ts2 = TrainingsampleForCategory(trainingsample_id=latestid+1, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefile2, filelocation=self.TRAINING_SAMPLES_LOCATION, concept_name = concept2)
+        ts1.save(force_insert=True)
+        ts2.save(force_insert=True)
+        new_concepts_details = []
+        new_concepts_details.append(ts1.trainingsample_id)
+        new_concepts_details.append(ts1.trainingsample_ver)
+        new_concepts_details.append(ts2.trainingsample_id)
+        new_concepts_details.append(ts2.trainingsample_ver)
+        
+        return new_concepts_details
 
 #b= ManageRasterData("final3b.tif")
 #b.convert_raster_csv_file_to_array("final3b.csv", "static/predictedvaluesinnumbers/", 865, 1171, 3)
-    
     
     
     

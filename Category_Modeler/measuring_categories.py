@@ -32,7 +32,6 @@ class TrainingSet:
             for sample in training_samples:
                 target.append(sample[-1])
                 samples.append(sample[0:-1])
-            
             features_as_nparray = np.asarray(features)
             target_as_nparray = np.asarray(target)
             samples_as_nparray = np.asarray(samples, dtype=np.float32)
