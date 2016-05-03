@@ -302,36 +302,7 @@ class ManageCSVData:
                         trainingset_file.write(eachSample)
                 sample.close()
         trainingset_file.close()         
-            
-        #reader = csv.reader(open('%s%s' %(file_location, file_name), 'rU'), delimiter = ',')
-
-        #f = csv.writer(open('%s%s' %(file_location, targetfile), 'wb'))
-        
-        #for line in reader:
-         #   if concepttosplit not in line:
-          #      f.writerow(line)
-
-
-
-        
-       # files_list = []
-       # files_list.append(samplefile1)
-       # files_list.append(samplefile2)
-       # self.combine_multiple_csv_files(files_list, sample_files_location, file_location, "test1.csv")
-        
-       # reader1 = csv.reader(open('%s%s' %(sample_files_location, samplefile2), 'rU'), delimiter = ',')
-        
-       # f1 = csv.writer(open('%s%s' %(file_location, targetfile), 'ab'))
-       # reader1.next()
-        #with open('%s%s' % (file_location, targetfile), "ab") as trainingset_file:
-        #    for eachSample in reader1:
-        #        trainingset_file.write(eachSample)
-        
-        
-        #print a
-        #print reader1
-        #f1.writerows(reader1)
-
+       
         if file_name == targetfile_name:
             os.remove(file_location + file_name)
         os.rename(file_location + targetfile, file_location + targetfile_name)

@@ -2,6 +2,7 @@ import csv, json, numpy, pydot, os
 import matplotlib.pyplot as plt
 from io import FileIO, BufferedWriter
 from datetime import datetime
+from shutil import copyfile
 from ete3 import Tree, TreeStyle, TextFace # @UndefinedVariable
 from django.shortcuts import render, HttpResponse, HttpResponseRedirect
 from django.contrib.auth import authenticate, login, logout
@@ -15,7 +16,8 @@ from sklearn.externals import joblib
 from sklearn.naive_bayes import GaussianNB
 from sklearn.externals.six import StringIO
 from Category_Modeler.models import Trainingset, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity, TrainingsampleForCategory, ChangeTrainingsetActivityDetails
-from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Legend, TrainingsetTrainingsamples, TrainingsampleCollection, CreateTrainingsetActivity, CreateTrainingsetActivityOperations
+from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Legend, TrainingsetTrainingsamples, TrainingsampleCollection, CreateTrainingsetActivity
+from Category_Modeler.models import  CreateTrainingsetActivityOperations, SatelliteImage, ClassifiedSatelliteImage
 from Category_Modeler.measuring_categories import TrainingSet, NormalDistributionIntensionalModel, DecisionTreeIntensionalModel, StatisticalMethods, ClassifiedFile
 from Category_Modeler.data_processing import ManageRasterData, ManageCSVData
 from Category_Modeler.database_transactions import UpdateDatabase, CustomQueries
@@ -28,6 +30,7 @@ EXISTING_TRAINING_DATA_LOCATION = 'Category_Modeler/static/trainingfiles/'
 CLASSIFICATION_MODEL_LOCATION = 'Category_Modeler/static/classificationmodel/'
 VALIDATION_DATA_LOCATION = 'Category_Modeler/static/validationfiles/'
 IMAGE_LOCATION = 'Category_Modeler/static/images/'
+TEST_DATA_LOCATION = 'Category_Modeler/static/testfiles/'
 CLASSIFIED_DATA_LOCATION = 'Category_Modeler/static/predictedvalues/'
 CLASSIFIED_DATA_IN_RGB_LOCATION = 'Category_Modeler/static/predictedvaluesRGB/'
 OUTPUT_RASTER_FILE_LOCATION = 'Category_Modeler/static/maps/'
@@ -253,11 +256,29 @@ def trainingsampleprocessing(request):
                 exp_chain.save()
                 request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
                 
-                #fp = file("%s%s" % (EXISTING_TRAINING_DATA_LOCATION, request.session['current_training_file_name']), 'rb')
-                #response = HttpResponse( fp, content_type='text/csv')
-                #response['Content-Disposition'] = 'attachment; filename="training File"'
-                #return response
-            
+                if 'currenteditoperations' in request.session:
+                    del request.session['currenteditoperations']
+                    del request.session['current_samples_id_and_version']
+                    request.session.modified = True
+                
+                if 'current_model_id' in request.session:
+                    del request.session['model_type']    
+                    del request.session['current_model_name']
+                    del request.session['current_model_id']
+                    del request.session['model_score']
+                    del request.session['producer_accuracies']
+                    del request.session['user_accuracies']
+                    request.session.modified = True
+        
+                if 'current_predicted_file_name' in request.session:
+                    del request.session['current_test_file_name']
+                    del request.session['current_predicted_file_name']
+                    del request.session['current_test_file_columns']
+                    del request.session['current_test_file_rows']
+                    request.session.modified = True
+                
+                
+                
                 trainingsetasArray = []
                 trs = TrainingSet(request.session['current_training_file_name'])
                 classes = list(numpy.unique(trs.target))
@@ -514,7 +535,10 @@ def applyeditoperations(request):
     exp_chain.save()
     
     request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
-    
+
+    if 'currenteditoperations' in request.session:
+        del request.session['currenteditoperations']
+        request.session.modified = True
     
     with open('%s%s' % (EXISTING_TRAINING_DATA_LOCATION, request.session['current_training_file_name']), 'rU') as trainingset:
         datareader = csv.reader(trainingset, delimiter=',')
@@ -757,6 +781,7 @@ def signaturefile(request):
             covariance_mat = trainingfile.create_covariance_matrix()
             mean_vectors = trainingfile.create_mean_vectors()
             jmdistances_list=[]
+            jmdistances_complete_list=[]
             for i in range(len(mean_vectors)):
                 for j in range(i+1, len(mean_vectors)):
                     jmdistance_for_each_pair =[]
@@ -767,6 +792,14 @@ def signaturefile(request):
                     jmdistance_for_each_pair.append(mean_vectors[j][0])
                     jmdistance_for_each_pair.append(jm)
                     jmdistances_list.append(jmdistance_for_each_pair)
+                complete_jmdistance_for_each_pair =[]
+                for k in range(len(mean_vectors)):
+                    model1 = NormalDistributionIntensionalModel(mean_vectors[i][1], covariance_mat[i][1])
+                    model2 = NormalDistributionIntensionalModel(mean_vectors[k][1], covariance_mat[k][1])
+                    jm = model1.jm_distance(model2)
+                    complete_jmdistance_for_each_pair.append(jm)
+                jmdistances_complete_list.append(complete_jmdistance_for_each_pair)
+                    
             
             suggestion_list=[]
             listofcategories = clf.classes_.tolist()
@@ -835,9 +868,9 @@ def signaturefile(request):
                         jm = model1.jm_distance(model2)
                         single_category_comparison.append(jm)
                         common_categories_comparison.append(single_category_comparison)
-                    return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
+                    return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
                
-            return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_list, 'suggestion_list': suggestion_list})
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list})
         
         elif (classifiername=="Decision Tree"):
             #print clf.tree_.__getstate__()
@@ -920,6 +953,7 @@ def supervised(request):
     if request.method == 'POST' and request.is_ajax():
         if request.FILES:
             testfile = request.FILES['testfile']
+            copyfile(TRAINING_SAMPLES_IMAGES_LOCATION + testfile.name, TEST_DATA_LOCATION + testfile.name)
             request.session['current_test_file_name'] = testfile.name
             manageData = ManageRasterData()
             testFileAsArray = numpy.array(manageData.convert_raster_to_array(testfile.name))
@@ -934,25 +968,29 @@ def supervised(request):
             columns, rows = manageData.create_raster_from_csv_file(request.session['current_predicted_file_name'], testfile.name, CLASSIFIED_DATA_IN_RGB_LOCATION, outputMap, OUTPUT_RASTER_FILE_LOCATION)
             request.session['current_test_file_columns'] = columns
             request.session['current_test_file_rows'] = rows
-            
+            outputmapinJPG = testfile.name.split('.', 1)[0] + '.jpeg'
             
             
             authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
             model_instance = Classificationmodel.objects.get(model_name=request.session['current_model_name'])
-            tc = ClassificationActivity(model=model_instance, testfile_location = 'Category_Modeler/static/testfiles/', testfile_name = request.session['current_test_file_name'], classifiedfile_location = 'Category_Modeler/static/predictedvalues/', classifiedfile_name = request.session['current_predicted_file_name'], completed_by= authuser_instance)
+            si = SatelliteImage(name= request.session['current_test_file_name'], location = TEST_DATA_LOCATION, columns = request.session['current_test_file_columns'], rows = request.session['current_test_file_rows'])
+            si.save()
+            csi = ClassifiedSatelliteImage(name = outputmapinJPG, location = OUTPUT_RASTER_FILE_LOCATION)
+            csi.save()
+            tc = ClassificationActivity(model=model_instance, satellite_image_id = si, classified_satellite_image_id = csi, completed_by= authuser_instance)
             tc.save()
             exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'classification', activity_instance = tc.id)
             exp_chain.save()
             request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
             
             listofcategories = clf.classes_.tolist()
-            outputmapName = testfile.name.split('.', 1)[0] + '.jpeg'
+            
             
             if 'existing_taxonomy_name' in request.session:
                 oldCategories = ['artificial_surface', 'cloud', 'forest', 'grassland', 'shadow', 'water']
                 change_matrix = create_change_matrix(oldCategories, predictedValue, rows, columns)
             
-            return  JsonResponse({'map': outputmapName, 'categories': listofcategories});
+            return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories});
     
     
     elif 'current_model_id' not in request.session:
@@ -1036,20 +1074,53 @@ def changeRecognizer(request):
     return render (request, 'changerecognition.html', {'user_name':user_name})
 
 def createChangeEventForNewTaxonomy(request):
-    changeOperation = []
-    changeOperation.append('Create new taxonomy ' + request.session['new_taxonomy_name'])
-    changeOperation.append('Create root concept of the legend ' + request.session['new_taxonomy_name'])
+    compositeChangeOperations = []
+    firstOp, root_concept = get_addTaxonomy_op_details(request.session['new_taxonomy_name'])
+    compositeChangeOperations.append(firstOp)
+    
+
     trainingfile = TrainingSet(request.session['current_training_file_name'])
     concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
     for concept in concepts_in_current_taxonomy:
-        changeOperation.append('Create new concept ' + concept)
-        changeOperation.append('Add hierarchical relationship: ' + concept + ' is a child of root concept')
-    changeOperation.append('Create root category corresponding to the root concept of the legend ' + request.session['new_taxonomy_name'])
-    for category in concepts_in_current_taxonomy:
-        changeOperation.append('create a category corresponding to concept ' + category)
-        changeOperation.append('Add the computational intension of the above category')
-        changeOperation.append('Add the extension of the above category')
-    return JsonResponse({'listOfOperations': changeOperation});
+        changeOperation = get_addConcept_op_details(request.session['new_taxonomy_name'], root_concept, concept)
+        compositeChangeOperations.append(changeOperation)
+        
+    return JsonResponse({'listOfOperations': compositeChangeOperations});
+
+def get_addTaxonomy_op_details(taxonomy_name):
+    changeOperation = []
+    compositeOp = "Add_Taxonomy ('" + taxonomy_name + "')"
+    changeOperation.append(compositeOp)
+    
+    compositeOp_details = []
+    compositeOp_details.append("Create taxonomy '" + taxonomy_name + "'")
+    root_concept = "root_" + taxonomy_name.replace(" ", "_")
+    compositeOp_details.append("Create root concept '" + root_concept + "'")
+    compositeOp_details.append("Add '" + root_concept + "' to '" + taxonomy_name + "'")
+    changeOperation.append(compositeOp_details)
+    return changeOperation, root_concept
+    
+def get_addConcept_op_details(taxonomy_name,  parent_concept_name, concept_name):
+    changeOperation = []
+    compositeOp = "Add_Concept ('" + taxonomy_name + "', '" + concept_name + "', '" + parent_concept_name + "')"
+    changeOperation.append(compositeOp)
+    
+    compositeOp_details = []
+    compositeOp_details.append("Create concept '" + concept_name + "' (if it does not exists)")
+    compositeOp_details.append("Add '" + concept_name + "' to '" + taxonomy_name + "'")
+    compositeOp_details.append("Add hierarchical relationship - '" + parent_concept_name + "' parent of '" + concept_name + "'")
+    compositeOp_details.append("Category Instantiation ('" + concept_name + "')")
+    #catInst = []
+    #catInst.append("Category Instantiation ('" + concept_name + "')")
+    #catInst_details = []
+    #catInst_details.append("Create category ('" + concept_name + "')")
+    #catInst_details.append("Add computational intension")
+    #catInst_details.append("Add extension")
+    #catInst_details.append("Add the category to the concept")
+    #catInst.append(catInst_details)
+    #compositeOp_details.append(catInst)
+    changeOperation.append(compositeOp_details)
+    return changeOperation
 
 @transaction.atomic  
 def applyChangeOperations(request):

@@ -1,2 +1,2 @@
-estuarine_open_water;inland_water;water;shadow;forest;grassland;open_space;artificial_surface;cloud;scrub;mangrove;
+Estuarine open water;Inland water;Water;Shadow;Forest;Grassland;Open space;Artificial surface;Cloud;Scrub;Mangrove;
 115,255,223;0,77,168;115,178,255;52,52,52;38,115,0;76,230,0;230,152,0;255,127,127;255,255,255;230,230,0;156,156,156;

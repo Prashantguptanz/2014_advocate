@@ -837,11 +837,17 @@ $(function() {
 									$('#ErrorAccuracy').html(d);
 									
 									var e = "<p style=\"font-size: 14px; margin-left: 5px; margin-right: 5px\">Jeffries-Matusita (JM) distance between probability distribution models of various categories:</p><br />";
-									e = e + "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category1 </th><th> Category2 </th><th>JM distance </th></tr>";
+									e = e + "<table style=\"width:100%\" class=\" table table-bordered\"><tr> <th> </th>";
+									for (var i = 0; i < response['listofclasses'].length; i++) {
+										e = e + "<th>" + response['listofclasses'][i] + "</th>";
+									}
+									e = e + "</tr>";
 									for (var i = 0; i < response['jmdistances'].length; i++){
-										e = e + "<tr><td>" + response['jmdistances'][i][0] + "</td><td>"
-											+ response['jmdistances'][i][1] + "</td><td>" 
-											+ response['jmdistances'][i][2] + "</td></tr>";
+										e = e + "<tr><th>" + response['listofclasses'][i] + "</th>";
+										for (var j = 0; j < response['jmdistances'][i].length; j++){
+											e = e + "<td>" + response['jmdistances'][i][j] + "</td>";
+										}
+										e = e + "</tr>";
 									}
 									e = e + "</table>";
 									$('#JMDistance').html(e);
@@ -1027,6 +1033,7 @@ $(function() {
 				contentType : false,
 				data : formdata,
 				success : function(response) {
+					$('#classificationresult').show();
 					var c = "<img style=\"width:95%; height:95%\" src=\"/static/maps/" + response['map'] + "\" />";
 					$('#classifiedmap').html(c);
 					var d = "<label>Legend</label>"
@@ -1053,21 +1060,45 @@ $(function() {
 			e.preventDefault();
 			$.get("http://127.0.0.1:8000/AdvoCate/createChangeEventForNewTaxonomy/", function(data){
 				$('#listofchangeoperations').show();
-				var d = "<table style=\"width:50%\" class=\" table table-bordered\">";
-				d = d + "<tr><th>No.</th><th>Change operation</th>" ;
-				for (var k = 1; k < data['listOfOperations'].length+1; k++) {
-					d = d + "<tr><td>" + k + "</td>" + "<td>" + data['listOfOperations'][k-1] + "</td></tr>";
-				}				
-				d = d + "</table>";
+				//x = "<dl id = \"compositechangeoperations\"style=\" margin:auto; width: 550px\">";
+				x = "";
+				for (var i = 0; i < data['listOfOperations'].length; i++) {
+					a = i + 1;
+					id = "operation_" + i;
+					x = x + "<dt style=\"cursor:pointer; font-weight:normal; line-height: 2.5em; background:#e4e4e4; border-bottom: 1px solid #c4c4c4; border-top: 1px solid white\"> &nbsp;&nbsp;" + a + ". &nbsp;&nbsp;&nbsp;" + data['listOfOperations'][i][0] + "</dt>";
+					for (var j = 0; j < data['listOfOperations'][i][1].length; j++){
+						b = j+1;
+						x = x + "<dd style=\" margin-left:10px; padding: 0.5em 0; border-bottom: 1px solid #c4c4c4; display: none\"> &nbsp;&nbsp;" + b + ". &nbsp; &nbsp; &nbsp;" + data['listOfOperations'][i][1][j] + "</dd>";
+					}
+					
+				}
+				x = x + "</dl>";
+			//	var d = "<table style=\"width:50%; margin: 0 auto\" class=\" table table-bordered\">";
+			//	d = d + "<tr><th>#</th><th>Change operation</th>" ;
+			//	for (var k = 1; k < data['listOfOperations'].length+1; k++) {
+			//		d = d + "<tr><td>" + k + "</td>" + "<td>" + data['listOfOperations'][k-1] + "</td></tr>";
+			//	}				
+			//	d = d + "</table>";
 				
-		
-				$('#listofchangeoperations').html(d);
+				$('#changeevent').show();
+				$('#compositechangeoperations').html(x);
 				$('#commit').show();
 				
 				$('#yesforchange').attr('disabled', 'disabled');
 				$('#noforchange').attr('disabled', 'disabled');
 			});
 		});
+		
+		$('#compositechangeoperations').on('click', 'dt', function(e) {
+			e.preventDefault();
+			$(this).nextUntil('dt').toggle();
+			$(this).siblings('dt').nextUntil('dt').hide();
+			
+			
+		});
+		
+	
+
 		
 		$('#yesforcommit').on('click', function(e) {
 			e.preventDefault();

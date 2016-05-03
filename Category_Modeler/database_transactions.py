@@ -31,25 +31,17 @@ class UpdateDatabase:
         model_instance = Classificationmodel.objects.get(id = int(self.request.session['current_model_id']))
         legend = Legend(legend_id = legendId, legend_ver = 1, legend_name= self.current_taxonomy, date_expired = datetime(9999, 9, 12), description = self.request.session['new_taxonomy_description'], created_by = self.authuser_instance, model = model_instance, change_event_id = self.change_event)
         legend.save()
-        createLegend = CreateLegendOperation(legend_name = legend.legend_name, legend_id = legend.legend_id, legend_ver = legend.legend_ver)
-        createLegend.save()
-        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createLegend.id, change_operation='create_legend_operation')
-        newOperationForChangeEvent.save()
         self.__create_root_concept(legendId, 1)
     
     def __create_root_concept(self, legendId, legendVer):
         details = "Root concept to legend " + self.current_taxonomy
         root_concept = Concept(concept_name = "root_"+self.current_taxonomy, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance, change_event_id = self.change_event)
         root_concept.save()
-        createConcept = CreateConceptOperation(concept_name = root_concept.concept_name)
-        createConcept.save()
-        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createConcept.id, change_operation='create_concept_operation')
-        newOperationForChangeEvent.save()
         connectToLegend = LegendConceptCombination(legend_id = legendId, legend_ver = legendVer, concept = root_concept, change_event_id = self.change_event)
         connectToLegend.save()
-        conceptLegendCombination = AddConceptToALegendOperation(legend_concept_combination_id = connectToLegend)
-        conceptLegendCombination.save()
-        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = conceptLegendCombination.id, change_operation='add_concept_to_a_legend_operation')
+        createLegend = CreateLegendOperation(legend_id = legendId, legend_ver = legendVer, root_concept_id = root_concept, legend_root_concept_combination_id = connectToLegend)
+        createLegend.save()
+        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createLegend.id, change_operation='Add_Taxonomy')
         newOperationForChangeEvent.save()
     
        

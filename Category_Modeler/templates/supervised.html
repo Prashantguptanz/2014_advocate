@@ -3,19 +3,20 @@
 
 	{% csrf_token %}
 
-	<div class="form-group" style="width: 22%; float: left; border-style: solid; border-width: 1px; border-color: #E5E5E5">
+	<div class="form-group" style="width: 100%; float: left; border-style: solid; border-width: 1px; border-color: #E5E5E5">
 		<form class="form-group" enctype="multipart/form-data" name="supervisedClassification" action="#">
-			<legend style="font-size: 18px; background-color: gainsboro" align="center">
-				Upload test file
+			<legend style="font-size: 16px; background-color: gainsboro" align="center">
+				Upload satellite image file
 			</legend>
 
-			<div class="form-group" style="margin-left: 5px; margin-right: 5px">
-				<input type="file" id="testfile" accept=".tif" required/>
-				<br />
-				<br />
-				<button id="doclassification" class="btn btn-default">
-					Submit
-				</button>
+			<div class="form-group" style="margin-left: 20px; margin-right: 5px">
+				<input type="file" id="testfile" accept=".tif" style = "display: inline" required>
+				<span style = "margin-left: 20px">
+					<button id="doclassification" class="btn btn-default">
+						Submit
+					</button>
+				</span>
+				</input>
 			</div>
 			<div style="float: left; margin-left: 1%">
 				{% if error %}
@@ -26,14 +27,14 @@
 			</div>
 		</form>
 	</div>
-	<div style="width: 76%; float: right; border-style: solid; border-width: 1px; border-color: #E5E5E5">
-		<legend style="font-size: 18px; background-color: gainsboro" align="center">
+	<div id = "classificationresult" style="width: 100%; float: right; border-style: solid; border-width: 1px; border-color: #E5E5E5; display:none">
+		<legend style="font-size: 16px; background-color: gainsboro" align="center">
 			Classified map
 		</legend>
 		
 			<div id="classifiedmap" style="padding-left: 15px; padding-right: 15px; width:78%; float:left ">
 			</div>
-			<div id="categorycolors" style="padding-left: 2px; padding-right: 2px; width: 22%; float:right">
+			<div id="categorycolors" style="padding-left: 2px; padding-right: 15px; width: 22%; float:right">
 			</div>
 
 		

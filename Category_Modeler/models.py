@@ -589,9 +589,8 @@ class CovarianceMatrix(models.Model):
 
 class ChangeEventOperations(models.Model):
     change_operation_type = (
-        ('create_legend_operation', 'create_legend_operation'),
-        ('create_concept_operation', 'create_concept_operation'),
-        ('add_concept_to_a_legend_operation', 'add_concept_to_a_legend_operation')
+        ('Add_Taxonomy', 'Add_Taxonomy'),
+        ('Add_Concept', 'Add_Concept')
         
     )
     change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id', primary_key=True)
@@ -617,9 +616,10 @@ class CreateConceptOperation(models.Model):
         db_table = 'create_concept_operation'
         
 class CreateLegendOperation(models.Model):
-    legend_name = models.CharField(max_length=100)
     legend_id = models.IntegerField()
     legend_ver = models.IntegerField()
+    root_concept_id = models.ForeignKey(Concept, db_column='root_concept_id')
+    legend_root_concept_combination_id = models.ForeignKey(LegendConceptCombination, db_column='legend_root_concept_combination_id')
 
     class Meta:
         managed = False

@@ -13,21 +13,21 @@
 	{% if existing_taxonomyName %}
 	<div style="width: 100%; float:center; border-style: solid; border-width: 1px; margin-bottom: 10px; padding: 10px, 10px, 10px, 10px; border-color: #E5E5E5" >
 	
-		<legend style="font-size: 18px;  background-color: gainsboro" align="center">Summary of current exploration</legend>
-		<p style="font-size: 16px; margin-left: 10px; margin-right: 10px">
+		<legend style="font-size: 16px;  background-color: gainsboro" align="center">Summary of current exploration</legend>
+		<p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
 			A taxonomy <strong><em>{{existing_taxonomyName}}</em></strong> is conceptualized with the following concepts:
 			{% for concept in conceptsList %}
 			<strong>{{concept}}</strong>, 	
 			{% endfor %}		
 		 </p>
-		 <p style="font-size: 16px;  margin-left: 10px; margin-right: 10px">
+		 <p style="font-size: 14px;  margin-left: 10px; margin-right: 10px">
 		 	The computational intension of the taxonomy is conceptualized as a {{modelType}} model with an accuracy of {{modelScore}}.
 		 </p>
-		 <p style="font-size: 16px; margin-left: 10px; margin-right: 10px">
+		 <p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
 		 	Categories corresponding to each concept, along with their accuracies are as below:
 		 </p>
-		 		 
-		 <table class=" table table-bordered" style="width:35%; margin-left: 10px;">
+		 <br />	 
+		 <table class=" table table-bordered" style="width:35%; margin: 0 auto">
 		 	<tr>
 		 		<th>Category</th>
 		 		<th>User accuracy</th>
@@ -43,36 +43,46 @@
 		 	{% endwith %}
 		 	{% endfor %}
 		 </table>
-		 <br />
-		 <div id="implement" style="margin-left: 10px;">
-		 <label style="margin-left: 10px" for="chooseButtons">Do you wish to implement these changes in AdvoCate:</label>&nbsp; &nbsp;
-		 <button id="yesforchange" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
-		 <button id="noforchange" class="btn btn-default">  No</button>
+		 <br /><br />
+		 
+		 <div id="implement" style="margin-left: 10px; margin-bottom: 15px">
+			 <label style="margin-left: 10px" for="chooseButtons">Do you wish to implement these changes in AdvoCate:</label>&nbsp; &nbsp;
+			 <button id="yesforchange" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
+			 <button id="noforchange" class="btn btn-default">  No</button>
 		 </div>
-		 <br />
-		 <br />
-		 <div id="listofchangeoperations" style="display:none; margin-left: 10px;">
+		 
+		 <div id="commitsuccessmessage" style="display:none; margin-left: 10px; margin-bottom: 15px" >
+		 	<p id = "successmessage" style="font-size: 16px; margin-left: 10px; margin-right: 10px">
+		 	</p>
 		 </div>
-		 <div id="commit" style="display:none; margin-left: 10px;">
-		 	<br />
+		 
+	</div>
+
+	<div id="changeevent" style="display:none; width: 100%; float:center; border-style: solid; border-width: 1px; margin-bottom: 10px; padding: 10px, 10px, 10px, 10px; border-color: #E5E5E5">
+		 <legend style="font-size: 16px; margin-bottom: 15px;  background-color: gainsboro" align="center">Change event</legend>
+		 
+		 <label style="margin-left: 10px" for="listofchangeoperations"> A change event is created to implement the above changes. The change event incorporates the change operations as listed below:</label>
+		 <br /><br />
+		 
+		 
+		 <div id="listofchangeoperations">
+		 	<dl id = "compositechangeoperations" style=" margin-left: 30px; width: 550px">
+		 		
+		 	</dl>
+		 </div>
+		 <p style="margin-left: 20px"><em>Note: Click a (composite) change operation in the above table to see the atomic and other composite changes it contains.</em></p>
+		 <br />
+		 
+		 <div id="commit" style="margin-left: 10px;">
 			<label style="margin-left: 10px" for="chooseButtons">Do you wish to commit these change operations:</label>&nbsp; &nbsp;
 			<button id="yesforcommit" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
 			<button id="noforcommit" class="btn btn-default">  No</button>
 		 </div>
-		 <div id="commitsuccessmessage" style="display:none; margin-left: 10px;" >
-		 	<p id = "successmessage" style="font-size: 16px; margin-left: 10px; margin-right: 10px">
-		 	
-		 	</p>
+		 
+
 		   
-		 </div>
-		 
-		 
-		
 	</div>
 	{% endif %}
-	
-	
-	
 
 </div>
 {% endblock %}
