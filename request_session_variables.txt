@@ -34,3 +34,8 @@ current_test_file_name
 current_predicted_file_name
 current_test_file_columns
 current_test_file_rows
+
+
+legend_id
+legend_ver
+root_concept

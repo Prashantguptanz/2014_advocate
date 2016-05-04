@@ -1150,6 +1150,9 @@ def applyChangeOperations(request):
     del request.session['current_predicted_file_name']
     del request.session['current_test_file_columns']
     del request.session['current_test_file_rows']
+    del request.session['legend_id'] 
+    del request.session['legend_ver']
+    del request.session['root_concept']
     request.session.modified = True
     return HttpResponse("The changes are committed and stored in the database. Choose an activity from the Home page to continue further!")
     

@@ -224,7 +224,6 @@ class SetOfOccurences(models.Model):
         db_table = 'set_of_occurences'
 
 class Extension(models.Model):
-    id = models.IntegerField(primary_key=True)
     set_of_occurences_id = models.IntegerField()
     classification_activity_id = models.ForeignKey(ClassificationActivity, db_column='classification_activity_id')
 
@@ -600,22 +599,32 @@ class ChangeEventOperations(models.Model):
     class Meta:
         managed = False
         db_table = 'change_event_operations'
-        
-class AddConceptToALegendOperation(models.Model):
-    legend_concept_combination_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_combination_id')
+
+
+class CategoryInstantiationOperation(models.Model):
+    legend_concept_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_id')
+    comp_int_id = models.ForeignKey(ComputationalIntension, db_column='comp_int_id')
+    ext_id = models.ForeignKey(Extension, db_column='ext_id')
+    category_id = models.IntegerField()
+    category_evol_ver = models.IntegerField()
+    category_comp_ver = models.IntegerField()
 
     class Meta:
         managed = False
-        db_table = 'add_concept_to_a_legend_operation'
+        db_table = 'Category_Instantiation_operation'
+        unique_together = ("category_id", "category_evol_ver", "category_comp_ver")
 
-class CreateConceptOperation(models.Model):
-    concept_name = models.CharField(max_length=100)
+class AddConceptOperation(models.Model):
+    concept_id = models.ForeignKey(Concept, db_column='concept_id')
+    legend_concept_comb_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_comb_id')
+    hierarchical_relationship_id = models.ForeignKey(HierarchicalRelationship, db_column='hierarchical_relationship_id')
+    category_instantiation_op_id = models.ForeignKey(CategoryInstantiationOperation, db_column='category_instantiation_op_id')
 
     class Meta:
         managed = False
-        db_table = 'create_concept_operation'
+        db_table = 'Add_Concept_operation'
         
-class CreateLegendOperation(models.Model):
+class AddTaxonomyOperation(models.Model):
     legend_id = models.IntegerField()
     legend_ver = models.IntegerField()
     root_concept_id = models.ForeignKey(Concept, db_column='root_concept_id')
@@ -623,5 +632,5 @@ class CreateLegendOperation(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'create_legend_operation'
+        db_table = 'Add_Taxonomy_operation'
         unique_together = ("legend_id", "legend_ver")

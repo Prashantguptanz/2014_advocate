@@ -1102,9 +1102,10 @@ $(function() {
 		
 		$('#yesforcommit').on('click', function(e) {
 			e.preventDefault();
+			$('#yesforcommit').attr('disabled', 'disabled');
+			$('#noforcommit').attr('disabled', 'disabled');
 			$.get("http://127.0.0.1:8000/AdvoCate/applyChangeOperations/", function(data){
-				$('#listofchangeoperations').hide();
-				$('#commit').hide();
+				$('#changeevent').hide();
 				$('#implement').hide();
 				$('#commitsuccessmessage').show();
 				$('#successmessage').html(data);
