@@ -164,7 +164,7 @@ def trainingsampleprocessing(request):
             return HttpResponseRedirect("/AdvoCate/home/", {'user_name': user_name})
     
     #Save training samples
-    elif request.method == 'POST' and request.is_ajax():
+    elif request.method == 'POST' and request.is_ajax() and 'new_taxonomy_name' in request.session:
         data = request.POST
         if 'IsFinalSample' in data:
             trainingFilesList = request.FILES.getlist('file')
@@ -331,13 +331,43 @@ def trainingsampleprocessing(request):
             #   response['Content-Disposition'] = 'attachment; filename="temp.csv"'            
             
             
-    
+    elif request.method == 'POST' and request.is_ajax() and 'existing_taxonomy_name' in request.session:
+        data = request.POST
+        if 'ConceptType' in data:
+            conceptType = data['ConceptType']
+            
+            if conceptType=='1':
+                trainingFilesList = request.FILES.getlist('file')
+                conceptName = data['ConceptName']
+                researcherName = data['FieldResearcherName'];
+                trainingstart = data['TrainingTimePeriodStartDate'];
+                trainingend = data['TrainingTimePeriodEndDate'];
+                location = data['TrainingLocation'];
+                otherDetails = data['OtherDetails'];
+                isitfinalsample = data['IsFinalSample'];
+        
+        
     else:
-        if Trainingset.objects.exists(): # @UndefinedVariable
-            training_set_list = Trainingset.objects.all()  # @UndefinedVariable
-            return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name})
+        if 'new_taxonomy_name' not in request.session:
+            existing_taxonomy = request.session['existing_taxonomy_name']
+            print existing_taxonomy
+            
+            if Trainingset.objects.exists(): # @UndefinedVariable
+                training_set_list = Trainingset.objects.all()  # @UndefinedVariable
+                
+            customQuery = CustomQueries()
+            old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[0]
+            old_training_sample = TrainingSet(old_trainingset_name)
+            category_list = list(numpy.unique(old_training_sample.target))
+            return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name, 'existing_taxonomy': existing_taxonomy, 'concept_list': category_list})
         else:
-            return render(request, 'trainingsample.html', {'user_name': user_name})
+            new_taxonomy =    request.session['new_taxonomy_name'] 
+            if Trainingset.objects.exists(): # @UndefinedVariable
+                training_set_list = Trainingset.objects.all()  # @UndefinedVariable
+                
+                return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name, 'new_taxonomy': new_taxonomy})
+            else:
+                return render(request, 'trainingsample.html', {'user_name': user_name, 'new_taxonomy': new_taxonomy})
         
         
     '''  
