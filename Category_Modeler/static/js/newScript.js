@@ -253,6 +253,9 @@ $(function() {
 			newtrainingdatasets = $this[0][1].files;
 			
 			var formdata = new FormData();
+			if (no_of_concepts==1){
+				formdata.append('IsFirstSample', 'True');
+			}
 			
 			$.each(newtrainingdatasets, function(i, file){
 				formdata.append('file', file);
@@ -287,8 +290,8 @@ $(function() {
 		});
 		
 		// function to save training samples for a new trainingset when modelling changes
-		function saveTrainingSamples() {
-			$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-2)');
+		function saveTrainingSamples($this, isFinalSample) {
+			
 			if ($this[0][0].id=='conceptName'){
 				newtrainingdatasets = $this[0][1].files;
 				var formdata = new FormData();
@@ -310,7 +313,8 @@ $(function() {
 				var conceptname = $this[0][0].value;
 				var formdata = new FormData();
 				formdata.append('ConceptName', conceptname);
-				if ($('input[name="existingornewsample"]').attr('value') == 'option2'){
+
+				if ($this[0][3].files[0] != ''){
 					newtrainingdatasets = $this[0][3].files;
 					$.each(newtrainingdatasets, function(i, file){
 						formdata.append('file', file);
@@ -330,7 +334,7 @@ $(function() {
 
 			}
 			else if ($this[0][0].id=='firstconcepttomerge'){
-				console.log($this);
+				
 				var formdata = new FormData();
 				formdata.append('FirstConceptName', $this[0][0].value);
 				formdata.append('SecondConceptName', $this[0][1].value);
@@ -355,16 +359,16 @@ $(function() {
 				
 			}
 			else{
-				console.log($this);
+				var formdata = new FormData();
 				formdata.append('ConceptToSplit', $this[0][0].value);
 				formdata.append('FirstConceptName', $this[0][1].value);
 				formdata.append('SecondConceptName', $this[0][2].value);
 				newtrainingdatasets1 = $this[0][3].files;
 				newtrainingdatasets2 = $this[0][4].files;
-				$.each(newtrainingdatasets, function(i, file){
+				$.each(newtrainingdatasets1, function(i, file){
 					formdata.append('filesforfirstconcept', file);
 				});
-				$.each(newtrainingdatasets, function(i, file){
+				$.each(newtrainingdatasets2, function(i, file){
 					formdata.append('filesforsecondconcept', file);
 				});
 				formdata.append('FieldResearcherName1', $this[0][5].value);
@@ -379,6 +383,15 @@ $(function() {
 				formdata.append('OtherDetails2', $this[0][14].value);
 				formdata.append('ConceptType', '4');
 			}
+			formdata.append('IsFinalSample', isFinalSample);
+			if (no_of_concepts_while_modeling_changes == 2){
+				formdata.append('IsFirstSample', 'True');
+			}
+			if (isFinalSample==true){
+				formdata.append('TrainingsetName', $('#trainingsetfilename1').val());
+			}
+			
+			
 			$.ajax({
 				type : "POST",
 				url : "http://127.0.0.1:8000/AdvoCate/trainingsample/",
@@ -387,6 +400,99 @@ $(function() {
 				contentType : false,
 				data : formdata,
 				success : function(response) {
+					if (response['trainingset']){
+						$('#createnewtrainingset_changeexistingtaxonomy').hide();
+						$('#viewandedittrainingset').show();
+						var trainingdata = response['trainingset'];
+						var classes = response['classes'];
+						$('#instances').html(trainingdata.length - 1);
+						$('#Attributes').html(trainingdata[0].length);
+
+						$('#trainingdataTable').show();
+						hot.loadData(trainingdata);
+						
+						x = "<option>Choose a concept</option>";
+						b = "<option>Choose first concept to merge</option>";
+						c = "<option>Choose second concept to merge</option>";
+						d = "<option>Choose the concept to be split</option>";
+						for (var i = 0; i < classes.length; i++){
+							x = x + "<option>" + classes[i] + "</option>";
+							b = b + "<option>" + classes[i] + "</option>";
+							c = c + "<option>" + classes[i] + "</option>";
+							d = d + "<option>" + classes[i] + "</option>";
+						}
+						$('#concepttoremove').html(x);
+						$('#firstconcepttomerge').html(b);
+						$('#secondconcepttomerge').html(c);
+						$('#concepttosplit').html(d);
+						
+						if (response['common_categories_message']){
+							$('#trainingsetcomparison').show();
+							var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
+									"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
+							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+							a = a + " <div class=\"panel-body\"> <p><em> Note:" + response['common_categories_message'] + "</em></p></div>";
+							a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+						
+							for (var i = 0; i < response['common_categories'].length; i++){
+								a = a + "<li class=\"list-group-item\">" + response['common_categories'][i] + "</li>";
+							}
+							a = a + "</ul></div>";
+							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+							a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+						
+							for (var i = 0; i < response['new_categories'].length; i++){
+								a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
+							}
+							a = a + "</ul></div>";
+							
+							if (response['deprecated_categories'].length!=0){
+								a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+								a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+							
+								for (var i = 0; i < response['deprecated_categories'].length; i++){
+									a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
+								}
+								a = a + "</ul></div>";
+							}
+							$('#trainingsetcomparisondetails').html(a);
+							
+						}
+						else if (response['common_categories']){
+							$('#trainingsetcomparison').show();
+							var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
+									"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
+							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+							a = a + "<table class=\"table\"><tr><th> Category</th><th> J-Index </th></tr>";
+	
+							for (var i = 0; i < response['common_categories'].length; i++){
+								a = a + "<tr><td>" + response['common_categories'][i][0] + "</td><td>" + response['common_categories'][i][1] + "</td></tr>";
+							}
+							a = a + "</table></div>";
+							
+							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+							a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+						
+							for (var i = 0; i < response['new_categories'].length; i++){
+								a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
+							}
+							a = a + "</ul></div>";
+							
+							if (response['deprecated_categories'].length!=0){
+								a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+								a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+							
+								for (var i = 0; i < response['deprecated_categories'].length; i++){
+									a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
+								}
+								a = a + "</ul></div>";
+							}
+							$('#trainingsetcomparisondetails').html(a);
+							
+						}
+						
+					}
+
 					
 				}
 			});
@@ -407,7 +513,8 @@ $(function() {
 				$('#submittrainingsamples1').show();
 			}
 			else{
-				saveTrainingSamples();
+				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-2)');
+				saveTrainingSamples($this, false);
 			}
 				
 			no_of_concepts_while_modeling_changes +=1;
@@ -424,7 +531,8 @@ $(function() {
 				$('#submittrainingsamples1').show();
 			}
 			else{
-				saveTrainingSamples();
+				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-2)');
+				saveTrainingSamples($this, false);
 			}
 			no_of_concepts_while_modeling_changes +=1;
 		});
@@ -441,7 +549,8 @@ $(function() {
 			}
 			else{
 				
-				saveTrainingSamples();
+				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-2)');
+				saveTrainingSamples($this, false);
 			}
 			no_of_concepts_while_modeling_changes +=1;
 		});
@@ -457,15 +566,24 @@ $(function() {
 				$('#submittrainingsamples1').show();
 			}
 			else{
-				saveTrainingSamples();
+				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-2)');
+				saveTrainingSamples($this, false);
 			}
 			no_of_concepts_while_modeling_changes +=1;
 		});
+		
+		
 		
 		$('#submittrainingsamples1').on('click', function(e) {
 			$('#buttonsforcreatingtrainingsample').hide();
 			$('#trainingsetname1').show();
 			$('#savetrainingset1').show();
+		});
+		
+		$('#savetrainingset1').on('click', function(e) {
+			$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-1)');
+			saveTrainingSamples($this, true);
+			
 		});
 		
 		
@@ -957,6 +1075,71 @@ $(function() {
 				$('#Attributes').html(trainingdata[0].length);
 				hot.loadData(trainingdata);
 				$('#applyeditoperations').attr('disabled', 'disabled');
+				
+				if (response['common_categories_message']){
+					$('#trainingsetcomparison').show();
+					var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
+							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+					a = a + " <div class=\"panel-body\"> <p><em> Note:" + response['common_categories_message'] + "</em></p></div>";
+					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+				
+					for (var i = 0; i < response['common_categories'].length; i++){
+						a = a + "<li class=\"list-group-item\">" + response['common_categories'][i] + "</li>";
+					}
+					a = a + "</ul></div>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+				
+					for (var i = 0; i < response['new_categories'].length; i++){
+						a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
+					}
+					a = a + "</ul></div>";
+					
+					if (response['deprecated_categories'].length!=0){
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+					
+						for (var i = 0; i < response['deprecated_categories'].length; i++){
+							a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
+						}
+						a = a + "</ul></div>";
+					}
+					$('#trainingsetcomparisondetails').html(a);
+					
+				}
+				else if (response['common_categories']){
+					$('#trainingsetcomparison').show();
+					var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
+							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+					a = a + "<table class=\"table\"><tr><th> Category</th><th> J-Index </th></tr>";
+
+					for (var i = 0; i < response['common_categories'].length; i++){
+						a = a + "<tr><td>" + response['common_categories'][i][0] + "</td><td>" + response['common_categories'][i][1] + "</td></tr>";
+					}
+					a = a + "</table></div>";
+					
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+				
+					for (var i = 0; i < response['new_categories'].length; i++){
+						a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
+					}
+					a = a + "</ul></div>";
+					
+					if (response['deprecated_categories'].length!=0){
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+					
+						for (var i = 0; i < response['deprecated_categories'].length; i++){
+							a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
+						}
+						a = a + "</ul></div>";
+					}
+					$('#trainingsetcomparisondetails').html(a);
+					
+				}
 			
 			});
 		});
