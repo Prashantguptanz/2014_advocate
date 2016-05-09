@@ -180,6 +180,8 @@ class ComputationalIntension(models.Model):
     mean_vector_id = models.IntegerField(blank=True, null=True)
     covariance_matrix_id = models.IntegerField(blank=True, null=True)
     learning_activity_id = models.ForeignKey(LearningActivity, db_column='learning_activity_id')
+    producer_accuracy = models.FloatField(blank=True, null=True)
+    user_accuracy = models.FloatField(blank=True, null=True)
 
     class Meta:
         managed = False

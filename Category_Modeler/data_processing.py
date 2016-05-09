@@ -254,7 +254,10 @@ class ManageCSVData:
         
         for line in reader:
             if firstconcepttomerge in line or secondconcepttomerge in line:
+                print line
+                print line[-1]
                 line[-1] = mergedconceptname
+                print line[-1]
                 f.writerow(line)
             else:
                 f.writerow(line)

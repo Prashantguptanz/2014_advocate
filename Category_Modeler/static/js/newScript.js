@@ -43,14 +43,14 @@ $(function() {
 			'height' : totalHeight - headerHeight - 176 + 'px'
 		});
 	};
-
-	function setSignatureFileDetailsHeight() {
-		var headerHeight = $('#top-part').outerHeight();
-		var totalHeight = $(window).height();
-		$('#signaturefiledetails').css({
-			'height' : totalHeight - headerHeight - 180 + 'px'
-		});
-	};
+//
+//	function setSignatureFileDetailsHeight() {
+//		var headerHeight = $('#top-part').outerHeight();
+//		var totalHeight = $(window).height();
+//		$('#signaturefiledetails').css({
+//			'height' : totalHeight - headerHeight - 180 + 'px'
+//		});
+//	};
 	// Script for navbar
 
 	var loc = window.location.href;
@@ -190,10 +190,20 @@ $(function() {
 		});
 
 	}
+	
+	$(window).on('resize', function() {
+		setTrainingSamplesTableHeight();
+	});
 
 	// Script for 'Training Samples' page
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/trainingsample/')) {
+		
+		setTrainingSamplesTableHeight();
+		// call the setHeight function, every time window is resized
+		$(window).on('resize', function() {
+			setTrainingSamplesTableHeight();
+		});
 
 		$('input[name="choosetrainingfile"]').on('click', function() {
 			var $this = $(this);
@@ -422,9 +432,9 @@ $(function() {
 							d = d + "<option>" + classes[i] + "</option>";
 						}
 						$('#concepttoremove').html(x);
-						$('#firstconcepttomerge').html(b);
-						$('#secondconcepttomerge').html(c);
-						$('#concepttosplit').html(d);
+						$('#selectfirstconcepttomerge').html(b);
+						$('#selectsecondconcepttomerge').html(c);
+						$('#selectconcepttosplit').html(d);
 						
 						if (response['common_categories_message']){
 							$('#trainingsetcomparison').show();
@@ -697,6 +707,7 @@ $(function() {
 			//	console.log(trainingdata);
 				var trainingdata = response['trainingset'];
 				var classes = response['classes'];
+				console.log(classes);
 				$('#instances').html(trainingdata.length - 1);
 				$('#Attributes').html(trainingdata[0].length);
 				$('#trainingdataTable').show();
@@ -713,9 +724,9 @@ $(function() {
 					d = d + "<option>" + classes[i] + "</option>";
 				}
 				$('#concepttoremove').html(a);
-				$('#firstconcepttomerge').html(b);
-				$('#secondconcepttomerge').html(c);
-				$('#concepttosplit').html(d);
+				$('#selectfirstconcepttomerge').html(b);
+				$('#selectsecondconcepttomerge').html(c);
+				$('#selectconcepttosplit').html(d);
 				
 			});
 
@@ -787,11 +798,7 @@ $(function() {
 
 		});
 
-		setTrainingSamplesTableHeight();
-		// call the setHeight function, every time window is resized
-		$(window).on('resize', function() {
-			setTrainingSamplesTableHeight();
-		});
+
 
 		$('#savetrainingdatadetails').on('click', function(e) {
 			e.preventDefault();
@@ -999,8 +1006,8 @@ $(function() {
 				
 			}
 			else if ($('input[name=chooseeditoperation]:checked').val() == "option3"){
-				firstconcepttomerge = $('#firstconcepttomerge>option:selected').text();
-				secondconcepttomerge = $('#secondconcepttomerge>option:selected').text();
+				firstconcepttomerge = $('#selectfirstconcepttomerge>option:selected').text();
+				secondconcepttomerge = $('#selectsecondconcepttomerge>option:selected').text();
 				mergedconceptname = $('#mergedconceptname').val();
 				editoperation = 3;
 				var data = {};
@@ -1017,7 +1024,7 @@ $(function() {
 				
 			}
 			else{
-				concepttosplit = $('#concepttosplit>option:selected').text();
+				concepttosplit = $('#selectconcepttosplit>option:selected').text();
 				concept1 = $('#firstsplitconcept').val();
 				concept2 = $('#secondsplitconcept').val();
 				
@@ -1150,11 +1157,11 @@ $(function() {
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/signaturefile/')) {
 
-		setSignatureFileDetailsHeight();
+		//setSignatureFileDetailsHeight();
 
-		$(window).on('resize', function() {
-			setSignatureFileDetailsHeight();
-		});
+		//$(window).on('resize', function() {
+		//	setSignatureFileDetailsHeight();
+		//});
 
 		$('.dropdown-toggle').dropdown();
 
@@ -1179,6 +1186,7 @@ $(function() {
 							contentType : false,
 							data : formData,
 							success : function(response) {
+								$('#signaturefiledetails').show();
 								$('#validationscore').html("<b>Validation score:  </b>"+ response['score']);
 								$('#kappa').html("<b>Kappa:  </b>"+ response['kappa']);
 								if (response['meanvectors']) {
@@ -1209,7 +1217,7 @@ $(function() {
 									b = b + "</table>";
 									$('#variance').html(b);
 	
-									var c = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['cm'] + "\" />";
+									var c = "<img style=\"width:60%; height:60%\" src=\"/static/images/" + response['cm'] + "\" />";
 									$('#confusionmatrix1').html(c);
 	
 									var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>";
@@ -1223,17 +1231,20 @@ $(function() {
 									}
 									d = d + "</table>";
 									$('#ErrorAccuracy').html(d);
-									
+									cellwidth = 100/(response['listofclasses'].length+1);
 									var e = "<p style=\"font-size: 14px; margin-left: 5px; margin-right: 5px\">Jeffries-Matusita (JM) distance between probability distribution models of various categories:</p><br />";
-									e = e + "<table style=\"width:100%\" class=\" table table-bordered\"><tr> <th> </th>";
+									e = e + "<table style=\"width:100%\" class=\" table table-bordered\"><tr> <th style=\"width:" +cellwidth+ "\"> </th>";
+									
+									
 									for (var i = 0; i < response['listofclasses'].length; i++) {
-										e = e + "<th>" + response['listofclasses'][i] + "</th>";
+										e = e + "<th style=\"width:" + cellwidth +  "%\">" + response['listofclasses'][i] + "</th>";
 									}
 									e = e + "</tr>";
+									
 									for (var i = 0; i < response['jmdistances'].length; i++){
 										e = e + "<tr><th>" + response['listofclasses'][i] + "</th>";
 										for (var j = 0; j < response['jmdistances'][i].length; j++){
-											e = e + "<td>" + response['jmdistances'][i][j] + "</td>";
+											e = e + "<td style=\"width:" + cellwidth +  "%\">" + response['jmdistances'][i][j] + "</td>";
 										}
 										e = e + "</tr>";
 									}
@@ -1242,7 +1253,7 @@ $(function() {
 									
 									if (response['suggestion_list'].length!=0){
 										
-										var f = "<legend style=\"font-size: 18px; background-color: gainsboro\" align=\"center\">Suggestions</legend>";
+										var f = "<legend style=\"font-size: 16px; background-color: gainsboro\" align=\"center\">Suggestions</legend>";
 										f= f + "<label style=\"font-size: 15px; margin-left: 5px; margin-right: 5px\">List of suggestions to increase the accuracy of classification model:</label>" + 
 											"<ul class=\" list-group\" style=\" margin-left: 5px; margin-right: 5px; margin-bottom: 5px\">";
 										for (var i = 0; i < response['suggestion_list'].length; i++){
@@ -1266,7 +1277,7 @@ $(function() {
 									$('#DecisionTreemodeldetails').show();
 									var a = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['tree'] + "\" />";
 									$('#decisiontree').html(a);
-									var b = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['cm'] + "\" />";
+									var b = "<img style=\"width:60%; height:60%\" src=\"/static/images/" + response['cm'] + "\" />";
 									$('#confusionmatrix2').html(b);
 									var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Class </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>";
 									for (var i = 0; i < response['listofclasses'].length; i++) {
@@ -1286,7 +1297,7 @@ $(function() {
 								}
 								if (response['common_categories_comparison']) {
 									if (response['common_categories_comparison'][0].length==9){
-										var a = "<legend style=\"font-size: 18px; background-color: gainsboro\" align=\"center\">Comparison between existing categories and the new modelled categories</legend>";
+										var a = "<legend style=\"font-size: 16px; background-color: gainsboro\" align=\"center\">Comparison between existing categories and the new modelled categories</legend>";
 										a =	a + "<table style=\"width:95%\" align=\"center\"class=\" table table-bordered\"><tr><th>Category</th><th>Model type</th><th>Validation</th>" +
 												"<th>Prod accuracy</th><th>User accuracy</th><th>Model type (new)</th><th>Validation (new)</th><th>Prod accuracy (new)</th><th>User accuracy (new)</th></tr>";
 										for (var i=0; i< response['common_categories_comparison'].length; i++){
@@ -1306,7 +1317,7 @@ $(function() {
 										$('#signaturefilecomparison').show();
 									}
 									else{
-										var a = "<legend style=\"font-size: 18px; background-color: gainsboro\" align=\"center\">Comparison between existing categories and the new modelled categories</legend>";
+										var a = "<legend style=\"font-size: 16px; background-color: gainsboro\" align=\"center\">Comparison between existing categories and the new modelled categories</legend>";
 										a =	a + "<table style=\"width:95%\" align=\"center\"class=\" table table-bordered\"><tr><th>Category</th><th>Validation</th>" +
 												"<th>Prod accuracy</th><th>User accuracy</th><th>Validation (new)</th><th>Prod accuracy (new)</th><th>User accuracy (new)</th><th>JM distance</th></tr>";
 										for (var i=0; i< response['common_categories_comparison'].length; i++){

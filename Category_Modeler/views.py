@@ -522,16 +522,21 @@ def trainingsampleprocessing(request):
                 
             return HttpResponse("")
         else:
+            print "I am inside existing trainingfiles section"
             trainingfilepkey = data['1']
             trid, ver = trainingfilepkey.split('+')
+            print trid, ver
             request.session['current_training_file_id'] = trid
             request.session['current_training_file_ver'] = ver
             trainingfilename = data['2']
+            print trainingfilename
             request.session['current_training_file_name'] = trainingfilename
             trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
+            print trainingfilelocation
             trainingsetasArray = []
             trs = TrainingSet(request.session['current_training_file_name'])
             classes = list(numpy.unique(trs.target))
+            print classes
             with open('%s%s' % (trainingfilelocation, trainingfilename), 'rU') as trainingset:
                 datareader = csv.reader(trainingset, delimiter=',')
                 trainingsetasArray = list(datareader)
@@ -697,7 +702,7 @@ def edittrainingset(request):
     
     return HttpResponse("");
 
-@transaction.atomic 
+
 def applyeditoperations(request):
     
     currenteditoperations = request.session['currenteditoperations']
@@ -709,13 +714,13 @@ def applyeditoperations(request):
     customQuery = CustomQueries()
     
     latestver = int(customQuery.get_latest_version_of_a_trainingset(trid)) + 1
-    print latestver
     newfilename = trainingfilename.rpartition('_')[0] + "_VER" + str(latestver) + ".csv"
-    print newfilename
-    oldversion = Trainingset.objects.get(trainingset_id=int(trid), trainingset_ver =int(ver))
-    if  oldversion.date_expired == datetime(9999, 9, 12):
-        oldversion.date_expired = datetime.now()
-        oldversion.save()
+    Trainingset.objects.filter(trainingset_id=int(trid), trainingset_ver =int(ver)).update(date_expired = datetime.now())
+    #print oldversion.trainingset_id
+    #print oldversion.trainingset_ver
+    #if  oldversion.date_expired == datetime(9999, 9, 12):
+    #oldversion.date_expired = datetime.now()
+    #oldversion.save(force_update=True)
     tr = Trainingset(trainingset_id=int(trid), trainingset_ver =latestver, trainingset_name=newfilename, date_expired=datetime(9999, 9, 12), filelocation=EXISTING_TRAINING_DATA_LOCATION)
     tr.save(force_insert=True)
     authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
@@ -745,6 +750,10 @@ def applyeditoperations(request):
             firstconcepttomerge = editoperation[1];
             secondconcepttomerge = editoperation[2];
             mergedconceptname = editoperation[3];
+            print firstconcepttomerge
+            print secondconcepttomerge
+            print mergedconceptname
+            print trainingfilename
             merged_sample_details = manageCsvData.mergeConcepts(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", firstconcepttomerge, secondconcepttomerge, mergedconceptname)
             
             trainingset_trainingsamples_instance = TrainingsetTrainingsamples(trainingset_id = tr.trainingset_id, trainingset_ver = tr.trainingset_ver, trainingsample_id = merged_sample_details[0], trainingsample_ver = merged_sample_details[1])
@@ -799,7 +808,7 @@ def applyeditoperations(request):
 
         return JsonResponse({'trainingset': trainingsetasArray, 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories})
 
-    
+    return JsonResponse({'trainingset': trainingsetasArray})
 
 def savetrainingdatadetails(request):
     if request.method=='POST':
@@ -1243,7 +1252,7 @@ def supervised(request):
             
             
             if 'existing_taxonomy_name' in request.session:
-                oldCategories = ['artificial_surface', 'cloud', 'forest', 'grassland', 'shadow', 'water']
+                oldCategories = ['Artificial surface', 'Cloud', 'Forest', 'Grassland', 'Shadow', 'Water']
                 change_matrix = create_change_matrix(oldCategories, predictedValue, rows, columns)
             
             return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories});

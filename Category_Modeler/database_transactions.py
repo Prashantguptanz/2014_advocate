@@ -144,7 +144,7 @@ class UpdateDatabase:
         activity_id = cursor.fetchone()[0]
         
         learning_activity_instance = LearningActivity.objects.get(id = activity_id)
-        comp_int = ComputationalIntension(mean_vector_id = meanvector_id, covariance_matrix_id = cov_mat_id, learning_activity_id=learning_activity_instance)
+        comp_int = ComputationalIntension(mean_vector_id = meanvector_id, covariance_matrix_id = cov_mat_id, learning_activity_id=learning_activity_instance, producer_accuracy = prodacc, user_accuracy = useracc)
         comp_int.save()
         return comp_int
 
@@ -153,13 +153,29 @@ class CustomQueries:
     def get_trainingset_name_for_current_version_of_legend(self, legendName):
         cursor = connection.cursor()
         
-        cursor.execute("select t.trainingset_name from trainingset t, category c, legend l, legend_concept_combination lcc \
+        cursor.execute("select t.trainingset_id, t.trainingset_ver, t.trainingset_name from trainingset t, category c, legend l, legend_concept_combination lcc \
                         where l.legend_name = %s and c.trainingset_id = t.trainingset_id and c.trainingset_ver = t.trainingset_ver and c.legend_concept_combination_id = lcc.id and \
                         lcc.id = (select lcc1.id from legend_concept_combination lcc1 where lcc1.legend_id = l.legend_id and lcc1.legend_ver= l.legend_ver order by lcc1.id DESC limit 1)", [legendName])
         
         row = cursor.fetchone()
         return row
         
+    def get_trainingsample_id_and_ver_for_concept_in_reference_taxonomy(self, tid, ver, concept):
+        cursor = connection.cursor()
+        
+        a = True
+        while a:
+            
+            cursor.execute("select tsc.trainingsample_id, tsc.trainingsample_ver, tsc.samplefile_name from trainingsample_for_category tsc, trainingset_trainingsamples tts where tts.trainingsample_id = tsc.trainingsample_id \
+                            and tts.trainingsample_ver = tsc.trainingsample_ver and tsc.concept_name = %s and tts.trainingset_id = %s and tts.trainingset_ver =%s", [concept, tid, ver])
+            row = cursor.fetchone()
+            if not row:
+                ver = int(ver)-1
+            else:
+                a = False
+        return row
+            
+            
         
     def get_model_name_and_accuracy_from_a_legend(self, lid, ver):
         cursor = connection.cursor()
@@ -205,10 +221,10 @@ class CustomQueries:
     def getExtension(self, concept_name, lid, ver):
         cursor = connection.cursor()
         
-        cursor.execute("select e.\"X\", e.\"Y\" from concept c, legend l, legend_concept_combination lcc, \
+        cursor.execute("select soc.x_coordinate, soc.y_coordinate from concept c, legend l, legend_concept_combination lcc, set_of_occurences soc,\
                         category ca, extension e where lcc.concept_id = c.id and lcc.legend_id = %s and lcc.legend_ver = %s \
                         and c.concept_name = %s and ca.legend_concept_combination_id = lcc.id and  \
-                        ca.extension_id = e.id", [lid, ver, concept_name])
+                        ca.extension_id = e.id and soc.id = e.set_of_occurences_id", [lid, ver, concept_name])
         
         row = cursor.fetchall()
         return row
