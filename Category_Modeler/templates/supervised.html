@@ -3,8 +3,8 @@
 
 	{% csrf_token %}
 
-	<div class="form-group" style="width: 100%; float: left; border-style: solid; border-width: 1px; border-color: #E5E5E5">
-		<form class="form-group" enctype="multipart/form-data" name="supervisedClassification" action="#">
+	<div class="form-group" style="width: 100%; float: left; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom: 0px">
+
 			<legend style="font-size: 16px; background-color: gainsboro" align="center">
 				Upload satellite image file
 			</legend>
@@ -25,19 +25,21 @@
 				</p>
 				{% endif %}
 			</div>
-		</form>
+
 	</div>
-	<div id = "classificationresult" style="width: 100%; float: right; border-style: solid; border-width: 1px; border-color: #E5E5E5; display:none">
+	<div id = "classificationresult" style= "border-style: solid; border-width: 1px; border-color: #E5E5E5; display:none; margin-bottom: 0px; padding-bottom: 20px; overflow: hidden ">
 		<legend style="font-size: 16px; background-color: gainsboro" align="center">
 			Classified map
 		</legend>
 		
-			<div id="classifiedmap" style="padding-left: 15px; padding-right: 15px; width:78%; float:left ">
-			</div>
-			<div id="categorycolors" style="padding-left: 2px; padding-right: 15px; width: 22%; float:right">
-			</div>
-
+		<div id="classifiedmap" style="padding-left: 15px; padding-right: 15px; width:78%; float:left ">
+		</div>
+		<div id="categorycolors" style="padding-left: 2px; padding-right: 15px; width: 22%; float:right">
+		</div>
+		<br /><br />
 		
+	</div>
+	<div id = "changematrix_display" style="border-style: solid; border-width: 1px; border-color: #E5E5E5; display:none">
 	</div>
 
 </div>

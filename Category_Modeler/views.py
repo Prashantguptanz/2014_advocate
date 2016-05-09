@@ -522,21 +522,16 @@ def trainingsampleprocessing(request):
                 
             return HttpResponse("")
         else:
-            print "I am inside existing trainingfiles section"
             trainingfilepkey = data['1']
             trid, ver = trainingfilepkey.split('+')
-            print trid, ver
             request.session['current_training_file_id'] = trid
             request.session['current_training_file_ver'] = ver
             trainingfilename = data['2']
-            print trainingfilename
             request.session['current_training_file_name'] = trainingfilename
             trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
-            print trainingfilelocation
             trainingsetasArray = []
             trs = TrainingSet(request.session['current_training_file_name'])
             classes = list(numpy.unique(trs.target))
-            print classes
             with open('%s%s' % (trainingfilelocation, trainingfilename), 'rU') as trainingset:
                 datareader = csv.reader(trainingset, delimiter=',')
                 trainingsetasArray = list(datareader)
@@ -1252,8 +1247,13 @@ def supervised(request):
             
             
             if 'existing_taxonomy_name' in request.session:
-                oldCategories = ['Artificial surface', 'Cloud', 'Forest', 'Grassland', 'Shadow', 'Water']
+                customQuery = CustomQueries()
+                old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[2]
+                trs = TrainingSet(old_trainingset)
+                oldCategories = list(numpy.unique(trs.target))
+                #oldCategories = ['Artificial surface', 'Cloud', 'Forest', 'Grassland', 'Shadow', 'Water']
                 change_matrix = create_change_matrix(oldCategories, predictedValue, rows, columns)
+                return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories, 'change_matrix':change_matrix, 'old_categories': oldCategories});
             
             return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories});
     

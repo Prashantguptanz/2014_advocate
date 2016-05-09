@@ -1444,6 +1444,26 @@ $(function() {
 					d = d + "</table>";
 						
 					$('#categorycolors').html(d);
+					if (response['old_categories']){
+						console.log("done");
+						var a = "<legend style=\"font-size: 16px; background-color: gainsboro\" align=\"center\">Change matrix</legend>";
+						a = a + "<table style=\"width:95%\" align=\"center\" class=\" table table-bordered\"><tr><th>#</th>";
+						for (var i=0; i< response['categories'].length; i++){
+							a = a + "<th>" + response['categories'][i] + "</th>";
+						}
+						a = a + "</tr>";
+						
+						for (var j=0; j < response['old_categories'].length; j++){
+							a = a + "<tr><th>" + response['old_categories'][j] + "</th>";
+							for (var k=0; k < response['change_matrix'][j].length; k++){
+								a = a + "<td>" + response['change_matrix'][j][k] + "</td>";
+							}
+							a = a + "</tr>";
+						}
+						$('#changematrix_display').show();
+						$('#changematrix_display').html(a);
+						
+					}
 					
 				}
 			});
