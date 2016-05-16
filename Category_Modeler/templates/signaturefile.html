@@ -4,94 +4,109 @@
 {% load staticfiles%}
 <div class="container">
 	<form class="form-group" id="trainingoptions" name="trainingoptions" style="width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px">
-		<legend style="font-size: 16px; background-color: gainsboro " align="center">Choose options to create signature file
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >
+			<a role="button" data-toggle="collapse" href="#collapse1" aria-expanded="false" aria-controls="collapse1" style="color: #333; vertical-align:middle">Choose options to create signature file </a>
 		</legend>
-
-		<div class="form-group" style="width: 98%; overflow: hidden">
-
-			<div style="float: left; margin-left: 10px">
-				<select id="classifiertype" name="classifiertype" required >
-				<option value="">Select Classifier</option>
-				<option value="Naive Bayes">NaiveBayes</option>
-				<option value="Decision Tree">Decision Tree (C4.5)</option>
-				<option value="SVM">Support Vector Machine</option>
-				</select>
-		    </div>
-
-			<div style="float: right; margin-right: 10px">
-				{% if attributes %}
-				{% else %}
-				<p id="signinerror" class="error" style= "color: brown">
-					Select a training sample!
-				</p>
-				{% endif %}
+		<div id="collapse1" class="collapse in">
+		  	<div class="form-group" style="width: 98%; overflow: hidden; margin-bottom: 15px">
+	
+				<div style="float: left; margin-left: 10px; margin-top: 10px">
+					<select id="classifiertype" name="classifiertype" required >
+					<option value="">Select Classifier</option>
+					<option value="Naive Bayes">NaiveBayes</option>
+					<option value="Decision Tree">Decision Tree (C4.5)</option>
+					<option value="SVM">Support Vector Machine</option>
+					</select>
+			    </div>
+	
+				<div style="float: right; margin-right: 10px">
+					{% if attributes %}
+					{% else %}
+					<p id="signinerror" class="error" style= "color: brown">
+						Select a training sample!
+					</p>
+					{% endif %}
+				</div>
 			</div>
+			<legend style="font-size: 14px; background-color: gainsboro; width:300px" align="center">Validation options
+				</legend>
+			<div class="form-group radio" style="width: 98%; overflow: hidden; margin-left: 10px">
+				
+				<input type="radio" name="validationoption" value="1" required />Use training data
+				<br/><br/>
+				<input type="radio" name="validationoption" value="2" required />Upload validation data
+				<span style="float: right; margin-right:590px">
+					<input type="file" id="validationfile" name="validationfile" accept=".csv,.xls,.tif,.png,.adf" disabled/>
+				</span> 
+				<br/><br/>
+				<input type="radio" name="validationoption" id="CrossValidation" value="3" required>Cross-validation 
+				<span style="margin-left: 72px"> 
+					<label style="font-weight: normal"> Folds </label>
+					<input style="margin-left: 25px" id="fold" name = "fold" disabled="disabled" type="text" size="15" value="10" required />
+				</span>
+				<br />			
+			</div>
+			<input type="submit" id="createsignaturefile" value="Submit" class="submit button" style="margin:10px"/>
 		</div>
-		<br />
-		<legend style="font-size: 14px; background-color: gainsboro; width:300px" align="center">Validation options
-			</legend>
-		<div class="form-group radio" style="width: 98%; overflow: hidden; margin-left: 10px">
-			
-			<input type="radio" name="validationoption" value="1" required />Use training data
-			<br/><br/>
-			<input type="radio" name="validationoption" value="2" required />Upload validation data
-			<span style="float: right; margin-right:590px">
-				<input type="file" id="validationfile" name="validationfile" accept=".csv,.xls,.tif,.png,.adf" disabled/>
-			</span> 
-			<br/><br/>
-			<input type="radio" name="validationoption" id="CrossValidation" value="3" required>Cross-validation 
-			<span style="margin-left: 72px"> 
-				<label style="font-weight: normal"> Folds </label>
-				<input style="margin-left: 25px" id="fold" name = "fold" disabled="disabled" type="text" size="15" value="10" required />
-			</span>
-			<br />			
-		</div>
-		<input type="submit" id="createsignaturefile" value="Submit" class="submit button" style="margin:10px"/>
-		
 	</form>
 	<div class="form-group" id="signaturefiledetails" style="width: 100%; display:none; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px">
-		<legend style="font-size: 16px; background-color: gainsboro" align="center">Signature file details</legend>
-		<div id="" style="padding-left: 15px; padding-right: 15px"><br />&nbsp; &nbsp;
-		<label  id = "validationscore" style="font-weight: normal"> </label>&nbsp; &nbsp; 
-		<label id = "kappa" style="font-weight: normal; "> </label>
-		</div>
-		<br />
-		<div id="NaiveBayesmodeldetails" style="display:none; padding-left: 15px; padding-right: 15px">
-			&nbsp; &nbsp;
-			<input type="radio" name="NaiveBayesmodeldetails" value="1" style="vertical-align: middle; margin: 0px;"/> Mean vectors and variances &nbsp; &nbsp;  &nbsp;
-			<input type="radio" name="NaiveBayesmodeldetails" value="2" style="vertical-align: middle; margin: 0px;" checked/> Confusion matrix &nbsp; &nbsp;  &nbsp; 
-			<input type="radio" name="NaiveBayesmodeldetails" value="3" style="vertical-align: middle; margin: 0px;"/> Error/Accuracy &nbsp; &nbsp;  &nbsp;
-			<input type="radio" name="NaiveBayesmodeldetails" value="4" style="vertical-align: middle; margin: 0px;"/> JM Distance &nbsp; &nbsp;  &nbsp; 
-			<br /><br />
-			<div class="form-group" id="meanvectorsandvariance" style="padding-left: 15px; padding-right: 15px ">
-		  	</div>
-			<div class="form-group" id="confusionmatrix1" style="padding-left: 15px; padding-right: 15px; display:none ">
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">
+			<a role="button" data-toggle="collapse" href="#collapse2" aria-expanded="true" aria-controls="collapse2" style="color: #333; vertical-align:middle">Signature file details</a>
+		</legend>
+		
+		<div id="collapse2" class="collapse in">
+			<div id="" style="padding-left: 15px; padding-right: 15px"><br />&nbsp; &nbsp;
+			<label  id = "validationscore" style="font-weight: normal"> </label>&nbsp; &nbsp; 
+			<label id = "kappa" style="font-weight: normal; "> </label>
 			</div>
-			<div class="form-group" id="ErrorAccuracy" style="padding-left: 15px; padding-right: 15px; display:none ">
+			<br />
+			<div id="NaiveBayesmodeldetails" style="display:none; padding-left: 15px; padding-right: 15px">
+				&nbsp; &nbsp;
+				<input type="radio" name="NaiveBayesmodeldetails" value="1" style="vertical-align: middle; margin: 0px;"/> Mean vectors and variances &nbsp; &nbsp;  &nbsp;
+				<input type="radio" name="NaiveBayesmodeldetails" value="2" style="vertical-align: middle; margin: 0px;" checked/> Confusion matrix &nbsp; &nbsp;  &nbsp; 
+				<input type="radio" name="NaiveBayesmodeldetails" value="3" style="vertical-align: middle; margin: 0px;"/> Error/Accuracy &nbsp; &nbsp;  &nbsp;
+				<input type="radio" name="NaiveBayesmodeldetails" value="4" style="vertical-align: middle; margin: 0px;"/> JM Distance &nbsp; &nbsp;  &nbsp; 
+				<br /><br />
+				<div class="form-group" id="meanvectorsandvariance" style="padding-left: 15px; padding-right: 15px ">
+			  	</div>
+				<div class="form-group" id="confusionmatrix1" style="padding-left: 15px; padding-right: 15px; display:none ">
+				</div>
+				<div class="form-group" id="ErrorAccuracy" style="padding-left: 15px; padding-right: 15px; display:none ">
+				</div>
+				<div class="form-group" id="JMDistance" style="padding-left: 15px; padding-right: 15px; display:none ">
+				</div>
+				
 			</div>
-			<div class="form-group" id="JMDistance" style="padding-left: 15px; padding-right: 15px; display:none ">
-			</div>
-			
-		</div>
-		<div id="DecisionTreemodeldetails" style="display:none; padding-left: 15px; padding-right: 15px">
-			&nbsp; &nbsp;
-			<input type="radio" name="DecisionTreemodeldetails" value="1" style="vertical-align: middle; margin: 0px;"/> Decision Tree &nbsp; &nbsp;  &nbsp; 
-			<input type="radio" name="DecisionTreemodeldetails" value="2" style="vertical-align: middle; margin: 0px;"/> Confusion matrix &nbsp; &nbsp;  &nbsp; 
-			<input type="radio" name="DecisionTreemodeldetails" value="3" style="vertical-align: middle; margin: 0px;"/> Error/Accuracy &nbsp; &nbsp;  &nbsp; 
-			<br/><br/>
-			<div class="form-group" id="decisiontree" style="padding-left: 15px; padding-right: 15px ">
-		  	</div>
-			<div class="form-group" id="confusionmatrix2" style="padding-left: 15px; padding-right: 15px; display:none ">
-			</div>
-			<div class="form-group" id="accuracies" style="padding-left: 15px; padding-right: 15px; display:none ">
-			</div>
-			
-		</div>			
+			<div id="DecisionTreemodeldetails" style="display:none; padding-left: 15px; padding-right: 15px">
+				&nbsp; &nbsp;
+				<input type="radio" name="DecisionTreemodeldetails" value="1" style="vertical-align: middle; margin: 0px;"/> Decision Tree &nbsp; &nbsp;  &nbsp; 
+				<input type="radio" name="DecisionTreemodeldetails" value="2" style="vertical-align: middle; margin: 0px;" checked /> Confusion matrix &nbsp; &nbsp;  &nbsp; 
+				<input type="radio" name="DecisionTreemodeldetails" value="3" style="vertical-align: middle; margin: 0px;"/> Error/Accuracy &nbsp; &nbsp;  &nbsp; 
+				<br/><br/>
+				<div class="form-group" id="decisiontree" style="padding-left: 15px; padding-right: 15px ">
+			  	</div>
+				<div class="form-group" id="confusionmatrix2" style="padding-left: 15px; padding-right: 15px; display:none ">
+				</div>
+				<div class="form-group" id="accuracies" style="padding-left: 15px; padding-right: 15px; display:none ">
+				</div>
+				
+			</div>	
+		</div>		
 	</div>
-	<div id = "suggestions_section" class="form-group" style="display:none; overflow: hidden; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px">
+	<div id = "suggestions_section" class="form-group" style="display:none; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px">
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">
+			<a role="button" data-toggle="collapse" href="#collapse3" aria-expanded="true" aria-controls="collapse3" style="color: #333; vertical-align:middle">Suggestions</a>
+		</legend>
+		<div id="collapse3" class="collapse in">
+		</div>
 	</div>
 	<div id = "signaturefilecomparison" class="form-group" style="display:none; border-style: solid; border-width: 1px; overflow: auto; border-color: #E5E5E5 ">
-
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">
+			<a role="button" data-toggle="collapse" href="#collapse4" aria-expanded="true" aria-controls="collapse4" style="color: #333; vertical-align:middle">
+			Comparison between existing categories and the new modelled categories</a>
+		</legend>
+		<div id="collapse4" class="collapse in">
+		</div>
 	</div>
 	
 </div>

@@ -1259,7 +1259,7 @@ $(function() {
 									a = a + "</table>";
 									$('#meanvectorsandvariance').html(a);
 	
-									var c = "<img style=\"width:60%; height:60%\" src=\"/static/images/" + response['cm'] + "\" />";
+									var c = "<img style=\"width:50%; height:50%; margin-left:auto; margin-right:auto; display:block\" src=\"/static/images/" + response['cm'] + "\" />";
 									$('#confusionmatrix1').html(c);
 	
 									var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>";
@@ -1307,15 +1307,14 @@ $(function() {
 									
 									if (response['suggestion_list'].length!=0){
 										
-										var f = "<legend style=\"font-size: 16px; background-color: gainsboro\" align=\"center\">Suggestions</legend>";
-										f= f + "<label style=\"font-size: 15px; margin-left: 5px; margin-right: 5px\">List of suggestions to increase the accuracy of classification model:</label>" + 
+										var f= "<label style=\"font-size: 15px; margin-left: 5px; margin-right: 5px\">List of suggestions to increase the accuracy of classification model:</label>" + 
 											"<ul class=\" list-group\" style=\" margin-left: 5px; margin-right: 5px; margin-bottom: 5px\">";
 										for (var i = 0; i < response['suggestion_list'].length; i++){
 											f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
 												"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
 										}
 										f = f + "</ul>";
-										$('#suggestions_section').html(f);
+										$('#collapse3').html(f);
 										$('#suggestions_section').show();
 									}
 									
@@ -1325,12 +1324,13 @@ $(function() {
 									$('#confusionmatrix1').show();
 									$('#ErrorAccuracy').hide();
 									$('#JMDistance').hide();
+									$('#collapse1').removeClass("collapse in").addClass("collapse");
 								} else {
 									$('#NaiveBayesmodeldetails').hide();
 									$('#DecisionTreemodeldetails').show();
 									var a = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['tree'] + "\" />";
 									$('#decisiontree').html(a);
-									var b = "<img style=\"width:60%; height:60%\" src=\"/static/images/" + response['cm'] + "\" />";
+									var b = "<img style=\"width:50%; height:50%; margin-left:auto; margin-right:auto; display:block\" src=\"/static/images/" + response['cm'] + "\" />";
 									$('#confusionmatrix2').html(b);
 									var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>";
 									for (var i = 0; i < response['listofclasses'].length; i++) {
@@ -1348,9 +1348,11 @@ $(function() {
 									}
 									d = d + "</table>";
 									$('#accuracies').html(d);
+									
 									$('#accuracies').hide();
 									$('#decisiontree').hide();
-									$('#confusionmatrix2').hide();
+									$('#confusionmatrix2').show();
+									$('#collapse1').removeClass("collapse in").addClass("collapse");
 	
 								}
 								if (response['common_categories_comparison']) {
@@ -1371,7 +1373,7 @@ $(function() {
 										}
 										a = a + "</table>";
 										
-										$('#signaturefilecomparison').html(a);
+										$('#collapse4').html(a);
 										$('#signaturefilecomparison').show();
 									}
 									else{
@@ -1392,7 +1394,7 @@ $(function() {
 										}
 										a = a + "</table>";
 										
-										$('#signaturefilecomparison').html(a);
+										$('#collapse4').html(a);
 										$('#signaturefilecomparison').show();
 										
 									}
