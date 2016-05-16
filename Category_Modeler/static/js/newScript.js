@@ -37,10 +37,10 @@ $(function() {
 		var headerHeight = $('#top-part').outerHeight();
 		var totalHeight = $(window).height();
 		$('#trainingdataTable').css({
-			'height' : totalHeight - headerHeight - 240 + 'px'
+			'height' : totalHeight - headerHeight - 320 + 'px'
 		});
 		$('#edittrainingset').css({
-			'height' : totalHeight - headerHeight - 176 + 'px'
+			'height' : totalHeight - headerHeight - 256 + 'px'
 		});
 	};
 //
@@ -467,7 +467,7 @@ $(function() {
 								}
 								a = a + "</ul></div>";
 							}
-							$('#trainingsetcomparisondetails').html(a);
+							$('#collapse7').html(a);
 							
 						}
 						else if (response['common_categories']){
@@ -499,7 +499,7 @@ $(function() {
 								}
 								a = a + "</ul></div>";
 							}
-							$('#trainingsetcomparisondetails').html(a);
+							$('#collapse7').html(a);
 							
 						}
 						
@@ -864,7 +864,7 @@ $(function() {
 						}
 						a = a + "</ul></div>";
 					}
-					$('#trainingsetcomparisondetails').html(a);
+					$('#collapse7').html(a);
 					
 				}
 				else if (response['common_categories']){
@@ -897,7 +897,7 @@ $(function() {
 						}
 						a = a + "</ul></div>";
 					}
-					$('#trainingsetcomparisondetails').html(a);
+					$('#collapse7').html(a);
 					
 				}
 				else{
@@ -954,7 +954,7 @@ $(function() {
 							}
 							a = a + "</ul></div>";
 						}
-						$('#trainingsetcomparisondetails').html(a);
+						$('#collapse7').html(a);
 						
 					}
 				else if (response['common_categories']){
@@ -986,7 +986,7 @@ $(function() {
 						}
 						a = a + "</ul></div>";
 					}
-					$('#trainingsetcomparisondetails').html(a);
+					$('#collapse7').html(a);
 					
 					}
 				}
@@ -1162,7 +1162,7 @@ $(function() {
 						}
 						a = a + "</ul></div>";
 					}
-					$('#trainingsetcomparisondetails').html(a);
+					$('#collapse7').html(a);
 					
 				}
 				else if (response['common_categories']){
@@ -1194,7 +1194,7 @@ $(function() {
 						}
 						a = a + "</ul></div>";
 					}
-					$('#trainingsetcomparisondetails').html(a);
+					$('#collapse7').html(a);
 					
 				}
 			
@@ -1307,8 +1307,8 @@ $(function() {
 									
 									if (response['suggestion_list'].length!=0){
 										
-										var f= "<label style=\"font-size: 15px; margin-left: 5px; margin-right: 5px\">List of suggestions to increase the accuracy of classification model:</label>" + 
-											"<ul class=\" list-group\" style=\" margin-left: 5px; margin-right: 5px; margin-bottom: 5px\">";
+										var f= "<label style=\"font-size: 15px; margin-left: 15px; margin-bottom:15px\">List of suggestions to increase the accuracy of classification model:</label>" + 
+											"<ul class=\" list-group\" style=\" margin-left: 15px; margin-right: 5px; margin-bottom: 5px; width:50%\">";
 										for (var i = 0; i < response['suggestion_list'].length; i++){
 											f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
 												"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
@@ -1510,7 +1510,7 @@ $(function() {
 							a = a + "</tr>";
 						}
 						$('#changematrix_display').show();
-						$('#changematrix_display').html(a);
+						$('#collapse10').html(a);
 						
 					}
 					

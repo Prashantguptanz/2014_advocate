@@ -4,6 +4,7 @@ from io import FileIO, BufferedWriter
 from datetime import datetime
 from shutil import copyfile
 from ete3 import Tree, TreeStyle, TextFace # @UndefinedVariable
+from operator import itemgetter
 from django.shortcuts import render, HttpResponse, HttpResponseRedirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
@@ -978,6 +979,7 @@ def save_csv_training_file(f):
 
 @login_required
 def signaturefile(request):
+    request.session['exploration_chain_step'] = request.session['exploration_chain_step'] + 1
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username # @UndefinedVariable
     if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
             messages.error(request, "Choose an activity before you proceed further")
@@ -1097,19 +1099,41 @@ def signaturefile(request):
             
             suggestion_list=[]
             listofcategories = clf.classes_.tolist()
-            for eachPair in  jmdistances_list:
-                single_suggestion=[]
+            overlapping_pairs = []
+            for eachPair in jmdistances_list:
                 if float(eachPair[2])<1.1:
-                    index1 = listofcategories.index(eachPair[0])
-                    index2 = listofcategories.index(eachPair[1])
-                    if float(prodacc[index1]) + float(useracc[index1]) < float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index1]) + float(useracc[index1])<1.2:
-                        single_suggestion.append(listofcategories[index1])
-                        single_suggestion.append(listofcategories[index2])
-                        suggestion_list.append(single_suggestion)
-                    elif float(prodacc[index1]) + float(useracc[index1]) > float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index2]) + float(useracc[index2]) <1.2:
-                        single_suggestion.append(listofcategories[index2])
-                        single_suggestion.append(listofcategories[index1])
-                        suggestion_list.append(single_suggestion)
+                    overlapping_pairs.append(eachPair)
+            sorted_overlapping_pairs = sorted(overlapping_pairs, key=itemgetter(2))     
+            print sorted_overlapping_pairs
+            positive_pairs = []
+            negative_pairs = []
+            for index in range(len(sorted_overlapping_pairs)):
+                if index==0:
+                    positive_pairs.append(sorted_overlapping_pairs[index])
+                else:
+                    positive_pair= True
+                    for pair in positive_pairs:
+                        if sorted_overlapping_pairs[index][0] in pair or sorted_overlapping_pairs[index][1] in pair:
+                            negative_pairs.append(sorted_overlapping_pairs[index])
+                            positive_pair = False
+                            break
+                    if positive_pair == True:
+                        positive_pairs.append(sorted_overlapping_pairs[index])
+            print positive_pairs
+            print negative_pairs
+            
+            for eachPair in positive_pairs:
+                single_suggestion=[]
+                index1 = listofcategories.index(eachPair[0])
+                index2 = listofcategories.index(eachPair[1])
+                if float(prodacc[index1]) + float(useracc[index1]) < float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index1]) + float(useracc[index1])<1.2:
+                    single_suggestion.append(listofcategories[index1])
+                    single_suggestion.append(listofcategories[index2])
+                    suggestion_list.append(single_suggestion)
+                elif float(prodacc[index1]) + float(useracc[index1]) > float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index2]) + float(useracc[index2]) <1.2:
+                    single_suggestion.append(listofcategories[index2])
+                    single_suggestion.append(listofcategories[index1])
+                    suggestion_list.append(single_suggestion)
             
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
