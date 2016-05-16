@@ -1242,30 +1242,22 @@ $(function() {
 								if (response['meanvectors']) {
 									$('#DecisionTreemodeldetails').hide();
 									$('#NaiveBayesmodeldetails').show();
-									var a = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Mean Vector </th></tr>";
+									var a = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Mean Vector </th><th> Variance </th></tr>";
 									for (var i = 0; i < response['listofclasses'].length; i++) {
 										a = a + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
 										var meanvectorarray = response['meanvectors'][i];
 										for (var j = 0; j < meanvectorarray.length; j++) {
 											a = a + parseFloat(meanvectorarray[j]).toFixed(2) + " |  ";
 										}
+										a = a + "</td><td>";
+										var variancearray = response['variance'][i];
+										for (var k = 0; k < variancearray.length; k++) {
+											a = a + parseFloat(variancearray[k]).toFixed(2) + " |  ";
+										}
 										a = a + "</td></tr>";
 									}
 									a = a + "</table>";
-									$('#meanvectors').html(a);
-	
-									var b = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Variance </th></tr>";
-									for (var i = 0; i < response['listofclasses'].length; i++) {
-										b = b + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
-										var variancearray = response['variance'][i];
-										for (var k = 0; k < variancearray.length; k++) {
-											b = b + parseFloat(variancearray[k]).toFixed(2) + " |  ";
-										}
-	
-										b = b + "</td></tr>";
-									}
-									b = b + "</table>";
-									$('#variance').html(b);
+									$('#meanvectorsandvariance').html(a);
 	
 									var c = "<img style=\"width:60%; height:60%\" src=\"/static/images/" + response['cm'] + "\" />";
 									$('#confusionmatrix1').html(c);
@@ -1329,9 +1321,8 @@ $(function() {
 									
 									
 									
-									$('#meanvectors').hide();
-									$('#variance').hide();
-									$('#confusionmatrix1').hide();
+									$('#meanvectorsandvariance').hide();
+									$('#confusionmatrix1').show();
 									$('#ErrorAccuracy').hide();
 									$('#JMDistance').hide();
 								} else {
@@ -1423,33 +1414,22 @@ $(function() {
 							'input[name="NaiveBayesmodeldetails"]:checked')
 							.val();
 					if (detailsoption == '1') {
-						$('#meanvectors').show();
-						$('#variance').hide();
+						$('#meanvectorsandvariance').show();
 						$('#confusionmatrix1').hide();
 						$('#ErrorAccuracy').hide();
 						$('#JMDistance').hide();
 					} else if (detailsoption == '2') {
-						console.log(detailsoption);
-						$('#meanvectors').hide();
-						$('#variance').show();
-						$('#confusionmatrix1').hide();
-						$('#ErrorAccuracy').hide();
-						$('#JMDistance').hide();
-					} else if (detailsoption == '3') {
-						$('#meanvectors').hide();
-						$('#variance').hide();
+						$('#meanvectorsandvariance').hide();
 						$('#confusionmatrix1').show();
 						$('#ErrorAccuracy').hide();
 						$('#JMDistance').hide();
-					} else if (detailsoption == '4') {
-						$('#meanvectors').hide();
-						$('#variance').hide();
+					} else if (detailsoption == '3') {
+						$('#meanvectorsandvariance').hide();
 						$('#confusionmatrix1').hide();
 						$('#ErrorAccuracy').show();
 						$('#JMDistance').hide();
 					} else {
-						$('#meanvectors').hide();
-						$('#variance').hide();
+						$('#meanvectorsandvariance').hide();
 						$('#confusionmatrix1').hide();
 						$('#ErrorAccuracy').hide();
 						$('#JMDistance').show();
