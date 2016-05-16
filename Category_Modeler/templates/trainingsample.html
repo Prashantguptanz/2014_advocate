@@ -6,27 +6,34 @@
 	<div class="container">
 		<div style="border-style: solid; border-width: 1px; border-color: #E5E5E5">
 			
-			<legend style="font-size: 16px; background-color: gainsboro" align="center">Choose existing trainingset or create a new one</legend>
-			<div class="form-group radio" style="margin-left: 10px">		
-							
-				<input type="radio" name="choosetrainingfile" value="option1" id="existingtrainingset"/>Choose existing
-				<span style = "margin: 50px">
-					<select name="existingtrainingfiles" id="existingtrainingfiles"  disabled>
-						<option>Existing trainingset</option>
-						{% for train in training_set_list %}
-						<option id="trainingset{{ forloop.counter }}" value="{{ train.trainingset_id }}+{{train.trainingset_ver}}">{{ train.trainingset_name }}</option>
-						{% endfor %}
-					</select>
-				</span>
-				<br /><br />
-				
-				<input type="radio" name="choosetrainingfile" value="option2" id="newtrainingset"/>Create a new trainingset
-				<br /><br />
+			<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">
+				<a role="button" data-toggle="collapse" href="#collapse5" aria-expanded="false" aria-controls="collapse5" style="color: #333; vertical-align:middle">
+					Choose existing trainingset or create a new one</a>
+			</legend>
+			<div id="collapse5" class="collapse in">
+				<div class="form-group radio" style="margin-left: 10px; margin-top: 20px">		
+								
+					<input type="radio" name="choosetrainingfile" value="option1" id="existingtrainingset"/>Choose existing
+					<span style = "margin: 50px">
+						<select name="existingtrainingfiles" id="existingtrainingfiles"  disabled>
+							<option>Existing trainingset</option>
+							{% for train in training_set_list %}
+							<option id="trainingset{{ forloop.counter }}" value="{{ train.trainingset_id }}+{{train.trainingset_ver}}">{{ train.trainingset_name }}</option>
+							{% endfor %}
+						</select>
+					</span>
+					<br /><br />
+					
+					<input type="radio" name="choosetrainingfile" value="option2" id="newtrainingset"/>Create a new trainingset
+					<br />
+				</div>
 			</div>
+			  
+		</div>
 			
 			{% if new_taxonomy %}
 			<div  id="newconceptsanddetails" style="display:none">
-				<legend style="font-size: 14px; background-color: gainsboro" align="center">Concepts in the new trainingset</legend>
+				<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">Concepts in the new trainingset</legend>
 	
 				<div class="form-group" id="categoriesandsamples" style="margin-left: 10px; margin-right: 10px">
 					<form id="concept1details" enctype="multipart/form-data" action="#" >
@@ -90,7 +97,7 @@
 			
 			{% if existing_taxonomy %}
 			<div  id="newconceptsanddetails" style="display:none">
-				<legend style="font-size: 16px; background-color: gainsboro" align="center">Concepts in the new trainingset</legend>
+				<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">Concepts in the new trainingset</legend>
 				
 				
 				<!-- Form for adding a new concept.. this is just for copying-->
@@ -409,118 +416,123 @@
 
 
 		<div id = "viewandedittrainingset" style=" border-style: solid; border-width: 1px; border-color: #E5E5E5; display:none">
-			<legend style="font-size: 16px; background-color: gainsboro; margin-bottom: 0px" align="center">View/Edit trainingset</legend>
-			<div id="viewtrainingset" style="width: 50%; float: left; border-style: solid; border-width: 1px; border-color: #E5E5E5">
-				<div style = "margin-left:10px"> 
-					<br />
-					<label for="instances" id = "instanceslabel" style="font-weight: normal">Instances: <span	id="instances"> </span></label>
-					&nbsp; &nbsp; 
-					<label for="Attributes" id = "attributeslabel" style="font-weight: normal">No of attributes: <span id="Attributes"> </span> </label>
-					&nbsp; &nbsp; 
-					<span style = "float:right; margin-right: 100px"><p id="updatedtrainingsetmessage" style= "color: green"> <em> </em> </p></span>
-				</div>
-				<br />
-				<div id= "trainingdataTable" class="handsontable" style="overflow: scroll; margin-left: 10px; display:none" >
-				</div>
-			</div>
-			<div id="edittrainingset" style="width: 50%; float: right; border-style: solid; border-width: 1px; border-color: #E5E5E5; overflow: scroll">
-				<br />
-				<p style="margin-left: 10px; margin-right:10px">If you wish to edit the trainingset, use the below editing operations. Otherwise, you may also edit the trainingset manually in the table on the LHS.</p>
-				<br />
-				
-				<div id= "editingoperations" class="form-group radio" style="margin-left: 10px">
-					<input type="radio" name="chooseeditoperation" value="option1" id="removenodatavalue"/>Remove 'No data' values
-					<span  style = "margin-left: 25px"> 
-						<label id = "labelfornodatavalue" style="font-weight: normal; display:none"> Enter 'No data' value:</label>
-						<input id="nodatavalue" style="display:none; margin-left: 10px" type="text" size="10" required />	
-					</span>
-					
-					<br /><br />
-					
-					<input type="radio" name="chooseeditoperation" value="option2" id="removeconcept"/>Remove a concept
-					<span  style = "margin-left: 50px">
-						<select name="concepttoremove" id="concepttoremove"  style="display:none">
-						</select>
-					</span>
-	
-					<br /><br />
-					
-					<input type="radio" name="chooseeditoperation" value="option3" id="mergetwoconcepts"/>Merge concepts
-					<div id="mergetwoconceptdetails" style="display: none">
-						<label style="font-weight: normal; margin-left: 0px"> Choose concepts to merge:</label>
-						<span style = "margin-left: 20px">
-							<select name="conceptstomerge" id="conceptstomerge" multiple="multiple" style="height: 55px; width:170px">
-							</select>
-						</span>
-						<br /><br />
-						<label style="font-weight: normal; margin-left: 0px"> Merged concept name:</label>
-						<span style = "margin-left: 48px"> 
-							<input id="mergedconceptname" type="text" size="20" required />	
-						</span>
-					</div>
-					<br /><br />
-					
-					<input type="radio" name="chooseeditoperation" value="option4" id="splitaconcept"/>Split a concept
-					<div id="splitaconceptdetails" style="display: none">
+			<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">
+				<a role="button" data-toggle="collapse" href="#collapse6" aria-expanded="false" aria-controls="collapse6" style="color: #333; vertical-align:middle">
+					View/Edit trainingset</a>
+			</legend>
+			<div id="collapse6" class="collapse in">
+				<div id="viewtrainingset" style="width: 50%; float: left; border-style: solid; border-width: 1px; border-color: #E5E5E5">
+					<div style = "margin-left:10px"> 
 						<br />
-						<label style="font-weight: normal; float: left"> concept to split:</label>
-						<span style = "margin-left: 10px">
-							<select name="selectconcepttosplit" id="selectconcepttosplit" >
-							</select>	
-						</span>
-						<br /><br />
-						<label style="font-weight: normal; float: left"> concept 1:</label>
-						<span style = "margin-left: 45px"> 
-							<input id="firstsplitconcept" type="text" size="10" required />	
-						</span>
-						<span style="float: right">
-							<input type="file" id="samplesforfirstsplitconcept" name="samplesforfirstsplitconcept" accept=".csv,.xls,.tif,.png,.adf" multiple />
+						<label for="instances" id = "instanceslabel" style="font-weight: normal">Instances: <span	id="instances"> </span></label>
+						&nbsp; &nbsp; 
+						<label for="Attributes" id = "attributeslabel" style="font-weight: normal">No of attributes: <span id="Attributes"> </span> </label>
+						&nbsp; &nbsp; 
+						<span style = "float:right; margin-right: 100px"><p id="updatedtrainingsetmessage" style= "color: green"> <em> </em> </p></span>
+					</div>
+					<br />
+					<div id= "trainingdataTable" class="handsontable" style="overflow: scroll; margin-left: 10px; display:none" >
+					</div>
+				</div>
+				<div id="edittrainingset" style="width: 50%; float: right; border-style: solid; border-width: 1px; border-color: #E5E5E5; overflow: scroll">
+					<legend style="font-size: 14px; background-color: gainsboro; line-height: 25px; margin-bottom:20px" align="center">Editing operations
+					</legend>
+					
+					<div id= "editingoperations" class="form-group radio" style="margin-left: 10px">
+						<input type="radio" name="chooseeditoperation" value="option1" id="removenodatavalue"/>Remove 'No data' values
+						<span  style = "margin-left: 25px"> 
+							<label id = "labelfornodatavalue" style="font-weight: normal; display:none"> Enter 'No data' value:</label>
+							<input id="nodatavalue" style="display:none; margin-left: 10px" type="text" size="10" required />	
 						</span>
 						
 						<br /><br />
-						<label style="font-weight: normal; float: left"> concept 2:</label>
-						<span style = "margin-left: 45px"> 
-							<input id="secondsplitconcept" type="text" size="10" required />	
+						
+						<input type="radio" name="chooseeditoperation" value="option2" id="removeconcept"/>Remove a concept
+						<span  style = "margin-left: 50px">
+							<select name="concepttoremove" id="concepttoremove"  style="display:none">
+							</select>
 						</span>
-						<span  style="float: right">
-							<input type="file" id="samplesforsecondsplitconcept" name="samplesforsecondsplitconcept" accept=".csv,.xls,.tif,.png,.adf" multiple />
-						</span>
+		
+						<br /><br />
+						
+						<input type="radio" name="chooseeditoperation" value="option3" id="mergetwoconcepts"/>Merge concepts
+						<div id="mergetwoconceptdetails" style="display: none">
+							<label style="font-weight: normal; margin-left: 0px"> Choose concepts to merge:</label>
+							<span style = "margin-left: 20px">
+								<select name="conceptstomerge" id="conceptstomerge" multiple="multiple" style="height: 55px; width:170px">
+								</select>
+							</span>
+							<br /><br />
+							<label style="font-weight: normal; margin-left: 0px"> Merged concept name:</label>
+							<span style = "margin-left: 48px"> 
+								<input id="mergedconceptname" type="text" size="20" required />	
+							</span>
+						</div>
+						<br /><br />
+						
+						<input type="radio" name="chooseeditoperation" value="option4" id="splitaconcept"/>Split a concept
+						<div id="splitaconceptdetails" style="display: none">
+							<br />
+							<label style="font-weight: normal; float: left"> concept to split:</label>
+							<span style = "margin-left: 10px">
+								<select name="selectconcepttosplit" id="selectconcepttosplit" >
+								</select>	
+							</span>
+							<br /><br />
+							<label style="font-weight: normal; float: left"> concept 1:</label>
+							<span style = "margin-left: 45px"> 
+								<input id="firstsplitconcept" type="text" size="10" required />	
+							</span>
+							<span style="float: right">
+								<input type="file" id="samplesforfirstsplitconcept" name="samplesforfirstsplitconcept" accept=".csv,.xls,.tif,.png,.adf" multiple />
+							</span>
+							
+							<br /><br />
+							<label style="font-weight: normal; float: left"> concept 2:</label>
+							<span style = "margin-left: 45px"> 
+								<input id="secondsplitconcept" type="text" size="10" required />	
+							</span>
+							<span  style="float: right">
+								<input type="file" id="samplesforsecondsplitconcept" name="samplesforsecondsplitconcept" accept=".csv,.xls,.tif,.png,.adf" multiple />
+							</span>
+						</div>
+						
+					</div>
+					<br />
+					<button id="addtoeditoperationslist" style="display:none; margin-left:15px" class="btn btn-default">Add the above operation to the list</button>
+					<br /><br />
+					<div id="listofeditingoperations" style="border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-left:15px; margin-right:15px;  display:none">
+						<legend style="font-size: 14px; background-color: gainsboro; margin-bottom: 0px" align="center">List of editing operations</legend>
+						<br />
+						<ul id = "editop" class=" list-group" style=" margin-left: 5px; margin-right: 5px; margin-bottom: 5px">
+						</ul>
+						<br />
+						<button id="applyeditoperations" style="display:none; margin-left:20px; margin-bottom: 15px" class="btn btn-default">Apply the edit operations</button>
+	
 					</div>
 					
+					<div id = "changedtrainingdata" style="margin-left: 5px; display:none" >
+						<label for="reasonchange" style ="font-weight:normal">Enter details of change</label><br />
+						<textarea name="reasonchange" rows="8" cols="40" id="reasonforchange" placeholder="Enter any more relevant details"> </textarea>
+					</div>
+					<div id = "newversionstoredsuccessfully" style="margin-left: 5px; display:none" >
+						<p id="successmessage" style= "color: green"> <em> </em> </p><br />
+					</div>
+					<button id="saveChanges" style="display:none" class="btn btn-default">Save changes </button>
+					
 				</div>
-				<br />
-				<button id="addtoeditoperationslist" style="display:none; margin-left:15px" class="btn btn-default">Add the above operation to the list</button>
-				<br /><br />
-				<div id="listofeditingoperations" style="border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-left:15px; margin-right:15px;  display:none">
-					<legend style="font-size: 14px; background-color: gainsboro; margin-bottom: 0px" align="center">List of editing operations</legend>
-					<br />
-					<ul id = "editop" class=" list-group" style=" margin-left: 5px; margin-right: 5px; margin-bottom: 5px">
-					</ul>
-					<br />
-					<button id="applyeditoperations" style="display:none; margin-left:20px; margin-bottom: 15px" class="btn btn-default">Apply the edit operations</button>
-
-				</div>
-				
-				<div id = "changedtrainingdata" style="margin-left: 5px; display:none" >
-					<label for="reasonchange" style ="font-weight:normal">Enter details of change</label><br />
-					<textarea name="reasonchange" rows="8" cols="40" id="reasonforchange" placeholder="Enter any more relevant details"> </textarea>
-				</div>
-				<div id = "newversionstoredsuccessfully" style="margin-left: 5px; display:none" >
-					<p id="successmessage" style= "color: green"> <em> </em> </p><br />
-				</div>
-				<button id="saveChanges" style="display:none" class="btn btn-default">Save changes </button>
-				
 			</div>
 		</div>
 		
-		
-	
-			<form  id="trainingsetcomparison" style="display:none" enctype="multipart/form-data" action="#">
-				<legend style="font-size: 16px; background-color: gainsboro" align="center">Training samples comparison</legend>
-				<div id = "trainingsetcomparisondetails" style=" margin-left: 5px; margin-right: 5px; margin-bottom:5px" >
+		<div  id="trainingsetcomparison" style="display:none; width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px">
+			<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >
+				<a role="button" data-toggle="collapse" href="#collapse7" aria-expanded="false" aria-controls="collapse7" style="color: #333; vertical-align:middle">
+					Training samples comparison</a>
+			</legend>
+			<div id = "trainingsetcomparisondetails" style=" margin-left: 5px; margin-right: 5px; margin-bottom:5px" >
 
-				</div>
-			</form>
+			</div>
+		</form>
 	</div>
 
 {% endblock content %}
