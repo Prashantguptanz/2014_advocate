@@ -1,7 +1,7 @@
 from Category_Modeler.models import Trainingset, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity 
 from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Concept, Legend, LegendConceptCombination, ComputationalIntension
 from Category_Modeler.models import Extension, Category, HierarchicalRelationship, HorizontalRelationship, MeanVector, CovarianceMatrix, ChangeEvent, ChangeEventOperations
-from Category_Modeler.models import AddTaxonomyOperation, AddConceptOperation, SetOfOccurences, CategoryInstantiationOperation
+from Category_Modeler.models import AddTaxonomyOperation, AddConceptOperation, SetOfOccurences, CategoryInstantiationOperation, AddTaxonomyVersionOperation, AddExistingConceptToNewVersionOfLegendOperation
 from datetime import datetime
 import numpy
 from django.db import transaction, connection
@@ -35,17 +35,33 @@ class UpdateDatabase:
         self.request.session['legend_ver'] = legend.legend_ver
         self.__create_root_concept(legendId, 1)
     
+    def create_new_legend_version(self):
+        model_instance = Classificationmodel.objects.get(id = int(self.request.session['current_model_id']))
+        version = int(self.request.session['existing_taxonomy_ver']) + 1
+        legend_new_version = Legend(legend_id = self.request.session['existing_taxonomy_id'], legend_ver = version, legend_name= self.current_taxonomy, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance, model = model_instance, change_event_id = self.change_event)
+        legend_new_version.save(force_insert=True)
+        self.request.session['existing_taxonomy_ver'] = legend_new_version.legend_ver
+        Legend.objects.filter(legend_id = self.request.session['existing_taxonomy_id'], legend_ver = self.request.session['existing_taxonomy_id']).update(date_expired = datetime.now())
+        self.__create_root_concept(legend_new_version.legend_id, legend_new_version.legend_ver)
+    
     def __create_root_concept(self, legendId, legendVer):
         details = "Root concept to legend " + self.current_taxonomy
-        root_concept = Concept(concept_name = "root_"+self.current_taxonomy, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance, change_event_id = self.change_event)
-        root_concept.save()
+        conceptName = "root_"+self.current_taxonomy.replace(" ", "_") + str(legendVer)
+        root_concept = Concept(concept_name = conceptName, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance, change_event_id = self.change_event)
+        root_concept.save(force_insert=True)
         self.request.session['root_concept'] = root_concept.concept_name
         connectToLegend = LegendConceptCombination(legend_id = legendId, legend_ver = legendVer, concept = root_concept, change_event_id = self.change_event)
         connectToLegend.save()
-        createLegend = AddTaxonomyOperation(legend_id = legendId, legend_ver = legendVer, root_concept_id = root_concept, legend_root_concept_combination_id = connectToLegend)
-        createLegend.save()
-        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createLegend.id, change_operation='Add_Taxonomy')
-        newOperationForChangeEvent.save()
+        if 'new_taxonomy_name' in self.request.session:
+            createLegend = AddTaxonomyOperation(legend_id = legendId, legend_ver = legendVer, root_concept_id = root_concept, legend_root_concept_combination_id = connectToLegend)
+            createLegend.save(force_insert=True)
+            newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createLegend.id, change_operation='Add_Taxonomy')
+        elif 'existing_taxonomy_name' in self.request.session and 'create_new_taxonomy_version' in self.request.session:
+            oldVer = int(legendVer)-1
+            createLegendVersion = AddTaxonomyVersionOperation(legend_id = legendId, old_legend_ver = oldVer, new_legend_ver = legendVer, root_concept_id = root_concept, legend_root_concept_combination_id = connectToLegend)
+            createLegendVersion.save(force_insert=True)
+            newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createLegendVersion.id, change_operation='Add_Taxonomy_Version')
+        newOperationForChangeEvent.save(force_insert=True)
     
        
     def create_concept(self, conceptName, mean_vector, covariance_matrix, extension, producer_accuracy, user_accuracy, parentName="", details=""):
@@ -70,10 +86,40 @@ class UpdateDatabase:
         
         createConcept_op = AddConceptOperation(concept_id = current_concept, legend_concept_comb_id = connectToLegend, hierarchical_relationship_id= addRelationship, category_instantiation_op_id= CatInstop_instance)
         createConcept_op.save()
-        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createConcept_op.id, change_operation='Add Concept')
+        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createConcept_op.id, change_operation='Add_Concept')
         newOperationForChangeEvent.save()
         
+    def add_existing_concept_to_new_version_of_legend_with_updated_categories(self, conceptName, mean_vector, covariance_matrix, extension, producer_accuracy, user_accuracy, int_similarity, ext_similarity, parentName=""):
+        concept_instance = Concept.objects.get(concept_name = conceptName)
         
+        customquery = CustomQueries()
+        oldversion = self.request.session['existing_taxonomy_ver'] - 1
+        old_category = customquery.get_category_details_of_a_concept_in_a_legend(self.request.session['existing_taxonomy_id'], oldversion, conceptName)
+        
+        connectToLegend = LegendConceptCombination(legend_id = self.request.session['existing_taxonomy_id'], legend_ver = self.request.session['existing_taxonomy_ver'], concept = concept_instance, change_event_id = self.change_event)
+        connectToLegend.save(force_insert=True)
+        
+        if parentName == "":
+            parentName = self.request.session['root_concept']
+        parent_concept_connection_to_legend = LegendConceptCombination.objects.get(concept__concept_name = parentName,  legend_id = self.request.session['existing_taxonomy_id'], legend_ver = self.request.session['existing_taxonomy_ver'])
+        
+        addRelationship = HierarchicalRelationship(relationship_name='parent-of', expired=False, concept1 =  parent_concept_connection_to_legend, concept2 = connectToLegend)
+        addRelationship.save(force_insert=True)
+        
+        extension_id = self.create_extension(extension)
+        cov_mat_id = self.create_covariance_matrix(covariance_matrix)
+        vector_id = self.create_mean_vector(mean_vector)
+        comp_int = self.create_computational_intension(vector_id, cov_mat_id, producer_accuracy, user_accuracy)
+        CatInstop_instance = self.create_categories(connectToLegend, comp_int, extension_id)
+        
+        addHorizontalRelationship = HorizontalRelationship(relationship_name='overlaps with', expired=False, category1_id = CatInstop_instance.category_id, category1_evol_ver = CatInstop_instance.category_evol_ver, category1_comp_ver=  CatInstop_instance.category_comp_ver, category2_id = old_category[0], category2_evol_ver = old_category[1], category2_comp_ver=  old_category[2],intensional_similarity = int_similarity, extensional_similarity = ext_similarity)
+        
+        new_op = AddExistingConceptToNewVersionOfLegendOperation(concept_id = concept_instance, legend_concept_comb_id = connectToLegend, hierarchical_relationship_id= addRelationship, horizontal_relationship_id= addHorizontalRelationship, category_instantiation_op_id= CatInstop_instance)
+        new_op.save(force_insert=True)
+        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = new_op.id, change_operation='Add_Existing_Concept_To_New_Version_Of_Legend')
+        newOperationForChangeEvent.save(force_insert=True)
+
+                
         
     def create_categories(self, legend_concept_comb_id, comp_int_id, ext_id):
         if Category.objects.all().exists():
@@ -149,6 +195,16 @@ class UpdateDatabase:
         return comp_int
 
 class CustomQueries:
+    
+    def get_latest_versions_of_all_legends(self):
+        cursor = connection.cursor()
+        
+        cursor.execute("select legend_id, max(legend_ver), legend_name from legend group by legend_id, legend_name")
+        
+        row = cursor.fetchall()
+        return row
+
+
 
     def get_trainingset_name_for_current_version_of_legend(self, legendName):
         cursor = connection.cursor()
@@ -180,9 +236,8 @@ class CustomQueries:
     def get_model_name_and_accuracy_from_a_legend(self, lid, ver):
         cursor = connection.cursor()
         
-        cursor.execute("select classifier.classifier_name, classificationmodel.accuracy from classifier, learning_activity, classificationmodel, legend where \
-                        classifier.id = learning_activity.classifier_id and learning_activity.model_id = classificationmodel.id and legend.model_id = classificationmodel.id \
-                        and legend.legend_id = %s and legend.legend_ver = %s", [lid, ver])
+        cursor.execute("select classificationmodel.model_type, classificationmodel.accuracy from classificationmodel, legend where \
+                        legend.model_id = classificationmodel.id and legend.legend_id = %s and legend.legend_ver = %s", [lid, ver])
         
         row = cursor.fetchone()
         return row
@@ -261,7 +316,15 @@ class CustomQueries:
         
         return row[0]
         
+    def get_category_details_of_a_concept_in_a_legend(self, lid, ver, concept_name):
+        cursor = connection.cursor()
         
+        cursor.execute("select ca.category_id, ca.category_evol_ver, ca.category_comp_ver from category ca, concept c, legend_concept_combination lcc where lcc.id  = ca.legend_concept_combination_id and \
+l                       lcc.legend_id = %s and lcc.legend_ver = %s and lcc.concept_id = c.id and c.concept_name=%s", [lid, ver, concept_name])
+        
+        row = cursor.fetchone()
+        print row[0]
+        return row[0]
     
         
         

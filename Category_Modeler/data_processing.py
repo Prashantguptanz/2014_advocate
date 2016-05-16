@@ -245,7 +245,7 @@ class ManageCSVData:
             os.remove(file_location + file_name)
             os.rename(file_location + targetfile, file_location + file_name)
     
-    def mergeConcepts(self, file_name, file_location, targetfile_name, firstconcepttomerge, secondconcepttomerge, mergedconceptname):
+    def mergeConcepts(self, file_name, file_location, targetfile_name, concepts_to_merge, mergedconceptname):
         reader = csv.reader(open('%s%s' %(file_location, file_name), "rU"), delimiter = ',')
         targetfile = targetfile_name
         if file_name == targetfile_name:
@@ -253,11 +253,8 @@ class ManageCSVData:
         f = csv.writer(open('%s%s' %(file_location, targetfile), "wb"))
         
         for line in reader:
-            if firstconcepttomerge in line or secondconcepttomerge in line:
-                print line
-                print line[-1]
+            if line[-1] in concepts_to_merge:
                 line[-1] = mergedconceptname
-                print line[-1]
                 f.writerow(line)
             else:
                 f.writerow(line)

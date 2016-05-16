@@ -283,6 +283,7 @@ class ChangeTrainingsetActivityDetails(models.Model):
     concept1 = models.CharField(max_length=256, blank=True, null=True)
     concept2 = models.CharField(max_length=256, blank=True, null=True)
     concept3 = models.CharField(max_length=256, blank=True, null=True)
+    concept4 = models.CharField(max_length=256, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -412,6 +413,8 @@ class HorizontalRelationship(models.Model):
     category2_id = models.IntegerField()
     category2_evol_ver = models.IntegerField()
     category2_comp_ver = models.IntegerField()
+    intensional_similarity = models.FloatField(blank=True, null=True)
+    extensional_similarity = models.FloatField(blank=True, null=True)
     
     class Meta:
         managed = False
@@ -555,6 +558,7 @@ class CreateTrainingsetActivityOperations(models.Model):
     concept1 = models.CharField(max_length=256)
     concept2 = models.CharField(max_length=256, blank=True, null=True)
     concept3 = models.CharField(max_length=256, blank=True, null=True)
+    concept4 = models.CharField(max_length=256, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -591,7 +595,9 @@ class CovarianceMatrix(models.Model):
 class ChangeEventOperations(models.Model):
     change_operation_type = (
         ('Add_Taxonomy', 'Add_Taxonomy'),
-        ('Add_Concept', 'Add_Concept')
+        ('Add_Concept', 'Add_Concept'),
+        ('Add_Taxonomy_Version', 'Add_Taxonomy_Version'),
+        ('Add_Existing_Concept_To_New_Version_Of_Legend', 'Add_Existing_Concept_To_New_Version_Of_Legend')
         
     )
     change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id', primary_key=True)
@@ -636,3 +642,28 @@ class AddTaxonomyOperation(models.Model):
         managed = False
         db_table = 'Add_Taxonomy_operation'
         unique_together = ("legend_id", "legend_ver")
+
+class AddTaxonomyVersionOperation(models.Model):
+    legend_id = models.IntegerField()
+    old_legend_ver = models.IntegerField()
+    new_legend_ver = models.IntegerField()
+    root_concept_id = models.ForeignKey(Concept, db_column='root_concept_id')
+    legend_root_concept_combination_id = models.ForeignKey(LegendConceptCombination, db_column='legend_root_concept_combination_id')
+
+    class Meta:
+        managed = False
+        db_table = 'Add_Taxonomy_Version_operation'
+        unique_together = ("legend_id", "old_legend_ver")
+        unique_together = ("legend_id", "new_legend_ver")
+
+class AddExistingConceptToNewVersionOfLegendOperation(models.Model):
+    concept_id = models.ForeignKey(Concept, db_column='concept_id')
+    legend_concept_comb_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_comb_id')
+    hierarchical_relationship_id = models.ForeignKey(HierarchicalRelationship, db_column = 'hierarchical_relationship_id')
+    horizontal_relationship_id = models.ForeignKey(HorizontalRelationship, db_column = 'horizontal_relationship_id')
+    category_instantiation_op_id = models.ForeignKey(CategoryInstantiationOperation, db_column = 'category_instantiation_op_id')
+
+    class Meta:
+        managed = False
+        db_table = 'Add_Existing_Concept_To_New_Version_Of_Legend_operation'
+        

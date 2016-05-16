@@ -66,8 +66,6 @@ class TrainingSet:
         categories_with_sample_range_1 = self.split_training_samples_for_each_category()
         
         categories_with_sample_range_2 = old_training_sample.split_training_samples_for_each_category()
-        print categories_with_sample_range_1
-        print categories_with_sample_range_2
         common_categories_comparison = []
         new_categories_in_new_training_sample = []
         categories_not_in_new_training_sample = []
@@ -91,7 +89,6 @@ class TrainingSet:
     
     def __compare_training_sample_for_single_category(self, ts1, ts2):
         common_elements_in_both_samples = np.intersect1d(ts1, ts2)
-        print common_elements_in_both_samples
         union_of_both_training_samples = np.union1d(ts1, ts2)
         jaccard_index = float(len(common_elements_in_both_samples)/len(union_of_both_training_samples))
         return jaccard_index

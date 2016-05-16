@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, url
 from Category_Modeler.views import index, saveexistingtaxonomydetails, savenewtaxonomydetails, trainingsampleprocessing, supervised, createChangeEventForNewTaxonomy, applyChangeOperations
-from Category_Modeler.views import savetrainingdatadetails, saveNewTrainingVersion, signaturefile, visualizer, loginrequired, logout_view, auth_view, register_view, changeRecognizer
+from Category_Modeler.views import signaturefile, visualizer, loginrequired, logout_view, auth_view, register_view, changeRecognizer, createChangeEventForNewTaxonomyVersion
 from Category_Modeler.views import compareexistingtaxonomies, getconceptdetails, edittrainingset, applyeditoperations
 urlpatterns = patterns('',
         url(r'^$', index),
@@ -13,10 +13,9 @@ urlpatterns = patterns('',
         url(r'^applyeditoperations/$', applyeditoperations),        
         url(r'^signaturefile/$', signaturefile),  
         url(r'^supervised/$', supervised),
-        url(r'^savetrainingdatadetails/$', savetrainingdatadetails),
-        url(r'^saveNewTrainingVersion/', saveNewTrainingVersion),
         url(r'^changerecognition/', changeRecognizer),
         url(r'^createChangeEventForNewTaxonomy/', createChangeEventForNewTaxonomy),
+        url(r'^createChangeEventForNewTaxonomyVersion/', createChangeEventForNewTaxonomyVersion),
         url(r'^applyChangeOperations/', applyChangeOperations),
         url(r'^visualizer/', visualizer),
         url(r'^getconceptdetails/', getconceptdetails),        
