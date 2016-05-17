@@ -1331,18 +1331,28 @@ $(function() {
 									
 									if (response['suggestion_list'].length!=0){
 										
-										var f= "<label style=\"font-size: 15px; margin-left: 15px; margin-bottom:15px\">List of suggestions to increase the accuracy of classification model:</label>" + 
-											"<ul class=\" list-group\" style=\" margin-left: 15px; margin-right: 5px; margin-bottom: 5px; width:50%\">";
-										for (var i = 0; i < response['suggestion_list'].length; i++){
-											f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
-												"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
+										var f= "<label style=\"font-size: 15px; margin-left: 15px; margin-bottom:15px\">List of suggestions to increase the accuracy of classification model:</label>";
+										f = f + "<label style=\"margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal\"> <em>Note: To apply one or more suggestions below," 
+											+ "click the checkboxes next to them. After you have selected all the suggestions you wish to apply, click on the 'Submit' button.</em>" 
+											+ "You may also go back to the 'Training Samples' page and edit the trainingset, if required.</label>";
+										f = f +	"<table class=\"table\" style=\" margin: 20px; width:95%\" id=\"suggestion_table\">";
+										for (var i = 0; i < response['suggestion_list'].length; i++){											
+											f = f + "<tr><td><input type=\"checkbox\" style = \" width:18px; height:18px\" name=\"suggestion\" class=\"suggestion\" value=\"" + response['suggestion_list'][i][0] + "_" + response['suggestion_list'][i][1]
+												+ "\" /></td><td> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1]
+												+ "</em> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></td>"
+												+ "<td><div class=\"radiox\" style=\"display:none; margin:0\"> <input type=\"radio\" name=\"mergeorremove" + i + "\" value=\"1\" class=\"mergeorremove\"/>&nbsp;Merge" 
+												+ "<input type=\"radio\" name=\"mergeorremove" + i + "\" value=\"2\" class=\"mergeorremove\" style=\"margin-left:20px\"/>&nbsp;Remove</div></td>"
+												+ "<td><input  type=\"text\" size=\"25\" placeholder=\"Enter merged category name\" style=\"display:none\" required /></td></tr>";
+
 										}
-										f = f + "</ul>";
+										f = f + "</table>";
+										f = f + "<input type=\"submit\" id=\"submitsuggestions\" value=\"Submit\" class=\"btn btn-default\" style=\"margin:20px; display:none\"/>";
+										f = f + "<label id=\"successmessageforappliedsuggestions\" style=\"margin-top: 15px; margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal\"></label>";
 										$('#collapse3').html(f);
 										$('#suggestions_section').show();
 									}
 									
-									
+								
 									
 									$('#meanvectorsandvariance').hide();
 									$('#confusionmatrix1').show();
@@ -1374,14 +1384,31 @@ $(function() {
 									$('#accuracies').html(d);
 									
 									if (response['suggestion_list'].length!=0){
-										
-										var f= "<label style=\"font-size: 15px; margin-left: 15px; margin-bottom:15px\">List of suggestions to increase the accuracy of classification model:</label>" + 
-											"<ul class=\" list-group\" style=\" margin-left: 15px; margin-right: 5px; margin-bottom: 5px; width:50%\">";
-										for (var i = 0; i < response['suggestion_list'].length; i++){
-											f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
-												"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
+										var f= "<label style=\"font-size: 15px; margin-left: 15px; margin-bottom:15px\">List of suggestions to increase the accuracy of classification model:</label>";
+										f = f + "<label style=\"margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal\"> <em>Note: To apply one or more suggestions below," 
+											+ "click the checkboxes next to them. After you have selected all the suggestions you wish to apply, click on the 'Submit' button.</em>" 
+											+ "You may also go back to the 'Training Samples' page and edit the trainingset, if required.</label>";
+										f = f +	"<table class=\"table\" style=\" margin: 20px; width:95%\" id=\"suggestion_table\">";
+										for (var i = 0; i < response['suggestion_list'].length; i++){											
+											f = f + "<tr><td><input type=\"checkbox\" style = \" width:18px; height:18px\" name=\"suggestion\" class=\"suggestion\" value=\"" + response['suggestion_list'][i][0] + "_" + response['suggestion_list'][i][1]
+												+ "\" /></td><td> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1]
+												+ "</em> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></td>"
+												+ "<td><div class=\"radiox\" style=\"display:none; margin:0\"> <input type=\"radio\" name=\"mergeorremove" + i + "\" value=\"1\" class=\"mergeorremove\"/>&nbsp;Merge" 
+												+ "<input type=\"radio\" name=\"mergeorremove" + i + "\" value=\"2\" class=\"mergeorremove\" style=\"margin-left:20px\"/>&nbsp;Remove</div></td>"
+												+ "<td><input  type=\"text\" size=\"25\" placeholder=\"Enter merged category name\" style=\"display:none\" required /></td></tr>";
+
 										}
-										f = f + "</ul>";
+										f = f + "</table>";
+										f = f + "<input type=\"submit\" id=\"submitsuggestions\" value=\"Submit\" class=\"btn btn-default\" style=\"margin:20px; display:none\"/>";
+										f = f + "<label id=\"successmessageforappliedsuggestions\" style=\"margin-top: 15px; margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal\"></label>";
+										
+								//		var f= "<label style=\"font-size: 15px; margin-left: 15px; margin-bottom:15px\">List of suggestions to increase the accuracy of classification model:</label>" + 
+								//			"<ul class=\" list-group\" style=\" margin-left: 15px; margin-right: 5px; margin-bottom: 5px; width:50%\">";
+								//		for (var i = 0; i < response['suggestion_list'].length; i++){
+								//			f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
+								//				"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
+								//		}
+								//		f = f + "</ul>";
 										$('#collapse3').html(f);
 										$('#suggestions_section').show();
 									}
@@ -1476,27 +1503,113 @@ $(function() {
 					}
 				});
 
-		$('input[name="DecisionTreemodeldetails"]').on(
-				'click',
-				function(e) {
-					var detailsoption = $(
-							'input[name="DecisionTreemodeldetails"]:checked')
-							.val();
-					if (detailsoption == '1') {
-						$('#decisiontree').show();
-						$('#confusionmatrix2').hide();
-						$('#accuracies').hide();
-					} else if (detailsoption == '2') {
-						$('#decisiontree').hide();
-						$('#confusionmatrix2').show();
-						$('#accuracies').hide();
-					} else {
-						$('#decisiontree').hide();
-						$('#confusionmatrix2').hide();
-						$('#accuracies').show();
-					}
-				});
+		$('input[name="DecisionTreemodeldetails"]').on('click',function(e) {
+			var detailsoption = $('input[name="DecisionTreemodeldetails"]:checked').val();
+			if (detailsoption == '1') {
+				$('#decisiontree').show();
+				$('#confusionmatrix2').hide();
+				$('#accuracies').hide();
+			} else if (detailsoption == '2') {
+				$('#decisiontree').hide();
+				$('#confusionmatrix2').show();
+				$('#accuracies').hide();
+			} else {
+				$('#decisiontree').hide();
+				$('#confusionmatrix2').hide();
+				$('#accuracies').show();
+			}
+		});
+		
+		$('#collapse3').on('click','.suggestion', function(e) {
+			$this = $(this);
+			$this.closest('td').next().next().find('.radiox').toggle();
+			$this.closest('td').next().next().find('.mergeorremove').prop('checked', false);
+			$this.closest('td').next().next().next().find('input').hide();
+			
+			if ($('#collapse3 input:checkbox:checked').length > 0){
+				$('#submitsuggestions').show();
+			}
+			else{
+				$('#submitsuggestions').hide();
+			}
+			
+		});
+		
+		$('#collapse3').on('click','.mergeorremove', function(e) {
+			if ($(this).val() =='1'){
+				$(this).closest('td').next().find('input').show();
+			}
+			else{
+				$(this).closest('td').next().find('input').hide();
+			}
+			
+		});
+		
+		$('#collapse3').on('click', '#submitsuggestions', function(e){
+			e.preventDefault();
+			var hasCallbackCompleted = [ true ];
+			$('#collapse3 input:checkbox:checked').each(function(index){
+				var f = arguments.callee;
+                var args = arguments;
+                var t = this;
+                
+                if( !hasCallbackCompleted[ index ] ){
+                  window.setTimeout( function(){ f.apply(t, args); }, 5 );
+                  return true; 
+                }
+                
+                hasCallbackCompleted[ index + 1 ] = false;
+				
+				data = {};
+				categories = $(this).val();
+				categories_arr = categories.split('_');
+				x = $(this).closest('td').next().next().find('.mergeorremove:checked').val();
+				console.log(x);
+				if (x=='1'){
+					y = $(this).closest('td').next().next().next().find('input').val();
+					console.log(y);
+					data['1'] = '3';
+					data['concept1tomerge'] = categories_arr[0];
+					data['concept2tomerge'] = categories_arr[1];
+					data['mergedconceptname'] = y;
+					console.log(data);
+					$.post("http://127.0.0.1:8000/AdvoCate/edittrainingset/", data, function(response) {
+						console.log(response);
+						hasCallbackCompleted[ index + 1 ] = true;
+						if ($('#collapse3 input:checkbox:checked').length == index+1){
+							$.get("http://127.0.0.1:8000/AdvoCate/applyeditoperations/", function(response){
+								$('#submitsuggestions').hide();
+								$('#successmessageforappliedsuggestions').html("The training file is updated with the suggestions submitted. Try and recreate the classification model to check the difference.");
+								
+							});
+							
+						}
+					});
+				}
+				
+				else{
+					data['1'] = '2';
+					data['2'] = categories_arr[0];
+					$.post("http://127.0.0.1:8000/AdvoCate/edittrainingset/", data, function(response) {
+						console.log(response);
+						hasCallbackCompleted[ index + 1 ] = true;
+						if ($('#collapse3 input:checkbox:checked').length == index+1){
+							$.get("http://127.0.0.1:8000/AdvoCate/applyeditoperations/", function(response){
+								$('#submitsuggestions').hide();
+								$('#successmessageforappliedsuggestions').html("The training file is updated with the suggestions submitted. Try and recreate the classification model to check the difference.");
+								
+							});
+							
+						}
+					});
+				}
+				
+			});
+			
 
+			
+		});
+		
 	}
 
 	// Script for 'Classification' page

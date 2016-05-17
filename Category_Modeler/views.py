@@ -703,7 +703,7 @@ def edittrainingset(request):
             mergedconceptname = data['mergedconceptname'];
             editoperaiton_details.append(conceptstomerge)
             editoperaiton_details.append(mergedconceptname)
-            print editoperaiton_details[1]
+            print editoperaiton_details
         else:
             trainingsamplesforfirstconcept = request.FILES.getlist('filesforconcept1')
             trainingsamplesforsecondconcept = request.FILES.getlist('filesforconcept2')
@@ -735,20 +735,22 @@ def edittrainingset(request):
         
         if 'currenteditoperations' in request.session:
             currenteditoperations = request.session['currenteditoperations']
+            print currenteditoperations
             currenteditoperations.append(editoperaiton_details)
             request.session['currenteditoperations'] = currenteditoperations
         else:
             currenteditoperations = []
             currenteditoperations.append(editoperaiton_details)
             request.session['currenteditoperations'] = currenteditoperations
-
+        print request.session['currenteditoperations']
     
-    return HttpResponse("");
+    return HttpResponse("done");
 
 @transaction.atomic
 def applyeditoperations(request):
     
     currenteditoperations = request.session['currenteditoperations']
+    print currenteditoperations
     trid = request.session['current_training_file_id']
     ver = request.session['current_training_file_ver']
     trainingfilename = request.session['current_training_file_name']
@@ -993,6 +995,9 @@ def changethresholdlimits(request):
 
 @login_required
 def signaturefile(request):
+    if 'currenteditoperations' in request.session:
+        del request.session['currenteditoperations']
+        request.session.modified = True
     request.session['exploration_chain_step'] = request.session['exploration_chain_step'] + 1
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username # @UndefinedVariable
     if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
