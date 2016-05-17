@@ -36,7 +36,8 @@ CLASSIFIED_DATA_LOCATION = 'Category_Modeler/static/predictedvalues/'
 CLASSIFIED_DATA_IN_RGB_LOCATION = 'Category_Modeler/static/predictedvaluesRGB/'
 OUTPUT_RASTER_FILE_LOCATION = 'Category_Modeler/static/maps/'
 TAXONOMY_IMAGE_LOCATION = 'Category_Modeler/static/taxonomyimage/'
-
+DEFAULT_JM_DISTANCE_THRESHOLD_LIMIT = 1.1
+DEFAULT_ACCURACY_THRESHOLD_LIMIT = 0.6
 # Login and logout methods
 
 def register_view(request):
@@ -105,6 +106,8 @@ def saveexistingtaxonomydetails(request):
         request.session['external_trigger'] = etrigger
         request.session['existing_taxonomy_id'] = lid
         request.session['existing_taxonomy_ver'] = ver
+        request.session['jm_distance_limit'] = DEFAULT_JM_DISTANCE_THRESHOLD_LIMIT
+        request.session['accuracy_limit'] = DEFAULT_ACCURACY_THRESHOLD_LIMIT
         if ExplorationChain.objects.all().exists():
             request.session['exploration_chain_id'] = ExplorationChain.objects.latest("id").id + 1
         else:
@@ -125,6 +128,8 @@ def savenewtaxonomydetails(request):
         data = request.POST
         request.session['new_taxonomy_name'] = data['newtaxonomyname']
         request.session['new_taxonomy_description'] = data['description']
+        request.session['jm_distance_limit'] = DEFAULT_JM_DISTANCE_THRESHOLD_LIMIT
+        request.session['accuracy_limit'] = DEFAULT_ACCURACY_THRESHOLD_LIMIT
         if ExplorationChain.objects.all().exists():
             request.session['exploration_chain_id'] = ExplorationChain.objects.latest("id").id + 1
         else:
@@ -976,6 +981,15 @@ def save_csv_training_file(f):
             foo = f.read(1024)
         dest.close();
 
+def changethresholdlimits(request):
+    if request.method=='POST':
+        data = request.POST;
+        jm_limit = data['1']
+        acc_limit = data['2']
+        request.session['jm_distance_limit'] = jm_limit
+        request.session['accuracy_limit'] = acc_limit
+        print request.session['accuracy_limit'] 
+        return HttpResponse("")
 
 @login_required
 def signaturefile(request):
@@ -1047,6 +1061,7 @@ def signaturefile(request):
         classifier_instance = Classifier.objects.get(classifier_name=classifiername)
         numpy.set_printoptions(precision=2)
         plt.figure()
+        print cm
         plot_confusion_matrix(cm, trainingfile.target)
         cmname = modelname+"_cm.png"
         plt.savefig("%s/%s" % (IMAGE_LOCATION, cmname),  bbox_inches='tight')
@@ -1097,14 +1112,14 @@ def signaturefile(request):
                 jmdistances_complete_list.append(complete_jmdistance_for_each_pair)
                     
             
-            suggestion_list=[]
+            
             listofcategories = clf.classes_.tolist()
             overlapping_pairs = []
             for eachPair in jmdistances_list:
-                if float(eachPair[2])<1.1:
+                if float(eachPair[2])<float(request.session['jm_distance_limit']):
                     overlapping_pairs.append(eachPair)
             sorted_overlapping_pairs = sorted(overlapping_pairs, key=itemgetter(2))     
-            print sorted_overlapping_pairs
+            
             positive_pairs = []
             negative_pairs = []
             for index in range(len(sorted_overlapping_pairs)):
@@ -1119,18 +1134,18 @@ def signaturefile(request):
                             break
                     if positive_pair == True:
                         positive_pairs.append(sorted_overlapping_pairs[index])
-            print positive_pairs
-            print negative_pairs
-            
+                        
+            suggestion_list=[]
             for eachPair in positive_pairs:
                 single_suggestion=[]
                 index1 = listofcategories.index(eachPair[0])
                 index2 = listofcategories.index(eachPair[1])
-                if float(prodacc[index1]) + float(useracc[index1]) < float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index1]) + float(useracc[index1])<1.2:
+                acc_limit = float(request.session['accuracy_limit'])*2.0
+                if float(prodacc[index1]) + float(useracc[index1]) < float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index1]) + float(useracc[index1])<acc_limit:
                     single_suggestion.append(listofcategories[index1])
                     single_suggestion.append(listofcategories[index2])
                     suggestion_list.append(single_suggestion)
-                elif float(prodacc[index1]) + float(useracc[index1]) > float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index2]) + float(useracc[index2]) <1.2:
+                elif float(prodacc[index1]) + float(useracc[index1]) > float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index2]) + float(useracc[index2]) <acc_limit:
                     single_suggestion.append(listofcategories[index2])
                     single_suggestion.append(listofcategories[index1])
                     suggestion_list.append(single_suggestion)
@@ -1191,9 +1206,9 @@ def signaturefile(request):
                         existing_categories_comparison_to_store.append(a)
                         common_categories_comparison.append(single_category_comparison)
                     request.session['existing_categories_computational_intension_comparison'] = existing_categories_comparison_to_store
-                    return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
+                    return JsonResponse({'attributes': features, 'user_name':user_name, 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
                
-            return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list})
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list})
         
         elif (classifiername=="Decision Tree"):
             #print clf.tree_.__getstate__()
@@ -1208,6 +1223,28 @@ def signaturefile(request):
             graph = pydot.graph_from_dot_data(dot_data.getvalue())
             tree_name = modelname + "_tree.png"
             graph.write_png('%s%s' %(IMAGE_LOCATION, tree_name))
+            
+            listofcategories = clf.classes_.tolist()
+            categories_with_low_accuracies = []
+            acc_limit = float(request.session['accuracy_limit'])
+            
+            for index in range(len(listofcategories)):
+                if (float(prodacc[index]) < acc_limit and float(useracc[index]) < acc_limit) or ((float(prodacc[index]) + float(useracc[index]))<(2.0*acc_limit)):
+                    categories_with_low_accuracies.append(listofcategories[index])
+            
+            suggestion_list=[]
+            for category in categories_with_low_accuracies:
+                index = listofcategories.index(category)
+                confusion_of_category_with_others = cm[index]
+                highest_confusion_with_index = find_index_of_highest_number_except_a_given_index(confusion_of_category_with_others, index)
+                if float(prodacc[index]) + float(useracc[index]) < float(prodacc[highest_confusion_with_index]) + float(useracc[highest_confusion_with_index]):
+                    suggestion_list.append([category, listofcategories[highest_confusion_with_index]])
+                else:
+                    suggestion_list.append([listofcategories[highest_confusion_with_index], category])
+            
+            unique_suggestion_list = [list(t) for t in set(tuple(element) for element in suggestion_list)]    
+            
+            
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
                 old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[2]
@@ -1232,13 +1269,30 @@ def signaturefile(request):
                     single_category_comparison.append(old_category_details[0][0])
                     single_category_comparison.append(old_category_details[0][1])
                     common_categories_comparison.append(single_category_comparison)
-                return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc, 'common_categories_comparison':common_categories_comparison})
+                return JsonResponse({'attributes': features, 'user_name':user_name, 'suggestion_list': unique_suggestion_list, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc, 'common_categories_comparison':common_categories_comparison})
                 
-            return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc})
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'suggestion_list': unique_suggestion_list, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc})
         else:
             return ""   
     else:
-        return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name})
+        return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name, 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit']})
+
+
+def find_index_of_highest_number_except_a_given_index(lst, index):
+    if index !=0:
+        highest_number_with_index = [0, lst[0]]
+    else:
+        highest_number_with_index = [1, lst[1]]
+    
+    for i, num in enumerate(lst):
+        if i==index or i==highest_number_with_index[0]:
+            continue
+        else:
+            if num > highest_number_with_index[1]:
+                highest_number_with_index = [i, num]
+            
+    return highest_number_with_index[0]
+    
 
 def chooseClassifier(classifiername):
     if classifiername=='Naive Bayes':

@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from Category_Modeler.views import index, saveexistingtaxonomydetails, savenewtaxonomydetails, trainingsampleprocessing, supervised, createChangeEventForNewTaxonomy, applyChangeOperations
 from Category_Modeler.views import signaturefile, visualizer, loginrequired, logout_view, auth_view, register_view, changeRecognizer, createChangeEventForNewTaxonomyVersion
-from Category_Modeler.views import compareexistingtaxonomies, getconceptdetails, edittrainingset, applyeditoperations
+from Category_Modeler.views import compareexistingtaxonomies, getconceptdetails, edittrainingset, applyeditoperations, changethresholdlimits
 urlpatterns = patterns('',
         url(r'^$', index),
         url(r'^home/$', index),
@@ -12,6 +12,7 @@ urlpatterns = patterns('',
         url(r'^edittrainingset/$', edittrainingset),
         url(r'^applyeditoperations/$', applyeditoperations),        
         url(r'^signaturefile/$', signaturefile),  
+        url(r'^changethresholdlimits/$', changethresholdlimits),        
         url(r'^supervised/$', supervised),
         url(r'^changerecognition/', changeRecognizer),
         url(r'^createChangeEventForNewTaxonomy/', createChangeEventForNewTaxonomy),

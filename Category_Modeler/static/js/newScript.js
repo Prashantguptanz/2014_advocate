@@ -1206,7 +1206,7 @@ $(function() {
 	// Script for 'Signature file' page
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/signaturefile/')) {
-
+		$('[data-toggle="popover"]').popover();
 		//setSignatureFileDetailsHeight();
 
 		//$(window).on('resize', function() {
@@ -1220,6 +1220,30 @@ $(function() {
 			$this.next().children().removeAttr('disabled');
 			$this.siblings('input').next().children().attr('disabled', 'disabled');
 
+		});
+		
+		$('#changelimits').on('click', function(e) {
+			e.preventDefault();
+			$('#jm_limit').removeAttr('disabled');
+			$('#acc_limit').removeAttr('disabled');
+			$('#submitchangelimits').show();
+			$('#changelimits').attr('disabled', 'disabled');
+		});
+		
+		$('#submitchangelimits').on('click', function(e) {
+			e.preventDefault();
+			$('#jm_limit').attr('disabled', 'disabled');
+			$('#acc_limit').attr('disabled', 'disabled');
+			$('#submitchangelimits').hide();
+			$('#changelimits').removeAttr('disabled');
+			var data = {};
+			data['1'] = $('#jm_limit').val();
+			data['2'] = $('#acc_limit').val();
+			console.log(data['1']);
+			console.log(data['2']);
+			$.post("http://127.0.0.1:8000/AdvoCate/changethresholdlimits/", data, function(response) {
+				
+			});
 		});
 
 		$('#createsignaturefile').on('click', function(e) {
@@ -1266,7 +1290,7 @@ $(function() {
 									for (var i = 0; i < response['listofclasses'].length; i++) {
 										var producerAccuracy = parseFloat(response['prodacc'][i]);
 										var userAccuracy = parseFloat(response['useracc'][i]);
-										if (producerAccuracy <0.6 && userAccuracy <0.6 || producerAccuracy>0.6 && userAccuracy<0.5 || producerAccuracy<0.5 && userAccuracy>0.6){
+										if (producerAccuracy < response['acc_limit'] && userAccuracy < response['acc_limit'] || (producerAccuracy + userAccuracy)< 2.0* response['acc_limit'] ){
 											d = d + "<tr bgcolor=\"#ff7f7f\"><td>" + response['listofclasses'][i] + "</td><td>";
 										}
 										else {
@@ -1292,7 +1316,7 @@ $(function() {
 									for (var i = 0; i < response['jmdistances'].length; i++){
 										e = e + "<tr><th>" + response['listofclasses'][i] + "</th>";
 										for (var j = 0; j < response['jmdistances'][i].length; j++){
-											if (response['jmdistances'][i][j] < 1.1 && response['jmdistances'][i][j] !=0){
+											if (response['jmdistances'][i][j] < response['jm_limit'] && response['jmdistances'][i][j] !=0){
 												e = e + "<td style=\"width:" + cellwidth +  "%\" bgcolor=\"#ff7f7f\">" + response['jmdistances'][i][j] + "</td>";
 											}
 											else{
@@ -1336,7 +1360,7 @@ $(function() {
 									for (var i = 0; i < response['listofclasses'].length; i++) {
 										var producerAccuracy = parseFloat(response['prodacc'][i]);
 										var userAccuracy = parseFloat(response['useracc'][i]);
-										if (producerAccuracy <0.6 && userAccuracy <0.6 || producerAccuracy>0.6 && userAccuracy<0.5 || producerAccuracy<0.5 && userAccuracy>0.6){
+										if (producerAccuracy < response['acc_limit'] && userAccuracy < response['acc_limit'] || (producerAccuracy + userAccuracy)< 2.0* response['acc_limit'] ){
 											d = d + "<tr bgcolor=\"#ff7f7f\"><td>" + response['listofclasses'][i] + "</td><td>";
 										}
 										else {
@@ -1348,6 +1372,19 @@ $(function() {
 									}
 									d = d + "</table>";
 									$('#accuracies').html(d);
+									
+									if (response['suggestion_list'].length!=0){
+										
+										var f= "<label style=\"font-size: 15px; margin-left: 15px; margin-bottom:15px\">List of suggestions to increase the accuracy of classification model:</label>" + 
+											"<ul class=\" list-group\" style=\" margin-left: 15px; margin-right: 5px; margin-bottom: 5px; width:50%\">";
+										for (var i = 0; i < response['suggestion_list'].length; i++){
+											f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
+												"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
+										}
+										f = f + "</ul>";
+										$('#collapse3').html(f);
+										$('#suggestions_section').show();
+									}
 									
 									$('#accuracies').hide();
 									$('#decisiontree').hide();

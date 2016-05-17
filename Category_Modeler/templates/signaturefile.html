@@ -3,50 +3,81 @@
 {% csrf_token %}
 {% load staticfiles%}
 <div class="container">
-	<form class="form-group" id="trainingoptions" name="trainingoptions" style="width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px">
+	<form class="form-group" id="trainingoptions" name="trainingoptions" style="width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px; border-bottom: 0">
 		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >
 			<a role="button" data-toggle="collapse" href="#collapse1" aria-expanded="false" aria-controls="collapse1" style="color: #333; vertical-align:middle">Choose options to create signature file </a>
 		</legend>
 		<div id="collapse1" class="collapse in">
-		  	<div class="form-group" style="width: 98%; overflow: hidden; margin-bottom: 15px">
-	
-				<div style="float: left; margin-left: 10px; margin-top: 10px">
-					<select id="classifiertype" name="classifiertype" required >
-					<option value="">Select Classifier</option>
-					<option value="Naive Bayes">NaiveBayes</option>
-					<option value="Decision Tree">Decision Tree (C4.5)</option>
-					<option value="SVM">Support Vector Machine</option>
-					</select>
-			    </div>
-	
-				<div style="float: right; margin-right: 10px">
-					{% if attributes %}
-					{% else %}
-					<p id="signinerror" class="error" style= "color: brown">
-						Select a training sample!
-					</p>
-					{% endif %}
-				</div>
+			<div style="float: left; margin-left: 10px; margin-top: 10px">
+				<select id="classifiertype" name="classifiertype" required >
+				<option value="">Select Classifier</option>
+				<option value="Naive Bayes">NaiveBayes</option>
+				<option value="Decision Tree">Decision Tree (C4.5)</option>
+				<option value="SVM">Support Vector Machine</option>
+				</select>
+		    </div>
+
+			<div style="float: right; margin-right: 5px">
+				{% if attributes %}
+				{% else %}
+				<p id="signinerror" class="error" style= "color: brown">
+					Select a training sample!
+				</p>
+				{% endif %}
 			</div>
-			<legend style="font-size: 14px; background-color: gainsboro; width:300px" align="center">Validation options
+			<br /><br /><br />
+			
+			<div style="width:56%; float:left; border-style: solid; border-width: 1px; border-color: #E5E5E5; border-right: 0; border-top:0; height:285px">
+				<legend style="font-size: 14px; background-color: gainsboro; width:500px; float:left" align="center">Validation options
 				</legend>
-			<div class="form-group radio" style="width: 98%; overflow: hidden; margin-left: 10px">
-				
-				<input type="radio" name="validationoption" value="1" required />Use training data
-				<br/><br/>
-				<input type="radio" name="validationoption" value="2" required />Upload validation data
-				<span style="float: right; margin-right:590px">
-					<input type="file" id="validationfile" name="validationfile" accept=".csv,.xls,.tif,.png,.adf" disabled/>
-				</span> 
-				<br/><br/>
-				<input type="radio" name="validationoption" id="CrossValidation" value="3" required>Cross-validation 
-				<span style="margin-left: 72px"> 
-					<label style="font-weight: normal"> Folds </label>
-					<input style="margin-left: 25px" id="fold" name = "fold" disabled="disabled" type="text" size="15" value="10" required />
-				</span>
-				<br />			
+				<div class="form-group radio" style="width: 98%; overflow: hidden; margin-left: 10px">
+					
+					<input type="radio" name="validationoption" value="1" required />Use training data
+					<br/><br/>
+					<input type="radio" name="validationoption" value="2" required />Upload validation data
+					<span style="float: right; margin-right:95px">
+						<input type="file" id="validationfile" name="validationfile" accept=".csv,.xls,.tif,.png,.adf" disabled/>
+					</span> 
+					<br/><br/>
+					<input type="radio" name="validationoption" id="CrossValidation" value="3" required>Cross-validation 
+					<span style="margin-left: 72px"> 
+						<label style="font-weight: normal"> Folds </label>
+						<input style="margin-left: 25px" id="fold" name = "fold" disabled="disabled" type="text" size="15" value="10" required />
+					</span>
+					<br />			
+				</div>
+				<input type="submit" id="createsignaturefile" value="Submit" class="btn btn-default" style="margin:10px"/>
+				<br /><br />
 			</div>
-			<input type="submit" id="createsignaturefile" value="Submit" class="submit button" style="margin:10px"/>
+			
+			<div style="width:44%; float:right; border-style: solid; border-width: 1px; border-color: #E5E5E5; border-left: 0; border-top:0; height:285px">
+			<legend style="font-size: 14px; background-color: gainsboro; width:500px; margin-bottom: 10px" align="center">Threshold limits
+			</legend>
+			
+			<p style="margin-left: 10px; margin-right: 10px; margin-bottom: 15px">
+				To model a better classification model, AdvoCate provides 
+				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Suggestions"data-content="AdvoCate analyses which categories are overlapping and confused and may give high classification error. Based on it, AdvoCate then provides suggestions to acheive better accuracy, such as merge two categories that are highly confused.">suggestions</a> 
+				about what can be changed in modelled categories based on the threshold limits of 
+				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="J-M distance"data-content="It is a separability measure which suggests how separable the two probability distributions are. The value decreases exponentially from 1.41 to 0 with decreasing separation between two categories.">J-M distance</a>
+				and 
+				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Producer/User accuracy"data-content="Producer accuracy is the number of occurences correctly classified for a category divided by the total number of occurrences belonging to the category in the reference data. User accuracy is the number of occurrences correctly classified for a category divided by the total number of occurrences belonging to the category in the classified data.">producer/user accuracies </a>
+				of categories. The default values are:</p>
+			
+			<label style = "margin-left: 10px; font-weight: normal ">J-M distance for overlapping categories: </label>
+			<span>
+				<input style="margin-left: 20px" id="jm_limit" name = "jm_limit" disabled="disabled" type="text" size="10" value="{{jm_limit}}" required />
+			</span>
+			<br /><br />
+			<label style = "margin-left: 10px; font-weight: normal ">Producer/user accuracy: </label>
+			<span>
+				<input style="margin-left: 120px" id="acc_limit" name = "acc_limit" disabled="disabled" type="text" size="10" value="{{acc_limit}}" required />
+			</span>
+			<br />
+			<input type="submit" id="changelimits" value="Change" class="btn btn-default" style="margin:30px"/>
+			<span>
+				<input type="submit" id="submitchangelimits" value="Submit" class="btn btn-default" style="margin:30px; display: none" />
+			</span>
+			</div>
 		</div>
 	</form>
 	<div class="form-group" id="signaturefiledetails" style="width: 100%; display:none; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px">
