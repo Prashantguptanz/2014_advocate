@@ -1681,6 +1681,8 @@ $(function() {
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/changerecognition/')) {
 		
+		$('[data-toggle="popover"]').popover();
+		
 		$('#yesforchange').on('click', function(e) {
 			e.preventDefault();
 			$.get("http://127.0.0.1:8000/AdvoCate/createChangeEventForNewTaxonomy/", function(data){
@@ -1711,6 +1713,7 @@ $(function() {
 				
 				$('#yesforchange').attr('disabled', 'disabled');
 				$('#noforchange').attr('disabled', 'disabled');
+				$('#collapse11').removeClass("collapse in").addClass("collapse");
 			});
 		});
 		
@@ -1742,6 +1745,7 @@ $(function() {
 				$('#commit').show();
 				$('#newtaxonomyversion').attr('disabled', 'disabled');
 				$('#changeexistingtaxonomy').attr('disabled', 'disabled');
+				$('#collapse11').removeClass("collapse in").addClass("collapse");
 				
 			});
 			
@@ -1753,6 +1757,12 @@ $(function() {
 			$(this).siblings('dt').nextUntil('dt').hide();
 			
 			
+		});
+		
+		$('#explorationchain').on('click', 'dt', function(e) {
+			e.preventDefault();
+			$(this).nextUntil('dt').toggle();
+			$(this).siblings('dt').nextUntil('dt').hide();
 		});
 		
 	

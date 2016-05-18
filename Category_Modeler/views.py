@@ -1479,6 +1479,7 @@ def calculate_J_index_for_catgeory_extension(category, ext1, ext2, predicted_fil
 
 @login_required
 def changeRecognizer(request):
+    customQuery = CustomQueries()
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
     if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session:
         if 'view_existing_taxonomies' not in request.session:
@@ -1499,9 +1500,48 @@ def changeRecognizer(request):
             user_accuracies = request.session['user_accuracies']
             producer_accuracies = request.session['producer_accuracies']
             model_type = request.session['model_type']
-            return render(request, 'changerecognition.html', {'user_name':user_name, 'new_taxonomyName': new_taxonomy, 'conceptsList':concepts_in_current_taxonomy, 'modelType': model_type, 'modelScore': model_accuracy, 'userAccuracies': user_accuracies, 'producerAccuracies': producer_accuracies})
+            
+            exploration_chain = ExplorationChain.objects.filter(id = request.session['exploration_chain_id'])
+            exploration_chain_details = []
+            for exp in exploration_chain:
+                exploration_step = []
+                if exp.activity == 'create trainingset':
+                    details_of_create_trainingset_activity = customQuery.getDetailsOfCreateTrainingSetActivity(exp.activity_instance)
+                    data_term = "Create trainingset (Trainingset id: " +  str(details_of_create_trainingset_activity[0][0]) + ", Trainingset version: " + str(details_of_create_trainingset_activity[0][1]) + ")"
+                    exploration_step.append(data_term)
+                    details_of_activity = []
+                    for each_step in details_of_create_trainingset_activity:
+                        details_of_activity.append(each_step[4] + " category: " + each_step[5])
+                    exploration_step.append(details_of_activity)
+                    exploration_chain_details.append(exploration_step)
+                elif exp.activity == 'change trainingset':
+                    details_of_change_trainingset_activity = customQuery.getDetailsOfChangeTrainingSetActivity(exp.activity_instance)
+                    data_term = "Change trainingset (Trainingset id: " + str(details_of_change_trainingset_activity[0][0]) + ", old version: " + str(details_of_create_trainingset_activity[0][1]) + ", new version: " + str(details_of_create_trainingset_activity[0][2]) + ")"
+                    exploration_step.append(data_term)
+                    details_of_activity = []
+                    for each_step in details_of_change_trainingset_activity:
+                        if each_step[3] == 'remove no data':
+                            details_of_activity.append("Remove 'no data' values")
+                        elif each_step[3] == 'remove':
+                            details_of_activity.append("Remove concept: " + each_step[4])
+                        elif each_step[3] == 'merge':
+                            if each_step[7] == None:
+                                details_of_activity.append("Merge concepts: " + each_step[4] + " and " + each_step[5] + ", and create a new concept " +  each_step[6])
+                            else:
+                                details_of_activity.append("Merge concepts: " + each_step[4] + ", " + each_step[5] + " and " + each_step[6] + ", and create a new concept " +  each_step[7])
+                        else:
+                            details_of_activity.append([each_step[3], each_step[4], each_step[5], each_step[6], each_step[7]])
+                    exploration_step.append(details_of_activity)
+                    exploration_chain_details.append(exploration_step)
+                elif exp.activity == 'learning':
+                    details_of_learning_activity = customQuery.getDetailsOfTrainingActivity(exp.activity_instance)
+                    data_term = "Learning activity (Model type: " + details_of_learning_activity[0] + ", Validation type: " + details_of_learning_activity[2] + ", Validation score: " + str(details_of_learning_activity[1]) + ")"
+                    exploration_chain_details.append([data_term])
+                else:
+                    exploration_chain_details.append(["Classification activity"])
+
+            return render(request, 'changerecognition.html', {'user_name':user_name, 'new_taxonomyName': new_taxonomy, 'exploration_chain':exploration_chain_details, 'conceptsList':concepts_in_current_taxonomy, 'modelType': model_type, 'modelScore': model_accuracy, 'userAccuracies': user_accuracies, 'producerAccuracies': producer_accuracies})
     else:
-        customQuery = CustomQueries()
         existing_taxonomy = request.session['existing_taxonomy_name']
         existing_taxonomy_instance = Legend.objects.get(legend_name = existing_taxonomy) 
         trid = existing_taxonomy_instance.legend_id

@@ -17,16 +17,63 @@
 			Summary of current exploration</a>
 		</legend>
 		<div id="collapse11" class="collapse in">
-			<p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
-				A taxonomy <strong><em>{{new_taxonomyName}}</em></strong> is conceptualized with the following concepts:
+			<p style="font-size: 14px; margin-left: 15px; margin-right: 15px">
+				To model data-driven categories for a set of concepts (Taxonomy), AdvoCate provides the following four activities: 
+				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Create trainingset activity" data-content="This activity allows a user to create a new trainingset. User have to provide the training samples and other relevant details for individual concepts, and AdvoCate combine them to create a new trainingset. In case of exploring changes in an existing taxonomy, user may also use the existing trainingset in AdvoCate as a reference set.">
+					Create trainingset
+				</a>
+				, 
+				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Change trainingset activity" data-content="This activity allows a user to remove, merge or split existing concepts in a trainingset to create a new version. create a new trainingset.">
+					Change trainingset
+				</a>
+				, 
+				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Learning activity" data-content="This activity allows a user to create a new classification model, which consists of signature files of a set of concepts to be modelled. A user may use different classification methods (classifiers) to create different classification models.">
+					Learning activity
+				</a>
+				and 
+				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Classification activity" data-content="This activity allows a user to classify a satellite image into a set of concepts using a classification model built in the previous Learning activity.">
+					Classification activity
+				</a>
+				. The exploration path shows how a user traverses through these activities to model a new taxonomy or changes in an existing taxonomy. The details of the exploration path
+				for the current session is shown below:
+			</p>
+			<br />
+			<p style="font-size: 14px;  margin-left: 30px; margin-right: 10px">
+			 	<em>Note: click on an activity to see more details about it.</em>
+			 </p>
+			
+			<div id="explorationchaindiv" >
+			 	<dl id = "explorationchain" style=" margin-left: 30px; width: 700px">
+			 		{% for activity in exploration_chain %}
+			 		{% with forloop.counter|cut:" " as index %}
+			 		<dt style="cursor:pointer; font-weight:normal; line-height: 2.5em; background:#e4e4e4; border-bottom: 1px solid #c4c4c4; border-top: 1px solid white"> 
+			 			&nbsp;&nbsp;  {{forloop.counter}}. &nbsp;&nbsp;&nbsp;
+			 			{% for details in activity%}
+			 				{% if forloop.first %}
+			 					{{details}} </dt>			 				
+			 				{% else %}
+			 					{% for each_detail in details %}
+			 					<dd style=" margin-left:10px; padding: 0.5em 0; border-bottom: 1px solid #c4c4c4; display:none"> &nbsp;&nbsp; {{forloop.counter}}. &nbsp; &nbsp; &nbsp; {{each_detail}} </dd>
+			 					{% endfor %}
+			 				{% endif %}
+			 			
+			 			{% endfor %}
+			 		
+			 		{% endwith %}
+			 		{% endfor %}
+			 	</dl>
+			 </div>
+			
+			<p style="font-size: 14px; margin-left: 15px; margin-right: 15px">
+				The above exploration process leads to the conceptualization of a taxonomy <strong><em>{{new_taxonomyName}}</em></strong> with the following concepts:
 				{% for concept in conceptsList %}
 				<strong>{{concept}}</strong>, 	
 				{% endfor %}		
 			 </p>
-			 <p style="font-size: 14px;  margin-left: 10px; margin-right: 10px">
+			 <p style="font-size: 14px;  margin-left: 15px; margin-right: 15px">
 			 	The classification model of the taxonomy is conceptualized as a {{modelType}} model with an accuracy of {{modelScore}}.
 			 </p>
-			 <p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
+			 <p style="font-size: 14px; margin-left: 15px; margin-right: 15px">
 			 	Categories corresponding to each concept, along with their accuracies are as below:
 			 </p>
 			 <br />	 
@@ -48,6 +95,7 @@
 			 </table>
 			 <br /><br />
 			 
+		 
 			 <div id="implement" style="margin-left: 10px; margin-bottom: 15px">
 				 <label style="margin-left: 10px" for="chooseButtons">Do you wish to implement these changes in AdvoCate:</label>&nbsp; &nbsp;
 				 <button id="yesforchange" class="btn btn-default"> Yes</button>&nbsp; &nbsp;

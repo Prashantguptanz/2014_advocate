@@ -326,6 +326,33 @@ l                       lcc.legend_id = %s and lcc.legend_ver = %s and lcc.conce
         print row[0]
         return row[0]
     
+    def getDetailsOfCreateTrainingSetActivity(self, ctaid):
+        cursor = connection.cursor()
+        
+        cursor.execute("select trainingset_id, trainingset_ver, reference_trainingset_id, reference_trainingset_ver, operation, concept1, concept2, concept3, concept4 from \
+                        create_trainingset_activity cta, create_trainingset_activity_operations ctao where cta.id = %s and cta.id = ctao.create_trainingset_activity_id", [ctaid])
+        
+        row = cursor.fetchall()
+        return row        
+        
+    def getDetailsOfChangeTrainingSetActivity(self, ctaid):
+        cursor = connection.cursor()
+        
+        cursor.execute("select oldtrainingset_id, oldtrainingset_ver, newtrainingset_ver, operation, concept1, concept2, concept3, concept4 from change_trainingset_activity cta, \
+                        change_trainingset_activity_details ctad where cta.id = %s and cta.id = ctad.activity_id", [ctaid])
+        
+        row = cursor.fetchall()
+        return row        
+        
+    def getDetailsOfTrainingActivity(self, taid):
+        cursor = connection.cursor()
+        
+        cursor.execute("select classifier_name, validation_score, validation from learning_activity, classifier where learning_activity.id = %s and \
+                        learning_activity.classifier_id = classifier.id", [taid])
+        
+        row = cursor.fetchone()
+        
+        return row         
         
         
         
