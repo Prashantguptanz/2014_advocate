@@ -3,21 +3,32 @@
 
 	{% csrf_token %}
 
-	<div class="form-group" style="width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px">
+	<div class="form-group" style="width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5;margin-bottom:0px">
 		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >
 			<a role="button" data-toggle="collapse" href="#collapse8" aria-expanded="false" aria-controls="collapse8" style="color: #333; vertical-align:middle">
 				Upload satellite image file</a>
 		</legend>
 		<div id="collapse8" class="collapse in">
-			<div class="form-group" style="margin-left: 20px; margin-right: 5px">
-				<input type="file" id="testfile" accept=".tif" style = "display: inline" required>
-				<span style = "margin-left: 20px">
-					<button id="doclassification" class="btn btn-default">
-						Submit
-					</button>
+			<form class="form-group" style="margin-top: 15px">
+				<label for ="testfile" style="font-weight: normal; margin-left: 20px">Upload satellite image: </label>
+				<span>
+				<input type="file" id="testfile" accept=".tif" style = "display: inline; margin-left: 50px" required>
 				</span>
-				</input>
-			</div>
+				<br /><br />
+				{% if concepts%}
+				<div class="form-group" style="overflow: hidden" id = "categoriesandcolors">
+					<legend style="font-size: 14px; background-color: gainsboro; width:400px" align="center">Categories and colors
+					</legend>
+					<label style="margin-left: 15px">Pick a color for each category:</label><br /><br />
+					{% for concept  in concepts %}					
+					<label style="margin-left: 15px; margin-bottom:15px; font-weight: normal" >{{concept}}:</label> 
+					<input id= {{concept}} type="text" class="jscolor {position:'right'}" style="display: inline; margin-right: 900px; float: right; width:70px" required/>
+					<br />
+					{% endfor %}
+				</div>
+				{% endif %}
+				<input type="submit" id="doclassification" value="Submit" class="btn btn-default" style="margin-left:160px"/>
+			</form>
 			<div style="float: left; margin-left: 1%">
 				{% if error %}
 				<p id="signinerror" class="error" style= "color: brown">

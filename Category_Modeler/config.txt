@@ -1,2 +1,2 @@
-Estuarine Open Water;Inland Water;Sea Water;Water Bodies;Water;Shadow;Forest;Vegetation;Grassland and Open Space;Grassland;Open Space;Artificial Surface;Built-up Area;Cloud;Scrub;Mangrove;Undefined;Urban;Suburban;
-115,255,223;0,77,168;115,178,255;115,178,255;115,178,255;52,52,52;38,115,0;38,115,0;76,230,0;76,230,0;230,152,0;255,127,127;255,127,127;255,255,255;230,230,0;156,156,156;0,0,0;255,127,127;255,235,190;
+Built-up Area;Water Bodies;Vegetation;Pasture;Shadow;Cloud;
+99,255,97;242,246,255;212,255,197;255,116,103;125,255,188;192,140,255;

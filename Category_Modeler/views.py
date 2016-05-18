@@ -1,4 +1,4 @@
-import csv, json, numpy, pydot, os
+import csv, json, numpy, pydot, os, re
 import matplotlib.pyplot as plt
 from io import FileIO, BufferedWriter
 from datetime import datetime
@@ -1329,7 +1329,15 @@ def supervised(request):
             
     if request.method == 'POST' and request.is_ajax():
         if request.FILES:
+            data = request.POST
             testfile = request.FILES['testfile']
+            trainingfile = TrainingSet(request.session['current_training_file_name'])
+            concepts_in_modelled_taxonomy = list(numpy.unique(trainingfile.target))
+            colors = []
+            for i, concept in enumerate(concepts_in_modelled_taxonomy):
+                color = (re.sub('[(rgb) ]', '', data[str(i)])).split(',')
+                colors.append([concept, color])
+            updateConfigFiles(colors)
             copyfile(TRAINING_SAMPLES_IMAGES_LOCATION + testfile.name, TEST_DATA_LOCATION + testfile.name)
             request.session['current_test_file_name'] = testfile.name
             manageData = ManageRasterData()
@@ -1380,7 +1388,23 @@ def supervised(request):
         error = "Create a classification model before classifying an image"
         return render(request, 'supervised.html', {'user_name':user_name, 'error': error})
     else:
-        return render (request, 'supervised.html', {'user_name':user_name})
+        trainingfile = TrainingSet(request.session['current_training_file_name'])
+        concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
+        return render (request, 'supervised.html', {'user_name':user_name, 'concepts': concepts_in_current_taxonomy})
+
+def updateConfigFiles(conceptsandcolors):
+    sorted_concepts = sorted(conceptsandcolors, key= lambda concept: len(concept[0]))
+    line1 = ""
+    line2 = ""
+    for concept in reversed(sorted_concepts):
+        line1 = line1 + concept[0] + ";"
+        line2 = line2 + concept[1][0] + "," + concept[1][1] + "," + concept[1][2] + ";"
+    
+    with open("Category_Modeler/config.txt", 'w') as text_file:
+        text_file.write(line1 + "\n")
+        text_file.write(line2 + "\n")
+    
+    
 
 def savePredictedValues(filename, predictedValue):
     with BufferedWriter( FileIO( '%s%s' % (CLASSIFIED_DATA_LOCATION, filename), "wb" ) ) as csvfile:

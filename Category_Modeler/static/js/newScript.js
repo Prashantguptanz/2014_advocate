@@ -1617,55 +1617,62 @@ $(function() {
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/supervised/')) {
 		// Script to deal with when the test file is uploaded
 		$('#doclassification').on('click', function(e) {
-			e.preventDefault();
-			console.log("I am here");
-			var newtestfile = ($('#testfile'))[0].files[0];
-			// Posting file to the server side using formdata
-			var formdata = new FormData();
-			formdata.append("testfile", newtestfile);
-			$.ajax({
-				type : "POST",
-				url : "http://127.0.0.1:8000/AdvoCate/supervised/",
-				async : true,
-				processData : false,
-				contentType : false,
-				data : formdata,
-				success : function(response) {
-					$('#classificationresult').show();
-					var c = "<img style=\"width:95%; height:95%\" src=\"/static/maps/" + response['map'] + "\" />";
-					$('#classifiedmap').html(c);
-					var d = "<label>Legend</label>"
-							+ "<table style=\"width:100%\" class=\" table table-bordered\">";
-					for (var i = 0; i < response['categories'].length; i++) {
-						d = d + "<tr><td>" + "<img src=\"/static/images/" + response['categories'][i] + ".png\" />" +
-							"</td><td>" + response['categories'][i] + "</td></tr>";
-					}							
-					d = d + "</table>";
-						
-					$('#categorycolors').html(d);
-					if (response['old_categories']){
-						console.log("done");
-						var a = "<legend style=\"font-size: 16px; background-color: gainsboro\" align=\"center\">Change matrix</legend>";
-						a = a + "<table style=\"width:95%\" align=\"center\" class=\" table table-bordered\"><tr><th>#</th>";
-						for (var i=0; i< response['categories'].length; i++){
-							a = a + "<th>" + response['categories'][i] + "</th>";
-						}
-						a = a + "</tr>";
-						
-						for (var j=0; j < response['old_categories'].length; j++){
-							a = a + "<tr><th>" + response['old_categories'][j] + "</th>";
-							for (var k=0; k < response['change_matrix'][j].length; k++){
-								a = a + "<td>" + response['change_matrix'][j][k] + "</td>";
+			if (($('#testfile'))[0].files.length > 0){
+				e.preventDefault();
+				var newtestfile = ($('#testfile'))[0].files[0];
+				var formdata = new FormData();
+				$('#categoriesandcolors input').each(function(index){
+					category = $(this).attr('id');
+					color = $(this).css('background-color');
+					formdata.append(index, color);
+				});
+				// Posting file to the server side using formdata
+				
+				formdata.append("testfile", newtestfile);
+				$.ajax({
+					type : "POST",
+					url : "http://127.0.0.1:8000/AdvoCate/supervised/",
+					async : true,
+					processData : false,
+					contentType : false,
+					data : formdata,
+					success : function(response) {
+						$('#classificationresult').show();
+						var c = "<img style=\"width:95%; height:95%\" src=\"/static/maps/" + response['map'] + "\" />";
+						$('#classifiedmap').html(c);
+						var d = "<label>Legend</label>"
+								+ "<table style=\"width:100%\" class=\" table table-bordered\">";
+						$('#categoriesandcolors input').each(function(index){
+							d = d + "<tr><td>" + "<div style=\"width:20px; height:20px; border: 1px solid rgba(0, 0, 0, .2); background:" + $(this).css('background-color') + "\"></div></td><td>" 
+								+ $(this).attr('id') + "</td></tr>";
+						});				
+						d = d + "</table>";
+							
+						$('#categorycolors').html(d);
+						if (response['old_categories']){
+							console.log("done");
+							var a = "<legend style=\"font-size: 16px; background-color: gainsboro\" align=\"center\">Change matrix</legend>";
+							a = a + "<table style=\"width:95%\" align=\"center\" class=\" table table-bordered\"><tr><th>#</th>";
+							for (var i=0; i< response['categories'].length; i++){
+								a = a + "<th>" + response['categories'][i] + "</th>";
 							}
 							a = a + "</tr>";
+							
+							for (var j=0; j < response['old_categories'].length; j++){
+								a = a + "<tr><th>" + response['old_categories'][j] + "</th>";
+								for (var k=0; k < response['change_matrix'][j].length; k++){
+									a = a + "<td>" + response['change_matrix'][j][k] + "</td>";
+								}
+								a = a + "</tr>";
+							}
+							$('#changematrix_display').show();
+							$('#collapse10').html(a);
+							
 						}
-						$('#changematrix_display').show();
-						$('#collapse10').html(a);
 						
 					}
-					
-				}
-			});
+				});
+			}
 		});
 
 	}
