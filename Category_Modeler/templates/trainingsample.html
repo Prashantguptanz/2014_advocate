@@ -32,7 +32,7 @@
 		</div>
 			
 			{% if new_taxonomy %}
-			<div  id="newconceptsanddetails" style="display:none">
+			<div class="form-group" id="newconceptsanddetails" style="display:none; border-style: solid; border-width: 1px; border-color: #E5E5E5">
 				<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">Concepts in the new trainingset</legend>
 	
 				<div class="form-group" id="categoriesandsamples" style="margin-left: 10px; margin-right: 10px">
@@ -45,58 +45,57 @@
 							<span style = "margin-left: 50px">
 							<label for="trainingfile1" style ="font-weight:normal">Upload training samples</label></span>
 							<span style = "margin-right: 250px; float:right">					
-						  	<input type="file" id="trainingfile1" name="trainingfile1" accept=".csv,.xls,.tif,.png,.adf" multiple /></span>
+						  	<input type="file" id="trainingfile1" name="trainingfile1" accept=".csv,.xls,.tif,.png,.adf" multiple required/></span>
 					  	</div>
 					  	<div class="form-group">
 							<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
 							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName" size="20" id="FieldResearcherName" placeholder="Enter Name"/></span>
+							<input type="text" name="FieldResearcherName" size="20" id="FieldResearcherName" placeholder="Enter Name" required/></span>
 							<span style = "margin-left: 50px">
 							<label for="Location" style ="font-weight:normal">Training Location</label></span>
 							<span style = "margin-right: 350px; float:right">
-							<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location"/></span>
+							<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location" required/></span>
 						</div>
 						<div class="form-group">
 							<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
 							<span style = "margin-left: 80px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate"/></span>
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate" required/></span>
 							<span style = "margin-left: 50px">
 							<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
 							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate"/></span>
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate" required/></span>
 						</div>
 						
 						<div class="form-group">
 							<span><label for="Description" style ="font-weight:normal">Other details</label></span>
 							<span style = "margin-left: 112px">
-							<textarea name="OtherDetails" rows="1" cols="71" id="Description" placeholder="Enter any more relevant details"> </textarea></span>
+							<textarea name="OtherDetails" rows="1" cols="71" id="Description" placeholder="Enter any more relevant details" required></textarea></span>
 						</div>
 					</form>
-				</div>
-				<br />	
-				<div class="form-group" id="addmorecategoriesorsubmit" style = "margin-left: 10px; margin-right: 10px; margin-bottom:15px">
-					<div id="trainingsetname" style="display:none" class="form-group" >
-						<label for="trainingsetfilename" >Combine training samples and save trainingset as</label>
-						<span style = "margin-left: 65px">
-						<input type="text" name="trainingsetfilename" value="" id="trainingsetfilename" placeholder="Enter file name"/></span>							  
+						<div class="form-group" id="addmorecategoriesorsubmit" style = "margin-bottom:15px">
+							<div id="trainingsetname" style="display:none" class="form-group" >
+								<label for="trainingsetfilename" >Combine training samples and save trainingset as:</label>
+								<span style = "margin-left: 50px">
+								<input type="text" name="trainingsetfilename" value="" id="trainingsetfilename" placeholder="Enter file name"/></span>							  
+							</div>
+							<input type="submit" id="addmorecategories" value="Add another concept" class="btn btn-default" style="float: left"/>
+							<span >
+						  		<button id="submittrainingsamples" class="btn btn-default"style="margin-left: 70px" >Submit</button>
+						  	</span>
+							<span>
+						  		<button id="savetrainingset" class="btn btn-default" style="display:none">Save trainingset</button>
+						  	</span>
+						  	<span style="margin-right: 500px; float:right">
+						  		<p id="missingfields" style= "color: red; display:none"> <em>Error: one or more fields are missing</em> </p>
+						  	</span>
+						</div>
 					</div>
-					<button id="addmorecategories" class="btn btn-default" style = "float: left" >Add another concept</button>
-					<span style="margin-left: 70px">
-				  		<button id="submittrainingsamples" class="btn btn-default" >Submit</button>
-				  	</span>
-					<span style="margin-left: 70px">
-				  		<button id="savetrainingset" class="btn btn-default" style="display:none">Save trainingset</button>
-				  	</span>
 				</div>
-				
-				<div style="margin-left: 5px; margin-right: 5px">	
-					<p id="trainingfileformatError" style= "color: red"> <em> </em> </p>
-				</div>
-			</div>
+
 			{% endif %}
 			
 			{% if existing_taxonomy %}
-			<div  id="newconceptsanddetails" style="display:none">
+			<div  id="newconceptsanddetails" style="display:none; border-style: solid; border-width: 1px; border-color: #E5E5E5">
 				<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">Concepts in the new trainingset</legend>
 				
 				
@@ -110,31 +109,31 @@
 						<span style = "margin-left: 50px">
 						<label for="trainingfile1" style ="font-weight:normal">Upload training samples</label></span>
 						<span style = "margin-right: 250px; float:right">					
-					  	<input type="file" id="trainingfile1" name="trainingfile1" accept=".csv,.xls,.tif,.png,.adf" multiple /></span>
+					  	<input type="file" id="trainingfile1" name="trainingfile1" accept=".csv,.xls,.tif,.png,.adf" multiple required/></span>
 				  	</div>
 				  	<div class="form-group">
 						<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
 						<span style = "margin-left: 43px">
-						<input type="text" name="FieldResearcherName" size="20" id="FieldResearcherName" placeholder="Enter Name"/></span>
+						<input type="text" name="FieldResearcherName" size="20" id="FieldResearcherName" placeholder="Enter Name" required/></span>
 						<span style = "margin-left: 50px">
 						<label for="Location" style ="font-weight:normal">Training Location</label></span>
 						<span style = "margin-right: 350px; float:right">
-						<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location"/></span>
+						<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location" required/></span>
 					</div>
 					<div class="form-group">
 						<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
 						<span style = "margin-left: 80px">
-						<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate"/></span>
+						<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate" required/></span>
 						<span style = "margin-left: 50px">
 						<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
 						<span style = "margin-right: 349px; float:right">
-						<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate"/></span>
+						<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate" required/></span>
 					</div>
 					
 					<div class="form-group">
 						<span><label for="Description" style ="font-weight:normal">Other details</label></span>
 						<span style = "margin-left: 112px">
-						<textarea name="OtherDetails" rows="1" cols="68" id="Description" placeholder="Enter any more relevant details"> </textarea></span>
+						<textarea name="OtherDetails" rows="1" cols="68" id="Description" placeholder="Enter any more relevant details" required></textarea></span>
 					</div>
 				</form>
 				
@@ -144,7 +143,7 @@
 					<div class="form-group" >
 						<span><label for="existingconceptName" style ="font-weight:normal">Choose a concept</label></span>
 						<span style = "margin-left: 80px">
-							<select name="existingconceptName" id="existingconceptName"  >
+							<select name="existingconceptName" id="existingconceptName" required >
 								<option>Existing concept</option>
 								{% for concept in concept_list %}
 								<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
@@ -158,7 +157,7 @@
 						<br /><br />
 						<input type="radio" name="existingornewsample" value="option2" id="newsamplechosen" class="newsamples"/>Upload new samples
 						<span style = "margin-right: 634px; float:right">					
-				  			<input type="file" id="newtrainingsamplesforanexistingconcept" class="uploadfile" accept=".csv,.xls,.tif,.png,.adf" multiple disabled/>
+				  			<input type="file" id="newtrainingsamplesforanexistingconcept" class="uploadfile" accept=".csv,.xls,.tif,.png,.adf" multiple disabled required/>
 				  		</span>
 				  	</div>
 				  	
@@ -166,26 +165,26 @@
 					  	<div class="form-group">
 							<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
 							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName" size="20" id="FieldResearcherName" placeholder="Enter Name"/></span>
+							<input type="text" name="FieldResearcherName" size="20" id="FieldResearcherName" placeholder="Enter Name" required/></span>
 							<span style = "margin-left: 50px">
 							<label for="Location" style ="font-weight:normal">Training Location</label></span>
 							<span style = "margin-right: 350px; float:right">
-							<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location"/></span>
+							<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location" required/></span>
 						</div>
 						<div class="form-group">
 							<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
 							<span style = "margin-left: 80px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate"/></span>
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate" required/></span>
 							<span style = "margin-left: 50px">
 							<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
 							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate"/></span>
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate" required/></span>
 						</div>
 						
 						<div class="form-group">
 							<span><label for="Description" style ="font-weight:normal">Other details</label></span>
 							<span style = "margin-left: 112px">
-							<textarea name="OtherDetails" rows="1" cols="68" id="Description" placeholder="Enter any more relevant details"> </textarea></span>
+							<textarea name="OtherDetails" rows="1" cols="68" id="Description" placeholder="Enter any more relevant details" required></textarea></span>
 						</div>
 					</div>
 				</form>
@@ -198,7 +197,7 @@
 					<div class="form-group" >
 						<span><label for="firstconcepttomerge" style ="font-weight:normal">First concept to merge:</label></span>
 						<span style = "margin-left: 45px">
-							<select name="firstconcepttomerge" id="firstconcepttomerge"  >
+							<select name="firstconcepttomerge" id="firstconcepttomerge"  required>
 								<option>Existing concept</option>
 								{% for concept in concept_list %}
 								<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
@@ -208,7 +207,7 @@
 						<span style = "margin-left: 95px">
 						<label for="secondconcepttomerge" style ="font-weight:normal">Second concept to merge:</label></span>				
 					  	<span style = "margin-left: 40px">
-							<select name="secondconcepttomerge" id="secondconcepttomerge"  >
+							<select name="secondconcepttomerge" id="secondconcepttomerge"  required>
 								<option>Existing concept</option>
 								{% for concept in concept_list %}
 								<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
@@ -220,7 +219,7 @@
 					<div class="form-group" >
 						<label for="Mergedconceptname" style ="font-weight:normal">Merged concept name:</label>
 						<span style = "margin-left: 45px">
-							<input type="text" name="Mergedconceptname" value="" id="Mergedconceptname" placeholder="Enter name of concept"/>
+							<input type="text" name="Mergedconceptname" value="" id="Mergedconceptname" placeholder="Enter name of concept" required/>
 						</span>
 					</div>
 					
@@ -237,26 +236,26 @@
 					  	<div class="form-group">
 							<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
 							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName" value="" id="FieldResearcherName" placeholder="Enter Name"/></span>
+							<input type="text" name="FieldResearcherName" value="" id="FieldResearcherName" placeholder="Enter Name" required/></span>
 							<span style = "margin-left: 50px">
 							<label for="Location" style ="font-weight:normal">Training Location</label></span>
 							<span style = "margin-right: 351px; float:right">
-							<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location"/></span>
+							<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location" required/></span>
 						</div>
 						<div class="form-group">
 							<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
 							<span style = "margin-left: 78px">
-							<input type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate"/></span>
-							<span style = "margin-left: 62px">
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate" required/></span>
+							<span style = "margin-left: 50px">
 							<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
-							<span style = "margin-right: 360px; float:right">
-							<input type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate"/></span>
+							<span style = "margin-right: 349px; float:right">
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate" required /></span>
 						</div>
 						
 						<div class="form-group">
 							<span><label for="Description" style ="font-weight:normal">Other details</label></span>
 							<span style = "margin-left: 110px">
-							<textarea name="OtherDetails" rows="1" cols="75" id="Description" placeholder="Enter any more relevant details"> </textarea></span>
+							<textarea name="OtherDetails" rows="1" cols="68" id="Description" placeholder="Enter any more relevant details" required></textarea></span>
 						</div>
 					</div>
 				</form>
@@ -268,7 +267,7 @@
 					<div class="form-group" >
 						<span><label for="concepttosplit" style ="font-weight:normal">Choose a concept to split:</label></span>
 						<span style = "margin-left: 102px">
-							<select name="concepttosplit" id="concepttosplit"  >
+							<select name="concepttosplit" id="concepttosplit" required >
 								<option>Existing concept</option>
 								{% for concept in concept_list %}
 								<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
@@ -280,7 +279,7 @@
 					<div class="form-group" >
 						<span><label style ="font-weight:normal">Split the concept into:</label></span>
 						<span style = "margin-left: 129px">
-							<input type="text" name="conceptstosplitinto" value="" id="conceptstosplitinto" placeholder="Enter the concepts name separated by comma" style="width: 350px"/>
+							<input type="text" name="conceptstosplitinto" value="" id="conceptstosplitinto" placeholder="Enter the concepts name separated by comma" style="width: 350px" required />
 						</span>
 						<span style = "margin-left: 50px">
 							<button id="uploadsamplesforsplitconcepts" class="btn btn-default" >Upload samples</button>
@@ -296,26 +295,26 @@
 						<div class="form-group">
 							<span><label for="FieldResearcherName1" style ="font-weight:normal">Field researcher's name</label></span>
 							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName1" size="20" id="FieldResearcherName1" placeholder="Enter Name"/></span>
+							<input type="text" name="FieldResearcherName1" size="20" id="FieldResearcherName1" placeholder="Enter Name" required /></span>
 							<span style = "margin-left: 50px">
 							<label for="Location1" style ="font-weight:normal">Training Location</label></span>
 							<span style = "margin-right: 350px; float:right">
-							<input type="text" name="TrainingLocation1" value="" id="Location1" placeholder="Enter Training Location"/></span>
+							<input type="text" name="TrainingLocation1" value="" id="Location1" placeholder="Enter Training Location" required/></span>
 						</div>
 						<div class="form-group">
 							<span><label for="TrainingTimePeriodStartDate1" style ="font-weight:normal">Training start date</label></span>
 							<span style = "margin-left: 80px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate1" value="" id="TrainingTimePeriodStartDate1"/></span>
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate1" value="" id="TrainingTimePeriodStartDate1" required/></span>
 							<span style = "margin-left: 50px">
 							<label for="TrainingTimePeriodEndDate1" style ="font-weight:normal">Training end date</label></span>
 							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate1" value="" id="TrainingTimePeriodEndDate1"/></span>
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate1" value="" id="TrainingTimePeriodEndDate1" required/></span>
 						</div>
 						
 						<div class="form-group">
 							<span><label for="Description1" style ="font-weight:normal">Other details</label></span>
 							<span style = "margin-left: 112px">
-							<textarea name="OtherDetails1" rows="1" cols="68" id="Description1" placeholder="Enter any more relevant details"> </textarea></span>
+							<textarea name="OtherDetails1" rows="1" cols="68" id="Description1" placeholder="Enter any more relevant details" required></textarea></span>
 						</div>
 
 					</div>
@@ -325,26 +324,26 @@
 						<div class="form-group">
 							<span><label for="FieldResearcherName2" style ="font-weight:normal">Field researcher's name</label></span>
 							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName2" size="20" id="FieldResearcherName2" placeholder="Enter Name"/></span>
+							<input type="text" name="FieldResearcherName2" size="20" id="FieldResearcherName2" placeholder="Enter Name" required /></span>
 							<span style = "margin-left: 50px">
 							<label for="Location2" style ="font-weight:normal">Training Location</label></span>
 							<span style = "margin-right: 350px; float:right">
-							<input type="text" name="TrainingLocation2" value="" id="Location2" placeholder="Enter Training Location"/></span>
+							<input type="text" name="TrainingLocation2" value="" id="Location2" placeholder="Enter Training Location" required/></span>
 						</div>
 						<div class="form-group">
 							<span><label for="TrainingTimePeriodStartDate2" style ="font-weight:normal">Training start date</label></span>
 							<span style = "margin-left: 80px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate2" value="" id="TrainingTimePeriodStartDate2"/></span>
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate2" value="" id="TrainingTimePeriodStartDate2" required /></span>
 							<span style = "margin-left: 50px">
 							<label for="TrainingTimePeriodEndDate2" style ="font-weight:normal">Training end date</label></span>
 							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate2" value="" id="TrainingTimePeriodEndDate2"/></span>
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate2" value="" id="TrainingTimePeriodEndDate2" required/></span>
 						</div>
 						
 						<div class="form-group">
 							<span><label for="Description2" style ="font-weight:normal">Other details</label></span>
 							<span style = "margin-left: 112px">
-							<textarea name="OtherDetails2" rows="1" cols="68" id="Description2" placeholder="Enter any more relevant details"> </textarea></span>
+							<textarea name="OtherDetails2" rows="1" cols="68" id="Description2" placeholder="Enter any more relevant details" required></textarea></span>
 						</div>
 					</div>
 					
@@ -353,26 +352,26 @@
 						<div class="form-group">
 							<span><label for="FieldResearcherName3" style ="font-weight:normal">Field researcher's name</label></span>
 							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName3" size="20" id="FieldResearcherName3" placeholder="Enter Name"/></span>
+							<input type="text" name="FieldResearcherName3" size="20" id="FieldResearcherName3" placeholder="Enter Name" required/></span>
 							<span style = "margin-left: 50px">
 							<label for="Location3" style ="font-weight:normal">Training Location</label></span>
 							<span style = "margin-right: 350px; float:right">
-							<input type="text" name="TrainingLocation3" value="" id="Location3" placeholder="Enter Training Location"/></span>
+							<input type="text" name="TrainingLocation3" value="" id="Location3" placeholder="Enter Training Location" required/></span>
 						</div>
 						<div class="form-group">
 							<span><label for="TrainingTimePeriodStartDate3" style ="font-weight:normal">Training start date</label></span>
 							<span style = "margin-left: 80px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate3" value="" id="TrainingTimePeriodStartDate3"/></span>
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate3" value="" id="TrainingTimePeriodStartDate3" required/></span>
 							<span style = "margin-left: 50px">
 							<label for="TrainingTimePeriodEndDate3" style ="font-weight:normal">Training end date</label></span>
 							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate3" value="" id="TrainingTimePeriodEndDate3"/></span>
+							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate3" value="" id="TrainingTimePeriodEndDate3" required/></span>
 						</div>
 						
 						<div class="form-group">
 							<span><label for="Description3" style ="font-weight:normal">Other details</label></span>
 							<span style = "margin-left: 112px">
-							<textarea name="OtherDetails3" rows="1" cols="68" id="Description3" placeholder="Enter any more relevant details"> </textarea></span>
+							<textarea name="OtherDetails3" rows="1" cols="68" id="Description3" placeholder="Enter any more relevant details" required></textarea></span>
 						</div>
 					</div>
 					
@@ -408,6 +407,8 @@
 					  	</span>
 				  	</div>
 				  	<button id="savetrainingset1" class="btn btn-default" style=" display:none; margin:auto">Save trainingset</button>
+				  	<br />
+				  	<p id="missingfields1" style= "color: red; display:none; float:left"> <em>Error: one or more fields are missing</em> </p>
 				  	
 				</div>
 				
@@ -428,7 +429,7 @@
 						&nbsp; &nbsp; 
 						<label for="Attributes" id = "attributeslabel" style="font-weight: normal">No of attributes: <span id="Attributes"> </span> </label>
 						&nbsp; &nbsp; 
-						<span style = "float:right; margin-right: 100px"><p id="updatedtrainingsetmessage" style= "color: green"> <em> </em> </p></span>
+						<span style = "float:right; margin-right: 100px"><p id="updatedtrainingsetmessage" style= "color: green; font-size: 14px"> <em> </em> </p></span>
 					</div>
 					<br />
 					<div id= "trainingdataTable" class="handsontable" style="overflow: scroll; margin-left: 10px; display:none" >
@@ -510,16 +511,6 @@
 						<button id="applyeditoperations" style="display:none; margin-left:20px; margin-bottom: 15px" class="btn btn-default">Apply the edit operations</button>
 	
 					</div>
-					
-					<div id = "changedtrainingdata" style="margin-left: 5px; display:none" >
-						<label for="reasonchange" style ="font-weight:normal">Enter details of change</label><br />
-						<textarea name="reasonchange" rows="8" cols="40" id="reasonforchange" placeholder="Enter any more relevant details"> </textarea>
-					</div>
-					<div id = "newversionstoredsuccessfully" style="margin-left: 5px; display:none" >
-						<p id="successmessage" style= "color: green"> <em> </em> </p><br />
-					</div>
-					<button id="saveChanges" style="display:none" class="btn btn-default">Save changes </button>
-					
 				</div>
 			</div>
 		</div>

@@ -199,6 +199,9 @@ $(function() {
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/trainingsample/')) {
 		
+		var trainingdatacontainer = document.getElementById('trainingdataTable'), hot;
+		hot = new Handsontable(trainingdatacontainer, settings1);
+		
 		setTrainingSamplesTableHeight();
 		// call the setHeight function, every time window is resized
 		$(window).on('resize', function() {
@@ -258,15 +261,73 @@ $(function() {
 		var no_of_concepts =1;
 		
 		$('#addmorecategories').on('click', function(e) {
-			e.preventDefault();
+			$('#missingfields').hide();
+			var $this = $('#categoriesandsamples form:last');
+			if ($this[0][0].value != "" && $this[0][2].value != "" && $this[0][3].value != "" && $this[0][4].value != "" && $this[0][5].value != "" && $this[0][6].value != "" && $this[0][1].files.length != 0){
+				e.preventDefault();
+				
+				newtrainingdatasets = $this[0][1].files;
+				
+				var formdata = new FormData();
+				if (no_of_concepts==1){
+					formdata.append('IsFirstSample', 'True');
+				}
+				
+				$.each(newtrainingdatasets, function(i, file){
+					formdata.append('file', file);
+				});
+				
+				formdata.append('conceptName', $this[0][0].value);
+				formdata.append('FieldResearcherName', $this[0][2].value);
+				formdata.append('TrainingLocation', $this[0][3].value);
+				formdata.append('TrainingTimePeriodStartDate', $this[0][4].value);
+				formdata.append('TrainingTimePeriodEndDate', $this[0][5].value);
+				formdata.append('OtherDetails', $this[0][6].value);
+				formdata.append('IsFinalSample', 'False');
+				$.ajax({
+					type : "POST",
+					url : "http://127.0.0.1:8000/AdvoCate/trainingsample/",
+					async : true,
+					processData : false,
+					contentType : false,
+					data : formdata,
+					success : function(response) {
+						
+					}
+				});
+
+				no_of_concepts +=1;
+				console.log($('#categoriesandsamples form:last'));
+				a = "</br><form id=\"concept" + no_of_concepts + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
+				$(a).insertBefore('#addmorecategoriesorsubmit');
+				b = $('#concept1details').html();
+				$('#categoriesandsamples form:last').html(b);
+			}
+			else{
+				$('#missingfields').show();
+			}
 			
+		});
+		
+		//script to deal when user click submit button after finish uploading all the training samples
+		$('#submittrainingsamples').on('click', function(e) {
+			e.preventDefault();
+			$('#trainingsetname').show();
+			$('#savetrainingset').show();
+			$('#submittrainingsamples').hide();
+			$('#addmorecategories').hide();
+			$('#missingfields').hide();
+			
+		});
+		
+		// Script to deal when you done uploading all samples for a new trainingset for a new taxonomy and press save trainingset
+		$('#savetrainingset').on('click', function(e) {
+			e.preventDefault();
 			var $this = $('#categoriesandsamples form:last');
 			newtrainingdatasets = $this[0][1].files;
-			
+			console.log($('#trainingsetfilename'));
+			console.log($('#trainingsetfilename').val());
 			var formdata = new FormData();
-			if (no_of_concepts==1){
-				formdata.append('IsFirstSample', 'True');
-			}
 			
 			$.each(newtrainingdatasets, function(i, file){
 				formdata.append('file', file);
@@ -278,7 +339,8 @@ $(function() {
 			formdata.append('TrainingTimePeriodStartDate', $this[0][4].value);
 			formdata.append('TrainingTimePeriodEndDate', $this[0][5].value);
 			formdata.append('OtherDetails', $this[0][6].value);
-			formdata.append('IsFinalSample', 'False');
+			formdata.append('IsFinalSample', 'True');
+			formdata.append('TrainingsetName', $('#trainingsetfilename').val());
 			$.ajax({
 				type : "POST",
 				url : "http://127.0.0.1:8000/AdvoCate/trainingsample/",
@@ -287,112 +349,305 @@ $(function() {
 				contentType : false,
 				data : formdata,
 				success : function(response) {
+					$('#newconceptsanddetails').hide();
+					$('#viewandedittrainingset').show();
+					var trainingdata = response['trainingset'];
+					var classes = response['classes'];
+					$('#instances').html(trainingdata.length - 1);
+					$('#Attributes').html(trainingdata[0].length);
+
+					$('#trainingdataTable').show();
+					hot.loadData(trainingdata);
+					
+					a = "<option>Choose a concept</option>";
+					b = "<option>Choose first concept to merge</option>";
+					c = "<option>Choose second concept to merge</option>";
+					d = "<option>Choose the concept to be split</option>";
+					for (var i = 0; i < classes.length; i++){
+						a = a + "<option>" + classes[i] + "</option>";
+						b = b + "<option>" + classes[i] + "</option>";
+						c = c + "<option>" + classes[i] + "</option>";
+						d = d + "<option>" + classes[i] + "</option>";
+					}
+					$('#concepttoremove').html(a);
+					$('#firstconcepttomerge').html(b);
+					$('#secondconcepttomerge').html(c);
+					$('#concepttosplit').html(d);
+					
 					
 				}
 			});
+			
+		});
 
-			no_of_concepts +=1;
-			console.log($('#categoriesandsamples form:last'));
-			a = "</br><form id=\"concept" + no_of_concepts + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
-			$('#categoriesandsamples').append(a);
-			b = $('#concept1details').html();
-			$('#categoriesandsamples form:last').html(b);
+		//Script to deal when a new training set is created to model changes in an existing taxonomy
+		var no_of_concepts_while_modeling_changes =1;
+		$('#addnewcategory').on('click', function(e) {
+			a = "</br><form id=\"concept" + no_of_concepts_while_modeling_changes + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
+			b = $('#newconceptdetails').html();
+			
+			if (no_of_concepts_while_modeling_changes==1){
+				$('#categoriesandsamples_changeexistingtaxonomy').append(a);
+				$('#categoriesandsamples_changeexistingtaxonomy form:last').html(b);
+				$('#categoriesandsamples_changeexistingtaxonomy form:last').show();
+				$('#submittrainingsamples1').show();
+				no_of_concepts_while_modeling_changes +=1;
+			}
+			else{
+				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-1)');
+				saveTrainingSamples($this, false, a, b);
+			}
+		});
+		
+		$('#addexistingcategory').on('click', function(e) {
+			a = "</br><form id=\"concept" + no_of_concepts_while_modeling_changes + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
+			b = $('#existingconceptdetails').html();
+			
+			if (no_of_concepts_while_modeling_changes==1){
+				$('#categoriesandsamples_changeexistingtaxonomy').append(a);
+				$('#categoriesandsamples_changeexistingtaxonomy form:last').html(b);
+				$('#categoriesandsamples_changeexistingtaxonomy form:last').show();
+				$('#submittrainingsamples1').show();
+				no_of_concepts_while_modeling_changes +=1;
+			}
+			else{
+				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-1)');
+				saveTrainingSamples($this, false, a, b);
+			}
+		});
+		
+		$('#mergecategories').on('click', function(e) {
+			a = "</br><form id=\"concept" + no_of_concepts_while_modeling_changes + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
+			b = $('#mergingconceptdetails').html();
+						
+			if (no_of_concepts_while_modeling_changes==1){
+				$('#categoriesandsamples_changeexistingtaxonomy').append(a);
+				$('#categoriesandsamples_changeexistingtaxonomy form:last').html(b);
+				$('#categoriesandsamples_changeexistingtaxonomy form:last').show();
+				$('#submittrainingsamples1').show();
+				no_of_concepts_while_modeling_changes +=1;
+			}
+			else{
+				
+				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-1)');
+				saveTrainingSamples($this, false, a, b);
+			}
+		});
+		
+		$('#splitcategories').on('click', function(e) {
+			a = "</br><form id=\"concept" + no_of_concepts_while_modeling_changes + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
+			b = $('#splittingconceptdetails').html();
+						
+			if (no_of_concepts_while_modeling_changes==1){
+				$('#categoriesandsamples_changeexistingtaxonomy').append(a);
+				$('#categoriesandsamples_changeexistingtaxonomy form:last').html(b);
+				$('#categoriesandsamples_changeexistingtaxonomy form:last').show();
+				$('#submittrainingsamples1').show();
+				no_of_concepts_while_modeling_changes +=1;
+			}
+			else{
+				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-1)');
+				saveTrainingSamples($this, false, a, b);
+			}
+		});
+		
+		
+		
+		$('#submittrainingsamples1').on('click', function(e) {
+			$('#buttonsforcreatingtrainingsample').hide();
+			$('#trainingsetname1').show();
+			$('#savetrainingset1').show();
+		});
+		
+		$('#savetrainingset1').on('click', function(e) {
+			$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-1)');
+			saveTrainingSamples($this, true);
 			
 		});
 		
+		
+		//scripts to deal with the form when an existing concept is chosen when modelling changes in an existing category
+		
+		$('#categoriesandsamples_changeexistingtaxonomy').on('change', '.newsamples', function(e){
+			console.log($(this));
+			$(this).next().children().removeAttr('disabled');
+			
+		});
+		$('#categoriesandsamples_changeexistingtaxonomy').on('change', '.uploadfile', function(e){
+			//a = $(this).parents('form:first');
+			$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforanexistingconcept').show();
+			$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesformergedconcept').show();
+			
+			
+		});
+		
+		
+		// While creating a new trainingset when modelling changes in an existing category, if you split an existing category, this code does the magic
+		$('#categoriesandsamples_changeexistingtaxonomy').on('click', '#uploadsamplesforsplitconcepts', function(e){
+			e.preventDefault();
+			x = $('#categoriesandsamples_changeexistingtaxonomy form:last #conceptstosplitinto').val();
+			splitconcepts = x.split(',');
+			concept_no_id = ['samplesforfirstsplitconcept', 'samplesforsecondsplitconcept', 'samplesforthirdsplitconcept'];
+			a = "";
+			for (var i=0; i<splitconcepts.length; i++){
+				a = a + "<div class=\"form-group\" ><span><label style =\"font-weight:normal\"> Upload samples for " + splitconcepts[i] + ": </label></span><span style =\"margin-right: 560px; float:right\">" +
+					"<input type=\"file\" id =\"" + concept_no_id[i] + "accept=\".csv,.xls,.tif,.png,.adf\" multiple /></span></div>";
+				
+			}
+			$('#categoriesandsamples_changeexistingtaxonomy form:last #divforuploadsplitsamples').html(a);
+			if (splitconcepts.length ==2){
+				$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforfirstsplitconcept').show();
+				$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforsecondsplitconcept').show();
+			}
+			else{
+				$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforfirstsplitconcept').show();
+				$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforsecondsplitconcept').show();
+				$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforthirdsplitconcept').show();
+			}
+
+		});
+		
 		// function to save training samples for a new trainingset when modelling changes
-		function saveTrainingSamples($this, isFinalSample) {
+		function saveTrainingSamples($this, isFinalSample, a1, b1) {
 			
 			if ($this[0][0].id=='conceptName'){
-				newtrainingdatasets = $this[0][1].files;
-				var formdata = new FormData();
-				$.each(newtrainingdatasets, function(i, file){
-					formdata.append('file', file);
-				});
-				
-				formdata.append('ConceptName', $this[0][0].value);
-				formdata.append('FieldResearcherName', $this[0][2].value);
-				formdata.append('TrainingLocation', $this[0][3].value);
-				formdata.append('TrainingTimePeriodStartDate', $this[0][4].value);
-				formdata.append('TrainingTimePeriodEndDate', $this[0][5].value);
-				formdata.append('OtherDetails', $this[0][6].value);
-				formdata.append('ConceptType', '1');
-								
+				if ($this[0][0].value != "" && $this[0][2].value != "" && $this[0][3].value != "" && $this[0][4].value != "" && $this[0][5].value != "" && $this[0][6].value != "" && $this[0][1].files.length != 0){
+					newtrainingdatasets = $this[0][1].files;
+					var formdata = new FormData();
+					$.each(newtrainingdatasets, function(i, file){
+						formdata.append('file', file);
+					});
+					
+					formdata.append('ConceptName', $this[0][0].value);
+					formdata.append('FieldResearcherName', $this[0][2].value);
+					formdata.append('TrainingLocation', $this[0][3].value);
+					formdata.append('TrainingTimePeriodStartDate', $this[0][4].value);
+					formdata.append('TrainingTimePeriodEndDate', $this[0][5].value);
+					formdata.append('OtherDetails', $this[0][6].value);
+					formdata.append('ConceptType', '1');
+				}
+				else{
+					$('#missingfields1').show();
+					return true;
+				}			
 			}
 			else if ($this[0][0].id=='existingconceptName'){
-				
-				var conceptname = $this[0][0].value;
-				var formdata = new FormData();
-				formdata.append('ConceptName', conceptname);
-
-				if ($this[0][3].files[0] != ''){
-					newtrainingdatasets = $this[0][3].files;
-					$.each(newtrainingdatasets, function(i, file){
-						formdata.append('file', file);
-					});
-					formdata.append('FieldResearcherName', $this[0][4].value);
-					formdata.append('TrainingLocation', $this[0][5].value);
-					formdata.append('TrainingTimePeriodStartDate', $this[0][6].value);
-					formdata.append('TrainingTimePeriodEndDate', $this[0][7].value);
-					formdata.append('OtherDetails', $this[0][8].value);
-					formdata.append('UseExistingSamples', 'False');
+				if ( $this[0][0].value != ""){
+					var conceptname = $this[0][0].value;
+					var formdata = new FormData();
+					formdata.append('ConceptName', conceptname);
 					
+					if ($this[0][3].files[0] != ''){
+						if ($this[0][4].value != "" && $this[0][5].value != "" && $this[0][6].value != "" && $this[0][7].value != "" && $this[0][8].value != ""){
+							newtrainingdatasets = $this[0][3].files;
+							$.each(newtrainingdatasets, function(i, file){
+								formdata.append('file', file);
+							});
+							formdata.append('FieldResearcherName', $this[0][4].value);
+							formdata.append('TrainingLocation', $this[0][5].value);
+							formdata.append('TrainingTimePeriodStartDate', $this[0][6].value);
+							formdata.append('TrainingTimePeriodEndDate', $this[0][7].value);
+							formdata.append('OtherDetails', $this[0][8].value);
+							formdata.append('UseExistingSamples', 'False');
+						}
+						else{
+							$('#missingfields1').show();
+							return true;
+						}
+					}
+					else{
+						formdata.append('UseExistingSamples', 'True');
+					}
+					formdata.append('ConceptType', '2');
 				}
 				else{
-					formdata.append('UseExistingSamples', 'True');
+					$('#missingfields1').show();
+					return true;
 				}
-				formdata.append('ConceptType', '2');
-
 			}
 			else if ($this[0][0].id=='firstconcepttomerge'){
-				
-				var formdata = new FormData();
-				formdata.append('FirstConceptName', $this[0][0].value);
-				formdata.append('SecondConceptName', $this[0][1].value);
-				formdata.append('MergedConceptName', $this[0][2].value);
-				if ($('input[name="existingornewsampleformergedconcept"]').attr('value') == 'option2'){
-					newtrainingdatasets = $this[0][5].files;
-					$.each(newtrainingdatasets, function(i, file){
-						formdata.append('file', file);
-					});
-					formdata.append('FieldResearcherName', $this[0][6].value);
-					formdata.append('TrainingLocation', $this[0][7].value);
-					formdata.append('TrainingTimePeriodStartDate', $this[0][8].value);
-					formdata.append('TrainingTimePeriodEndDate', $this[0][9].value);
-					formdata.append('OtherDetails', $this[0][10].value);
-					formdata.append('UseExistingSamples', 'False');
-					
+				if ( $this[0][0].value != "" && $this[0][1].value != "" && $this[0][2].value != ""){
+					var formdata = new FormData();
+					formdata.append('FirstConceptName', $this[0][0].value);
+					formdata.append('SecondConceptName', $this[0][1].value);
+					formdata.append('MergedConceptName', $this[0][2].value);
+					if ($('input[name="existingornewsampleformergedconcept"]:checked').size()>0){
+						if ($('input[name="existingornewsampleformergedconcept"]:checked').attr('value') == 'option2'){
+							console.log($this[0][5].files.length);
+							if ($this[0][5].files.length != 0){
+								newtrainingdatasets = $this[0][5].files;
+								$.each(newtrainingdatasets, function(i, file){
+									formdata.append('file', file);
+								});
+								if ($this[0][6].value != "" && $this[0][7].value != "" && $this[0][8].value != "" && $this[0][9].value != "" && $this[0][10].value != ""){
+									formdata.append('FieldResearcherName', $this[0][6].value);
+									formdata.append('TrainingLocation', $this[0][7].value);
+									formdata.append('TrainingTimePeriodStartDate', $this[0][8].value);
+									formdata.append('TrainingTimePeriodEndDate', $this[0][9].value);
+									formdata.append('OtherDetails', $this[0][10].value);
+									formdata.append('UseExistingSamples', 'False');
+								}
+								else{
+									console.log("x");
+									$('#missingfields1').show();
+									return true;
+								}
+								
+							}
+							else{
+								console.log("11");
+								$('#missingfields1').show();
+								return true;
+							}
+							
+						}
+						else{
+							formdata.append('UseExistingSamples', 'True');
+						}
+						formdata.append('ConceptType', '3');
+					}
+					else{
+						console.log("2");
+						$('#missingfields1').show();
+						return true;
+					}
 				}
 				else{
-					formdata.append('UseExistingSamples', 'True');
+					console.log("3");
+					$('#missingfields1').show();
+					return true;
 				}
-				formdata.append('ConceptType', '3');
 				
 			}
 			else{
-				console.log($this);
-				var formdata = new FormData();
-				formdata.append('ConceptToSplit', $this[0][0].value);
-				formdata.append('conceptstosplitinto', $this[0][1].value);
-				conceptstosplitinto = $this[0][1].value;
-				splitconcepts = conceptstosplitinto.split(',');
-				filesforconcepts = ['filesforfirstconcept', 'filesforsecondconcept', 'filesforthirdconcept'];
-				detailsforconcepts = ['FieldResearcherName1', 'TrainingLocation1', 'TrainingTimePeriodStartDate1', 'TrainingTimePeriodEndDate1', 'OtherDetails1', 'FieldResearcherName2', 'TrainingLocation2', 'TrainingTimePeriodStartDate2', 'TrainingTimePeriodEndDate2', 'OtherDetails2', 'FieldResearcherName3', 'TrainingLocation3', 'TrainingTimePeriodStartDate3', 'TrainingTimePeriodEndDate3', 'OtherDetails3'];
-				fileslocation = 3;
-				datalocation= 3 + splitconcepts.length;
-				for (var i=0; i<splitconcepts.length; i++){
-					newtrainingdatasets = $this[0][fileslocation].files;
-					$.each(newtrainingdatasets, function(i, file){
-						formdata.append(filesforconcepts[i], file);
-					});
-					fileslocation++;
-					for (var j=0; j<5; j++){
-						formdata.append(detailsforconcepts[(i*5)+j], $this[0][datalocation].value);
-						datalocation++;
+				if ( $this[0][0].value != "" && $this[0][1].value != "" ){
+					var formdata = new FormData();
+					formdata.append('ConceptToSplit', $this[0][0].value);
+					formdata.append('conceptstosplitinto', $this[0][1].value);
+					conceptstosplitinto = $this[0][1].value;
+					splitconcepts = conceptstosplitinto.split(',');
+					filesforconcepts = ['filesforfirstconcept', 'filesforsecondconcept', 'filesforthirdconcept'];
+					detailsforconcepts = ['FieldResearcherName1', 'TrainingLocation1', 'TrainingTimePeriodStartDate1', 'TrainingTimePeriodEndDate1', 'OtherDetails1', 'FieldResearcherName2', 'TrainingLocation2', 'TrainingTimePeriodStartDate2', 'TrainingTimePeriodEndDate2', 'OtherDetails2', 'FieldResearcherName3', 'TrainingLocation3', 'TrainingTimePeriodStartDate3', 'TrainingTimePeriodEndDate3', 'OtherDetails3'];
+					fileslocation = 3;
+					datalocation= 3 + splitconcepts.length;
+					for (var i=0; i<splitconcepts.length; i++){
+						newtrainingdatasets = $this[0][fileslocation].files;
+						$.each(newtrainingdatasets, function(i, file){
+							formdata.append(filesforconcepts[i], file);
+						});
+						fileslocation++;
+						for (var j=0; j<5; j++){
+							formdata.append(detailsforconcepts[(i*5)+j], $this[0][datalocation].value);
+							datalocation++;
+						}
+						
 					}
-					
+					formdata.append('ConceptType', '4');
 				}
-				formdata.append('ConceptType', '4');
+				else{
+					$('#missingfields1').show();
+					return true;
+				}
 			}
 			formdata.append('IsFinalSample', isFinalSample);
 			if (no_of_concepts_while_modeling_changes == 2){
@@ -504,223 +759,18 @@ $(function() {
 						}
 						
 					}
-
 					
+					$('#categoriesandsamples_changeexistingtaxonomy').append(a1);
+					$('#categoriesandsamples_changeexistingtaxonomy form:last').html(b1);
+					$('#categoriesandsamples_changeexistingtaxonomy form:last').show();
+					no_of_concepts_while_modeling_changes +=1;
+					$('#missingfields1').hide();
+
 				}
 			});
-			
 
 		};
-		
-		//Script to deal when a new training set is created to model changes in an existing taxonomy
-		var no_of_concepts_while_modeling_changes =1;
-		$('#addnewcategory').on('click', function(e) {
-			a = "</br><form id=\"concept" + no_of_concepts_while_modeling_changes + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
-			$('#categoriesandsamples_changeexistingtaxonomy').append(a);
-			b = $('#newconceptdetails').html();
-			$('#categoriesandsamples_changeexistingtaxonomy form:last').html(b);
-			$('#categoriesandsamples_changeexistingtaxonomy form:last').show();
-			
-			if (no_of_concepts_while_modeling_changes==1){
-				$('#submittrainingsamples1').show();
-			}
-			else{
-				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-2)');
-				saveTrainingSamples($this, false);
-			}
-				
-			no_of_concepts_while_modeling_changes +=1;
-		});
-		
-		$('#addexistingcategory').on('click', function(e) {
-			a = "</br><form id=\"concept" + no_of_concepts_while_modeling_changes + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
-			$('#categoriesandsamples_changeexistingtaxonomy').append(a);
-			b = $('#existingconceptdetails').html();
-			$('#categoriesandsamples_changeexistingtaxonomy form:last').html(b);
-			$('#categoriesandsamples_changeexistingtaxonomy form:last').show();
-			
-			if (no_of_concepts_while_modeling_changes==1){
-				$('#submittrainingsamples1').show();
-			}
-			else{
-				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-2)');
-				saveTrainingSamples($this, false);
-			}
-			no_of_concepts_while_modeling_changes +=1;
-		});
-		
-		$('#mergecategories').on('click', function(e) {
-			a = "</br><form id=\"concept" + no_of_concepts_while_modeling_changes + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
-			$('#categoriesandsamples_changeexistingtaxonomy').append(a);
-			b = $('#mergingconceptdetails').html();
-			$('#categoriesandsamples_changeexistingtaxonomy form:last').html(b);
-			$('#categoriesandsamples_changeexistingtaxonomy form:last').show();
-						
-			if (no_of_concepts_while_modeling_changes==1){
-				$('#submittrainingsamples1').show();
-			}
-			else{
-				
-				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-2)');
-				saveTrainingSamples($this, false);
-			}
-			no_of_concepts_while_modeling_changes +=1;
-		});
-		
-		$('#splitcategories').on('click', function(e) {
-			a = "</br><form id=\"concept" + no_of_concepts_while_modeling_changes + "details\" enctype=\"multipart/form-data\" action=\"#\"></form>";
-			$('#categoriesandsamples_changeexistingtaxonomy').append(a);
-			b = $('#splittingconceptdetails').html();
-			$('#categoriesandsamples_changeexistingtaxonomy form:last').html(b);
-			$('#categoriesandsamples_changeexistingtaxonomy form:last').show();
-						
-			if (no_of_concepts_while_modeling_changes==1){
-				$('#submittrainingsamples1').show();
-			}
-			else{
-				$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-2)');
-				saveTrainingSamples($this, false);
-			}
-			no_of_concepts_while_modeling_changes +=1;
-		});
-		
-		
-		
-		$('#submittrainingsamples1').on('click', function(e) {
-			$('#buttonsforcreatingtrainingsample').hide();
-			$('#trainingsetname1').show();
-			$('#savetrainingset1').show();
-		});
-		
-		$('#savetrainingset1').on('click', function(e) {
-			$this = $('#categoriesandsamples_changeexistingtaxonomy form:eq(-1)');
-			saveTrainingSamples($this, true);
-			
-		});
-		
-		
-		//scripts to deal with the form when an existing concept is chosen when modelling changes in an existing category
-		
-		$('#categoriesandsamples_changeexistingtaxonomy').on('change', '.newsamples', function(e){
-			console.log($(this).next());
-			$(this).next().children().removeAttr('disabled');
-			
-		});
-		$('#categoriesandsamples_changeexistingtaxonomy').on('change', '.uploadfile', function(e){
-			//a = $(this).parents('form:first');
-			$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforanexistingconcept').show();
-			$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesformergedconcept').show();
-			
-			
-		});
-		
-		
-		// While creating a new trainingset when modelling changes in an existing category, if you split an existing category, this code does the magic
-		$('#categoriesandsamples_changeexistingtaxonomy').on('click', '#uploadsamplesforsplitconcepts', function(e){
-			e.preventDefault();
-			x = $('#categoriesandsamples_changeexistingtaxonomy form:last #conceptstosplitinto').val();
-			splitconcepts = x.split(',');
-			concept_no_id = ['samplesforfirstsplitconcept', 'samplesforsecondsplitconcept', 'samplesforthirdsplitconcept'];
-			a = "";
-			for (var i=0; i<splitconcepts.length; i++){
-				a = a + "<div class=\"form-group\" ><span><label style =\"font-weight:normal\"> Upload samples for " + splitconcepts[i] + ": </label></span><span style =\"margin-right: 560px; float:right\">" +
-					"<input type=\"file\" id =\"" + concept_no_id[i] + "accept=\".csv,.xls,.tif,.png,.adf\" multiple /></span></div>";
-				
-			}
-			$('#categoriesandsamples_changeexistingtaxonomy form:last #divforuploadsplitsamples').html(a);
-			if (splitconcepts.length ==2){
-				$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforfirstsplitconcept').show();
-				$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforsecondsplitconcept').show();
-			}
-			else{
-				$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforfirstsplitconcept').show();
-				$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforsecondsplitconcept').show();
-				$('#categoriesandsamples_changeexistingtaxonomy form:last #detailsfornewtrainingsamplesforthirdsplitconcept').show();
-			}
-			
-			
-	  		
-			
-			
-		});
-		
-		
-		//script to deal when user click submit button after finish uploading all the training samples
-		$('#submittrainingsamples').on('click', function(e) {
-			e.preventDefault();
-			$('#trainingsetname').show();
-			$('#savetrainingset').show();
-			$('#submittrainingsamples').attr('disabled','disabled');
-			$('#addmorecategories').attr('disabled','disabled');
-			
-			
-			
-		});
-		
-		$('#savetrainingset').on('click', function(e) {
-			e.preventDefault();
-			var $this = $('#categoriesandsamples form:last');
-			newtrainingdatasets = $this[0][1].files;
-			console.log($('#trainingsetfilename'));
-			console.log($('#trainingsetfilename').val());
-			var formdata = new FormData();
-			
-			$.each(newtrainingdatasets, function(i, file){
-				formdata.append('file', file);
-			});
-			
-			formdata.append('conceptName', $this[0][0].value);
-			formdata.append('FieldResearcherName', $this[0][2].value);
-			formdata.append('TrainingLocation', $this[0][3].value);
-			formdata.append('TrainingTimePeriodStartDate', $this[0][4].value);
-			formdata.append('TrainingTimePeriodEndDate', $this[0][5].value);
-			formdata.append('OtherDetails', $this[0][6].value);
-			formdata.append('IsFinalSample', 'True');
-			formdata.append('TrainingsetName', $('#trainingsetfilename').val());
-			$.ajax({
-				type : "POST",
-				url : "http://127.0.0.1:8000/AdvoCate/trainingsample/",
-				async : true,
-				processData : false,
-				contentType : false,
-				data : formdata,
-				success : function(response) {
-					$('#newconceptsanddetails').hide();
-					$('#viewandedittrainingset').show();
-					var trainingdata = response['trainingset'];
-					var classes = response['classes'];
-					$('#instances').html(trainingdata.length - 1);
-					$('#Attributes').html(trainingdata[0].length);
 
-					$('#trainingdataTable').show();
-					hot.loadData(trainingdata);
-					
-					a = "<option>Choose a concept</option>";
-					b = "<option>Choose first concept to merge</option>";
-					c = "<option>Choose second concept to merge</option>";
-					d = "<option>Choose the concept to be split</option>";
-					for (var i = 0; i < classes.length; i++){
-						a = a + "<option>" + classes[i] + "</option>";
-						b = b + "<option>" + classes[i] + "</option>";
-						c = c + "<option>" + classes[i] + "</option>";
-						d = d + "<option>" + classes[i] + "</option>";
-					}
-					$('#concepttoremove').html(a);
-					$('#firstconcepttomerge').html(b);
-					$('#secondconcepttomerge').html(c);
-					$('#concepttosplit').html(d);
-					
-					
-				}
-			});
-			
-		});
-		
-
-
-		var trainingdatacontainer = document.getElementById('trainingdataTable'), hot;
-		hot = new Handsontable(trainingdatacontainer, settings1);
-		
 		// Script to deal with when the existing training file is selected
 		$('#existingtrainingfiles').on('change', function() {
 			$('#viewandedittrainingset').show();
@@ -828,172 +878,6 @@ $(function() {
 
 		});
 
-
-
-		$('#savetrainingdatadetails').on('click', function(e) {
-			e.preventDefault();
-			var $this = $('#newtrainingdatasetdetails');
-			$.post("http://127.0.0.1:8000/AdvoCate/savetrainingdatadetails/", $this.serialize(), function(response) {
-				if (response['common_categories_message']){
-					$('#newtrainingdatasetdetails').hide();
-					$('#trainingsetcomparison').show();
-					var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
-							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
-					a = a + " <div class=\"panel-body\"> <p><em> Note:" + response['common_categories_message'] + "</em></p></div>";
-					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-				
-					for (var i = 0; i < response['common_categories'].length; i++){
-						a = a + "<li class=\"list-group-item\">" + response['common_categories'][i] + "</li>";
-					}
-					a = a + "</ul></div>";
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
-					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-				
-					for (var i = 0; i < response['new_categories'].length; i++){
-						a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
-					}
-					a = a + "</ul></div>";
-					
-					if (response['deprecated_categories'].length!=0){
-						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
-						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-					
-						for (var i = 0; i < response['deprecated_categories'].length; i++){
-							a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
-						}
-						a = a + "</ul></div>";
-					}
-					$('#collapse7').html(a);
-					
-				}
-				else if (response['common_categories']){
-					$('#newtrainingdatasetdetails').hide();
-					$('#trainingsetcomparison').show();
-					var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
-							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
-					a = a + "<table class=\"table\"><tr><th> Category</th><th> J-Index </th></tr>";
-
-					for (var i = 0; i < response['common_categories'].length; i++){
-						a = a + "<tr><td>" + response['common_categories'][i][0] + "</td><td>" + response['common_categories'][i][1] + "</td></tr>";
-					}
-					a = a + "</table></div>";
-					
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
-					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-				
-					for (var i = 0; i < response['new_categories'].length; i++){
-						a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
-					}
-					a = a + "</ul></div>";
-					
-					if (response['deprecated_categories'].length!=0){
-						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
-						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-					
-						for (var i = 0; i < response['deprecated_categories'].length; i++){
-							a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
-						}
-						a = a + "</ul></div>";
-					}
-					$('#collapse7').html(a);
-					
-				}
-				else{
-					$('#newtrainingdatasetdetails').hide();
-				}
-			});
-		});
-
-		$('#saveChanges').on('click', function() {
-			// So after the execution it doesn't refresh back
-			change_message = JSON.stringify($.trim($('#reasonforchange').val()));
-			table_data = hot.getData();
-			table_data.unshift(change_message);
-			data = JSON.stringify(table_data);
-			event.preventDefault();
-			$.ajax({
-				type : "POST",
-				url : "http://127.0.0.1:8000/AdvoCate/saveNewTrainingVersion/",
-				async : true,
-				processData : false,
-				contentType : false,
-				data : data,
-				success : function(response) {
-					$('#saveChanges').hide();
-					$('#changedtrainingdata').hide();
-					$('#newversionstoredsuccessfully').show();
-					$('#successmessage').html(response);
-					if (response['common_categories_message']){
-						$('#trainingsetcomparison').show();
-						var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
-								"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
-						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
-						a = a + " <div class=\"panel-body\"> <p><em> Note:" + response['common_categories_message'] + "</em></p></div>";
-						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-					
-						for (var i = 0; i < response['common_categories'].length; i++){
-							a = a + "<li class=\"list-group-item\">" + response['common_categories'][i] + "</li>";
-						}
-						a = a + "</ul></div>";
-						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
-						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-					
-						for (var i = 0; i < response['new_categories'].length; i++){
-							a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
-						}
-						a = a + "</ul></div>";
-						
-						if (response['deprecated_categories'].length!=0){
-							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
-							a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-						
-							for (var i = 0; i < response['deprecated_categories'].length; i++){
-								a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
-							}
-							a = a + "</ul></div>";
-						}
-						$('#collapse7').html(a);
-						
-					}
-				else if (response['common_categories']){
-					$('#trainingsetcomparison').show();
-					var a = "<label style=\"font-size: 16px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
-							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
-					a = a + "<table class=\"table\"><tr><th> Category</th><th> J-Index </th></tr>";
-
-					for (var i = 0; i < response['common_categories'].length; i++){
-						a = a + "<tr><td>" + response['common_categories'][i][0] + "</td><td>" + response['common_categories'][i][1] + "</td></tr>";
-					}
-					a = a + "</table></div>";
-					
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
-					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-				
-					for (var i = 0; i < response['new_categories'].length; i++){
-						a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
-					}
-					a = a + "</ul></div>";
-					
-					if (response['deprecated_categories'].length!=0){
-						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
-						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-					
-						for (var i = 0; i < response['deprecated_categories'].length; i++){
-							a = a + "<li class=\"list-group-item\">" + response['deprecated_categories'][i] + "</li>";
-						}
-						a = a + "</ul></div>";
-					}
-					$('#collapse7').html(a);
-					
-					}
-				}
-
-			});
-		});
-		
 		$('input[name="chooseeditoperation"]').on('click', function() {
 			var $this = $(this);
 			$this.next().show();
@@ -1347,7 +1231,7 @@ $(function() {
 										}
 										f = f + "</table>";
 										f = f + "<input type=\"submit\" id=\"submitsuggestions\" value=\"Submit\" class=\"btn btn-default\" style=\"margin:20px; display:none\"/>";
-										f = f + "<label id=\"successmessageforappliedsuggestions\" style=\"margin-top: 15px; margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal\"></label>";
+										f = f + "<label id=\"successmessageforappliedsuggestions\" style=\"margin-top: 15px; margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal; font-size:14px; color:green\"></label>";
 										$('#collapse3').html(f);
 										$('#suggestions_section').show();
 									}
