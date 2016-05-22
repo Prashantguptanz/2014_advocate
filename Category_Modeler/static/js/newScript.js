@@ -122,6 +122,20 @@ $(function() {
 		}
 
 	});
+	
+	$('#view_exp_process').on('click', function(e) {
+		console.log("I am here");
+		if ($(this).text() == 'Show exploration process'){
+			$(this).text("Hide exploration process");
+			$('#exploration_path_viz').show();
+			
+		}
+		else{
+			$(this).text("Show exploration process");
+			$('#exploration_path_viz').hide();
+		}
+			
+	});
 
 	totalwidth = $(window).width();
 	containerwidth = 1170;
