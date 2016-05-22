@@ -120,6 +120,9 @@ def saveexistingtaxonomydetails(request):
     if 'view_existing_taxonomies' in request.session:
         del request.session['view_existing_taxonomies']
         request.session.modified = True
+    if 'current_exploration_chain_viz' in request.session:
+        del request.session['current_exploration_chain_viz']
+        request.session.modified = True
     
     return HttpResponse("Upload new training samples or choose an existing one, and start the exploration process!");
 
@@ -142,6 +145,9 @@ def savenewtaxonomydetails(request):
         request.session.modified = True
     if 'view_existing_taxonomies' in request.session:
         del request.session['view_existing_taxonomies']
+        request.session.modified = True
+    if 'current_exploration_chain_viz' in request.session:
+        del request.session['current_exploration_chain_viz']
         request.session.modified = True
     return HttpResponse("Upload training samples by switching to 'Training Samples' tab, and start the modelling process!");
 
@@ -286,14 +292,31 @@ def trainingsampleprocessing(request):
                     del request.session['current_test_file_columns']
                     del request.session['current_test_file_rows']
                     request.session.modified = True
-                                
+                
                 trs = TrainingSet(request.session['current_training_file_name'])
                 classes = list(numpy.unique(trs.target))
+                no_of_spectral_bands = len(list(trs.features)) - 1
+                title = "Create trainingset: " + request.session['current_training_file_name']
                 with open('%s%s' % (EXISTING_TRAINING_DATA_LOCATION, request.session['current_training_file_name']), 'rU') as trainingset:
                     datareader = csv.reader(trainingset, delimiter=',')
                     trainingsetasArray = list(datareader)
                     trainingset.close()
-                return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes})  
+                data_content = "Spectral bands: " + str(no_of_spectral_bands) + "<br/><br/>" + "<b>New concepts added:</b> "
+                for concept in classes:
+                    data_content = data_content + "<br/>" + concept
+                
+                #adding details for current exploration details for visualization
+                current_step = ['Create trainingset', title, data_content]
+                
+                if 'current_exploration_chain_viz' in request.session:
+                    current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+                    current_exploration_chain_viz.append(current_step)
+                    request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
+                else:
+                    request.session['current_exploration_chain_viz'] = [current_step]
+                    
+                
+                return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz']})  
             return HttpResponse("")
         #----------------------------------------------------------------------------------------------------------------
         elif 'IsFinalSample' in data and 'existing_taxonomy_name' in request.session:
@@ -596,11 +619,60 @@ def trainingsampleprocessing(request):
                 new_training_sample = TrainingSet(request.session['current_training_file_name'])
                 old_training_sample = TrainingSet(old_trainingset[2])
                 common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
+                
+                #adding details for current exploration details for visualization
+                old_spectral_bands_no = len(old_training_sample.features)-1
+                new_spectral_bands_no = len(new_training_sample.features)-1
+                new_trainingset_name = request.session['current_training_file_name']
+                reference_trainingset_name = old_trainingset[2]
+                data_content = "Reference trainingset: " + reference_trainingset_name + " (" + str(old_spectral_bands_no) + "spectral bands)<br/> New trainingset: " + new_trainingset_name + " (" + str(new_spectral_bands_no) + "spectral bands)<br/><br/>" + "<b>Concepts in new trainingset:<b> <br/><br/>"
+                
+                if 'new_categories' in request.session:
+                    new_categories = request.session['new_categories']
+                    data_content = data_content + "<b>New concepts:</b><br/>"
+                    for category in new_categories:
+                        data_content = data_content + category + "<br/>"
+                    data_content = data_content + "<br/>"
+                
+                if 'existing_categories' in request.session:
+                    existing_categories = request.session['existing_categories']
+                    data_content = data_content + "<b>Existing concepts:</b><br/>"
+                    for category in existing_categories:
+                        data_content = data_content + category + "<br/>"
+                    data_content = data_content + "<br/>"
+                
+                if 'categories_merged_from_existing' in request.session:
+                    categories_merged_from_existing = request.session['categories_merged_from_existing']
+                    data_content = data_content + "<b>Merged concept:</b><br/>"
+                    for category in categories_merged_from_existing:
+                        data_content = data_content + category[0] + " and " + category[1] + " merged to create " + category[2] + "<br/>"
+                    data_content = data_content + "<br/>"
+                
+                if 'categories_split_from_existing' in request.session:
+                    categories_split_from_existing = request.session['categories_split_from_existing']
+                    data_content = data_content + "<b>Split concepts:</b><br/>"
+                    for category in categories_split_from_existing:
+                        if len(category) == 3:
+                            data_content = data_content + category[0] + " split into " + category[1] + " and " + category[2] + "<br/>"
+                        else:
+                            data_content = data_content + category[0] + " split into " + category[1] + ", " + category[2] +  " and " + category[3] +"<br/>"
+                    data_content = data_content + "<br/>"
+                      
+                
+                current_step = ['Create trainingset', 'Create trainingset', data_content]
+                
+                if 'current_exploration_chain_viz' in request.session:
+                    current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+                    current_exploration_chain_viz.append(current_step)
+                    request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
+                else:
+                    request.session['current_exploration_chain_viz'] = [current_step]
+                
                 if isinstance(common_categories[0], list)==False:
                     common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
-                    return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories, 'common_categories_message':common_categories_message})
+                    return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories, 'common_categories_message':common_categories_message})
         
-                return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories})
+                return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories})
 
                 
             return HttpResponse("")
@@ -668,13 +740,18 @@ def trainingsampleprocessing(request):
             old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[2]
             old_training_sample = TrainingSet(old_trainingset_name)
             category_list = list(numpy.unique(old_training_sample.target))
-            return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name, 'existing_taxonomy': existing_taxonomy, 'concept_list': category_list})
+            if 'current_exploration_chain_viz' in request.session:
+                return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'existing_taxonomy': existing_taxonomy, 'concept_list': category_list})
+            else:            
+                return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name, 'existing_taxonomy': existing_taxonomy, 'concept_list': category_list})
         else:
             new_taxonomy =    request.session['new_taxonomy_name'] 
             if Trainingset.objects.exists(): # @UndefinedVariable
                 training_set_list = Trainingset.objects.all()  # @UndefinedVariable
-                
-                return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name, 'new_taxonomy': new_taxonomy})
+                if 'current_exploration_chain_viz' in request.session:
+                    return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'new_taxonomy_name': new_taxonomy})
+                else:
+                    return render(request, 'trainingsample.html', {'training_set_list':training_set_list, 'user_name': user_name, 'new_taxonomy_name': new_taxonomy})
             else:
                 return render(request, 'trainingsample.html', {'user_name': user_name, 'new_taxonomy': new_taxonomy})
         
@@ -940,7 +1017,41 @@ def applyeditoperations(request):
     if 'categories_split_from_existing' in request.session:
         print request.session['categories_split_from_existing']
 
+    
+    #adding details for current exploration details for visualization
+    old_trainingset_name = request.session['current_training_file_name']
+    new_trainingset_name = newfilename
+    data_content = "Old trainingset: " + old_trainingset_name + "<br/> New trainingset: " + new_trainingset_name + "<br/><br/>" + "<b>Edit operations: </b><br/>"
 
+    for editoperation in currenteditoperations:
+        if editoperation[0] == '1':
+            data_content = data_content + "Remove 'no data' values<br/>"
+        elif editoperation[0] == '2': 
+            data_content = data_content + "Remove concept" + editoperation[1]  + "<br/>"
+        elif editoperation[0] == '3':
+            mergedconceptname = editoperation[2]
+            concepts_to_merge = editoperation[1]
+            if len(concepts_to_merge) ==2:
+                data_content = data_content + "Merge" + concepts_to_merge[0] + " and " + concepts_to_merge[1] + " to create " + mergedconceptname + "<br/>"
+            else:
+                data_content = data_content + "Merge" + concepts_to_merge[0] + ", " + concepts_to_merge[1] + " and " + concepts_to_merge[2] + " to create " + mergedconceptname + "<br/>"
+        else:
+            concepttosplit = editoperation[1];
+            firstconcept = editoperation[2];
+            secondconcept = editoperation[4];
+            data_content = data_content + "Split" + concepttosplit + " into " + firstconcept + " and " + secondconcept + "<br/>"
+    
+    current_step = ['Change trainingset', 'Change trainingset', data_content]
+    
+    if 'current_exploration_chain_viz' in request.session:
+        current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+        current_exploration_chain_viz.append(current_step)
+        request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
+    else:
+        request.session['current_exploration_chain_viz'] = [current_step]
+    
+    
+    
     os.rename(EXISTING_TRAINING_DATA_LOCATION + fname, EXISTING_TRAINING_DATA_LOCATION + newfilename)
 
     request.session['current_training_file_name'] = newfilename
@@ -966,11 +1077,11 @@ def applyeditoperations(request):
         common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
         if isinstance(common_categories[0], list)==False:
             common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
-            return JsonResponse({'trainingset': trainingsetasArray, 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories, 'common_categories_message':common_categories_message})
+            return JsonResponse({'trainingset': trainingsetasArray, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories, 'common_categories_message':common_categories_message})
 
-        return JsonResponse({'trainingset': trainingsetasArray, 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories})
+        return JsonResponse({'trainingset': trainingsetasArray, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories})
 
-    return JsonResponse({'trainingset': trainingsetasArray})
+    return JsonResponse({'trainingset': trainingsetasArray, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'],})
 
 
 
@@ -1006,8 +1117,7 @@ def signaturefile(request):
     
     if 'current_training_file_name' not in request.session:
         return render (request, 'signaturefile.html', {'user_name':user_name})
-    
-    print request.session['current_training_file_name']
+
     trainingfile = TrainingSet(request.session['current_training_file_name'])
     features = list(trainingfile.features)
 
@@ -1092,6 +1202,23 @@ def signaturefile(request):
             del request.session['current_test_file_columns']
             del request.session['current_test_file_rows']
             request.session.modified = True
+        
+            #adding details for current exploration details for visualization
+    
+        data_content = "Model type: " + classifiername + "<br/> Validation type: " + validationtype + "<br/> Validation score: " + score + "<br/>Kappa: " + kp + "<br/><br/>" + "<b>Producer/user accuracies:</b><br/>"
+        categories = list(numpy.unique(trainingfile.target))
+        for i, category in enumerate(categories):
+            data_content = data_content + category + " (" + prodacc[i] + ", " + useracc[i] + ")<br/>" 
+        
+        current_step = ['Training activity', 'Training activity', data_content]
+        
+        if 'current_exploration_chain_viz' in request.session:
+            current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+            current_exploration_chain_viz.append(current_step)
+            request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
+        else:
+            request.session['current_exploration_chain_viz'] = [current_step]
+    
         
         if (classifiername=="Naive Bayes"):
             covariance_mat = trainingfile.create_covariance_matrix()
@@ -1184,7 +1311,7 @@ def signaturefile(request):
                         single_category_comparison.append(old_category_details[0][0])
                         single_category_comparison.append(old_category_details[0][1])
                         common_categories_comparison.append(single_category_comparison)
-                    return JsonResponse({'attributes': features, 'user_name':user_name, 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
+                    return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
                 else:
                     for common_category in common_categories:
                         single_category_comparison = []
@@ -1211,9 +1338,9 @@ def signaturefile(request):
                         existing_categories_comparison_to_store.append(a)
                         common_categories_comparison.append(single_category_comparison)
                     request.session['existing_categories_computational_intension_comparison'] = existing_categories_comparison_to_store
-                    return JsonResponse({'attributes': features, 'user_name':user_name, 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
+                    return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'],'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
                
-            return JsonResponse({'attributes': features, 'user_name':user_name, 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list})
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list})
         
         elif (classifiername=="Decision Tree"):
             #print clf.tree_.__getstate__()
@@ -1274,14 +1401,16 @@ def signaturefile(request):
                     single_category_comparison.append(old_category_details[0][0])
                     single_category_comparison.append(old_category_details[0][1])
                     common_categories_comparison.append(single_category_comparison)
-                return JsonResponse({'attributes': features, 'user_name':user_name, 'suggestion_list': unique_suggestion_list, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc, 'common_categories_comparison':common_categories_comparison})
+                return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'suggestion_list': unique_suggestion_list, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc, 'common_categories_comparison':common_categories_comparison})
                 
-            return JsonResponse({'attributes': features, 'user_name':user_name, 'suggestion_list': unique_suggestion_list, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc})
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'suggestion_list': unique_suggestion_list, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc})
         else:
             return ""   
     else:
-        return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name, 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit']})
-
+        if 'existing_taxonomy_name' in request.session:        
+            return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit']})
+        else:
+            return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit']})
 
 def find_index_of_highest_number_except_a_given_index(lst, index):
     if index !=0:
@@ -1322,6 +1451,7 @@ def plot_confusion_matrix(cm, targetValueArray, title='Confusion matrix', cmap=p
 
 @login_required
 def supervised(request):
+    request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
     if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
         messages.error(request, "Choose an activity before you proceed further")
@@ -1370,6 +1500,15 @@ def supervised(request):
             
             listofcategories = clf.classes_.tolist()
             
+            data_content = "Test file: " + testfile.name + "<br/> Classified map: " + outputmapinJPG
+            current_step = ['Classification', 'Classification', data_content]
+            
+            if 'current_exploration_chain_viz' in request.session:
+                current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+                current_exploration_chain_viz.append(current_step)
+                request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
+            else:
+                request.session['current_exploration_chain_viz'] = [current_step]
             
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
@@ -1379,18 +1518,33 @@ def supervised(request):
                 change_matrix, J_Index_for_common_categories = create_change_matrix(oldCategories, predictedValue, rows, columns)
                 request.session['J_Index_for_common_categories'] = J_Index_for_common_categories
                     
-                return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories, 'change_matrix':change_matrix, 'old_categories': oldCategories});
+                return  JsonResponse({'map': outputmapinJPG, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'categories': listofcategories, 'change_matrix':change_matrix, 'old_categories': oldCategories});
             
-            return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories});
+            return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz']});
     
     
     elif 'current_model_id' not in request.session:
-        error = "Create a classification model before classifying an image"
-        return render(request, 'supervised.html', {'user_name':user_name, 'error': error})
+        trainingfile = TrainingSet(request.session['current_training_file_name'])
+        concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
+        error = "Error: Create a classification model before classifying an image"
+        if 'current_exploration_chain_viz' in request.session:
+            if 'existing_taxonomy_name' in request.session:
+                return render(request, 'supervised.html', {'user_name':user_name, 'error': error, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'concepts': concepts_in_current_taxonomy})
+            else:
+                return render(request, 'supervised.html', {'user_name':user_name, 'error': error, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'concepts': concepts_in_current_taxonomy})
+        else:
+            return render(request, 'supervised.html', {'user_name':user_name, 'error': error})
     else:
         trainingfile = TrainingSet(request.session['current_training_file_name'])
         concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
-        return render (request, 'supervised.html', {'user_name':user_name, 'concepts': concepts_in_current_taxonomy})
+        if 'current_exploration_chain_viz' in request.session:
+            if 'existing_taxonomy_name' in request.session:
+                return render(request, 'supervised.html', {'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'concepts': concepts_in_current_taxonomy})
+            else:
+                return render(request, 'supervised.html', {'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'concepts': concepts_in_current_taxonomy})
+        else:
+            return render (request, 'supervised.html', {'user_name':user_name, 'concepts': concepts_in_current_taxonomy})
+
 
 def updateConfigFiles(conceptsandcolors):
     sorted_concepts = sorted(conceptsandcolors, key= lambda concept: len(concept[0]))

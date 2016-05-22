@@ -123,9 +123,32 @@ $(function() {
 
 	});
 
+	totalwidth = $(window).width();
+	containerwidth = 1170;
+	remainingwidth = (totalwidth - containerwidth)/2;
+	newwidth = remainingwidth + 'px';
+	$('.container').attr('style', 'float:left');
+	$('.container').css('margin-left', newwidth);
+	
+	$('#explorationChainToggle').on('click', function(e) {
+		e.preventDefault();
+		$('#exploration_path_viz').slideToggle();
+	});
+	
+	$('[data-toggle="popover"]').popover();
+	
+	
+	var popOverSettings = {
+	    placement: 'top',
+	    container: '.pop_con',
+	    html: true,
+	    selector: '[rel="popover"]'
+	};
+	
 	// Script for 'Home' page
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/home/')) {
+		$('[data-toggle="popover"]').popover();
 
 		$('input[name="chooseactivity"]').on('click', function() {
 			var $this = $(this);
@@ -320,7 +343,7 @@ $(function() {
 			
 		});
 		
-		// Script to deal when you done uploading all samples for a new trainingset for a new taxonomy and press save trainingset
+		// Script to deal when user is done uploading all samples for a new trainingset for a new taxonomy and press save trainingset
 		$('#savetrainingset').on('click', function(e) {
 			e.preventDefault();
 			var $this = $('#categoriesandsamples form:last');
@@ -363,17 +386,42 @@ $(function() {
 					b = "<option>Choose first concept to merge</option>";
 					c = "<option>Choose second concept to merge</option>";
 					d = "<option>Choose the concept to be split</option>";
+					list_of_classes ="";
 					for (var i = 0; i < classes.length; i++){
 						a = a + "<option>" + classes[i] + "</option>";
 						b = b + "<option>" + classes[i] + "</option>";
 						c = c + "<option>" + classes[i] + "</option>";
 						d = d + "<option>" + classes[i] + "</option>";
+						list_of_classes = list_of_classes + classes[i] + ", ";
 					}
 					$('#concepttoremove').html(a);
 					$('#firstconcepttomerge').html(b);
 					$('#secondconcepttomerge').html(c);
 					$('#concepttosplit').html(d);
 					
+					if (response['new_taxonomy'] == 'True'){
+						x = "<div style = \"width:220px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Creating new taxonomy</span></div>";
+						for (var i = 0; i < response['current_exploration_chain'].length; i++){
+							x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin: auto\"></div>";
+							if (response['current_exploration_chain'][i][0]=='Create trainingset'){
+								bgcolor = "#AEBD38";
+							}
+							else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
+								bgcolor = "#598234";
+							}
+							else if (response['current_exploration_chain'][i][0]=='Training activity'){
+								bgcolor = "#68829E";
+							}
+							else{
+								bgcolor = "#505160";
+							}
+							x = x + "<div><a href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + "\" data-html=\"true\" data-content=\"" +
+								response['current_exploration_chain'][i][2] + "\"><div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
+								bgcolor + "; color: #000; margin: auto\"><span>" + response['current_exploration_chain'][i][0] + "</span></div></a></div>";
+						}
+						$('body').popover(popOverSettings);
+						$('#collapse0').html(x);
+					}
 					
 				}
 			});
@@ -573,7 +621,6 @@ $(function() {
 					formdata.append('MergedConceptName', $this[0][2].value);
 					if ($('input[name="existingornewsampleformergedconcept"]:checked').size()>0){
 						if ($('input[name="existingornewsampleformergedconcept"]:checked').attr('value') == 'option2'){
-							console.log($this[0][5].files.length);
 							if ($this[0][5].files.length != 0){
 								newtrainingdatasets = $this[0][5].files;
 								$.each(newtrainingdatasets, function(i, file){
@@ -588,14 +635,12 @@ $(function() {
 									formdata.append('UseExistingSamples', 'False');
 								}
 								else{
-									console.log("x");
 									$('#missingfields1').show();
 									return true;
 								}
 								
 							}
 							else{
-								console.log("11");
 								$('#missingfields1').show();
 								return true;
 							}
@@ -607,13 +652,11 @@ $(function() {
 						formdata.append('ConceptType', '3');
 					}
 					else{
-						console.log("2");
 						$('#missingfields1').show();
 						return true;
 					}
 				}
 				else{
-					console.log("3");
 					$('#missingfields1').show();
 					return true;
 				}
@@ -757,6 +800,10 @@ $(function() {
 							$('#collapse7').html(a);
 							
 						}
+						x = $('#collapse0').html();
+						x = x + "<a href=\"#\" data-toggle=\"popover\" data-placement=\"right\" data-container=\"body\"  title=\"Create trainingset\" data-content=\"Added new categories: " +
+							"\"><div style=\"width:25px; height:20px; border: 1px solid rgba(0, 0, 0, .2); background:green; margin: auto\">A1</div></a>";
+						$('#collapse0').html(x);
 						
 					}
 					
@@ -765,6 +812,30 @@ $(function() {
 					$('#categoriesandsamples_changeexistingtaxonomy form:last').show();
 					no_of_concepts_while_modeling_changes +=1;
 					$('#missingfields1').hide();
+					
+					if (response['new_taxonomy'] == 'False'){
+						x = "<div style = \"width:310px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Exploring changes in existing taxonomy</span></div>";
+						for (var i = 0; i < response['current_exploration_chain'].length; i++){
+							x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin: auto\"></div>";
+							if (response['current_exploration_chain'][i][0]=='Create trainingset'){
+								bgcolor = "#AEBD38";
+							}
+							else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
+								bgcolor = "#598234";
+							}
+							else if (response['current_exploration_chain'][i][0]=='Training activity'){
+								bgcolor = "#68829E";
+							}
+							else{
+								bgcolor = "#505160";
+							}
+							x = x + "<a href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + "\" data-html=\"true\" data-content=\"" +
+								response['current_exploration_chain'][i][2] + "\"><div style=\"width:135px; height:35px; line-height:35px; text-align: center; margin-right:100px; float:right; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
+								bgcolor + "; color: #000; margin: auto\"><span>" + response['current_exploration_chain'][i][0] + "</span></div></a>";
+						}
+						$('body').popover(popOverSettings);
+						$('#collapse0').html(x);
+					}
 
 				}
 			});
@@ -1081,6 +1152,35 @@ $(function() {
 					$('#collapse7').html(a);
 					
 				}
+				if (response['new_taxonomy']){
+					if (response['new_taxonomy'] == 'True'){
+						x = "<div style = \"width:220px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Creating new taxonomy</span></div>";
+					}
+					else{
+						x = "<div style = \"width:310px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Exploring changes in existing taxonomy</span></div>";
+					}
+					for (var i = 0; i < response['current_exploration_chain'].length; i++){
+						x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
+						if (response['current_exploration_chain'][i][0]=='Create trainingset'){
+							bgcolor = "#AEBD38";
+						}
+						else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
+							bgcolor = "#598234";
+						}
+						else if (response['current_exploration_chain'][i][0]=='Training activity'){
+							bgcolor = "#68829E";
+						}
+						else{
+							bgcolor = "#505160";
+						}
+						x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
+							bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+							"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></div>";
+					}
+					$('#collapse0').html(x);
+					$('.pop_con').popover(popOverSettings);
+					
+				}
 			
 			});
 		});
@@ -1305,8 +1405,7 @@ $(function() {
 								}
 								if (response['common_categories_comparison']) {
 									if (response['common_categories_comparison'][0].length==9){
-										var a = "<legend style=\"font-size: 16px; background-color: gainsboro\" align=\"center\">Comparison between existing categories and the new modelled categories</legend>";
-										a =	a + "<table style=\"width:95%\" align=\"center\"class=\" table table-bordered\"><tr><th>Category</th><th>Model type</th><th>Validation</th>" +
+										var a = "<table style=\"width:95%\" align=\"center\"class=\" table table-bordered\"><tr><th>Category</th><th>Model type</th><th>Validation</th>" +
 												"<th>Prod accuracy</th><th>User accuracy</th><th>Model type (new)</th><th>Validation (new)</th><th>Prod accuracy (new)</th><th>User accuracy (new)</th></tr>";
 										for (var i=0; i< response['common_categories_comparison'].length; i++){
 											a = a + "<tr><td>" + response['common_categories_comparison'][i][0] + "</td>";
@@ -1325,8 +1424,7 @@ $(function() {
 										$('#signaturefilecomparison').show();
 									}
 									else{
-										var a = "<legend style=\"font-size: 16px; background-color: gainsboro\" align=\"center\">Comparison between existing categories and the new modelled categories</legend>";
-										a =	a + "<table style=\"width:95%\" align=\"center\"class=\" table table-bordered\"><tr><th>Category</th><th>Validation</th>" +
+										var a = "<table style=\"width:95%\" align=\"center\"class=\" table table-bordered\"><tr><th>Category</th><th>Validation</th>" +
 												"<th>Prod accuracy</th><th>User accuracy</th><th>Validation (new)</th><th>Prod accuracy (new)</th><th>User accuracy (new)</th><th>JM distance</th></tr>";
 										for (var i=0; i< response['common_categories_comparison'].length; i++){
 											a = a + "<tr><td>" + response['common_categories_comparison'][i][0] + "</td>";
@@ -1346,6 +1444,35 @@ $(function() {
 										$('#signaturefilecomparison').show();
 										
 									}
+								}
+								if (response['new_taxonomy']){
+									if (response['new_taxonomy'] == 'True'){
+										x = "<div style = \"width:220px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Creating new taxonomy</span></div>";
+									}
+									else{
+										x = "<div style = \"width:310px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Exploring changes in existing taxonomy</span></div>";
+									}
+									for (var i = 0; i < response['current_exploration_chain'].length; i++){
+										x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
+										if (response['current_exploration_chain'][i][0]=='Create trainingset'){
+											bgcolor = "#AEBD38";
+										}
+										else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
+											bgcolor = "#598234";
+										}
+										else if (response['current_exploration_chain'][i][0]=='Training activity'){
+											bgcolor = "#68829E";
+										}
+										else{
+											bgcolor = "#505160";
+										}
+										x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
+											bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+											"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></span></div>";
+									}
+									$('#collapse0').html(x);
+									$('.pop_con').popover(popOverSettings);
+									
 								}
 	
 							}
@@ -1464,7 +1591,11 @@ $(function() {
 							$.get("http://127.0.0.1:8000/AdvoCate/applyeditoperations/", function(response){
 								$('#submitsuggestions').hide();
 								$('#successmessageforappliedsuggestions').html("The training file is updated with the suggestions submitted. Try and recreate the classification model to check the difference.");
-								
+								x = $('#collapse0').html();
+								x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin: auto\"></div>";
+								x = x + "<a href=\"#\" data-toggle=\"popover\" data-placement=\"right\" data-container=\"body\"  title=\"Change trainingset\" data-content=\"Added new categories: " +
+									"\"><div style=\"width:25px; height:20px; border: 1px solid rgba(0, 0, 0, .2); background:green; margin: auto\">A2</div></a>";
+								$('#collapse0').html(x);
 							});
 							
 						}
@@ -1481,7 +1612,11 @@ $(function() {
 							$.get("http://127.0.0.1:8000/AdvoCate/applyeditoperations/", function(response){
 								$('#submitsuggestions').hide();
 								$('#successmessageforappliedsuggestions').html("The training file is updated with the suggestions submitted. Try and recreate the classification model to check the difference.");
-								
+								x = $('#collapse0').html();
+								x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin: auto\"></div>";
+								x = x + "<a href=\"#\" data-toggle=\"popover\" data-placement=\"right\" data-container=\"body\"  title=\"Change trainingset\" data-content=\"Added new categories: " +
+									"\"><div style=\"width:25px; height:20px; border: 1px solid rgba(0, 0, 0, .2); background:green; margin: auto\">A2</div></a>";
+								$('#collapse0').html(x);
 							});
 							
 						}
@@ -1551,6 +1686,35 @@ $(function() {
 							}
 							$('#changematrix_display').show();
 							$('#collapse10').html(a);
+							
+						}
+						if (response['new_taxonomy']){
+							if (response['new_taxonomy'] == 'True'){
+								x = "<div style = \"width:220px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Creating new taxonomy</span></div>";
+							}
+							else{
+								x = "<div style = \"width:310px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Exploring changes in existing taxonomy</span></div>";
+							}
+							for (var i = 0; i < response['current_exploration_chain'].length; i++){
+								x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
+								if (response['current_exploration_chain'][i][0]=='Create trainingset'){
+									bgcolor = "#AEBD38";
+								}
+								else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
+									bgcolor = "#598234";
+								}
+								else if (response['current_exploration_chain'][i][0]=='Training activity'){
+									bgcolor = "#68829E";
+								}
+								else{
+									bgcolor = "#505160";
+								}
+								x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
+									bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+									"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></span></div>";
+							}
+							$('#collapse0').html(x);
+							$('.pop_con').popover(popOverSettings);
 							
 						}
 						
