@@ -16,7 +16,7 @@
 		href="{% static 'css/topbar.css' %}">
 
 	</head>
-	<body>
+	<body >
 		<div id="top-part">
 
 			<div id="top-stuff">
@@ -115,20 +115,21 @@
 			</div>
 			<div class="container">
 				<nav class="navbar navbar-default">
-					<div class="collapse navbar-collapse" style="background-color: gainsboro" >
-						<ul id="navbar" class="nav nav-pills nav-justified">
+
+					<div class="navbar-collapse collapse in" id="bs-example-navbar-collapse-1" >
+						<ul id="navbar" class="nav navbar-nav" style="font-size: 16px">
 
 							<li>
-								<a href="/AdvoCate/home" style="font-size: 16px">Home</a>
+								<a href="/AdvoCate/home" >Home</a>
 							</li>
 							<li >
-								<a href="/AdvoCate/trainingsample/" style="font-size: 16px">Training Samples</a>
+								<a href="/AdvoCate/trainingsample/" >Trainingset</a>
 							</li>
 							<li>
-								<a href="/AdvoCate/signaturefile/" style="font-size: 16px">Learning activity</a>
+								<a href="/AdvoCate/signaturefile/" >Learning-activity</a>
 							</li>
 							<li class="dropdown">
-								<a href="#" class="dropdown-toggle" data-toggle="dropdown" style="font-size: 16px" aria-haspopup="true" aria-expanded="false">Classification <span class="caret"></span></a>
+								<a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Classification <span class="caret"></span></a>
 								<ul class="dropdown-menu">
 									<li>
 										<a href="/AdvoCate/supervised/" >Supervised</a>
@@ -139,21 +140,25 @@
 								</ul>
 							</li>
 							<li>
-								<a href="/AdvoCate/changerecognition/" style="font-size: 16px">Change Recognition</a>
+								<a href="/AdvoCate/changerecognition/">Change Recognition</a>
 							</li>
 							<li>
-								<a id="view_exp_process" href="#" style="font-size: 16px">Show exploration process</a>
-							</li>
-							<li>
-								<a href="/AdvoCate/visualizer/" style="font-size: 16px">Visualization</a>
+								<a href="/AdvoCate/visualizer/" >Visualization</a>
 							</li>
 						</ul>
+						<form class="navbar-form navbar-right" style="padding-top: 8px">
+					    	<label class="label label-default" style ="display: inline;  font-size: 15px">Show exploration process
+					    	<span>
+					    	<input type="checkbox" class="form-control" id="show_exploration" style= "margin-left: 10px;margin-top:0px; width:15px; height:18px; display: inline">
+					    	</span>
+					    	</label>
+					    </form>
 					</div>
 				</nav>
 			</div>
 		</div>
 		
-		<div id="exploration_path_viz" class="pop_con" style="float:right; width:400px;  margin-right:20px; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px; display:none">
+		<div id="exploration_path_viz" class="pop_con" style="float:right; margin-right:20px; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px; display:none">
 			<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:0px" align="center">
 				<a role="button" data-toggle="collapse" href="#collapse0" aria-expanded="false" aria-controls="collapse0" style="color: #333; vertical-align:middle">
 				Current exploration path</a>

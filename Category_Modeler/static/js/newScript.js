@@ -51,11 +51,12 @@ $(function() {
 //			'height' : totalHeight - headerHeight - 180 + 'px'
 //		});
 //	};
+	
+	
 	// Script for navbar
-
 	var loc = window.location.href;
 
-	$('.nav.nav-pills.nav-justified > li').each(
+	$('.nav.navbar-nav > li').each(
 			function() {
 				var $this = $(this);
 				if (loc.match('http://127.0.0.1:8000'
@@ -123,26 +124,35 @@ $(function() {
 
 	});
 	
-	$('#view_exp_process').on('click', function(e) {
-		console.log("I am here");
-		if ($(this).text() == 'Show exploration process'){
-			$(this).text("Hide exploration process");
+	$('#show_exploration').on('click', function(e) {
+		if ($(this).is(':checked')){
 			$('#exploration_path_viz').show();
-			
+			totalwidth = $(window).width();
+			containerwidth = 1170;
+			remainingwidth = (totalwidth - containerwidth)/2;
+			width_of_exp =(remainingwidth-50) + 'px';
+			$('.pop_con').css('width', width_of_exp);
 		}
 		else{
-			$(this).text("Show exploration process");
 			$('#exploration_path_viz').hide();
 		}
 			
 	});
 
-	totalwidth = $(window).width();
-	containerwidth = 1170;
-	remainingwidth = (totalwidth - containerwidth)/2;
-	newwidth = remainingwidth + 'px';
-	$('.container').attr('style', 'float:left');
-	$('.container').css('margin-left', newwidth);
+	function setWidthOfBody() {
+		totalwidth = $(window).width();
+		containerwidth = 1170;
+		remainingwidth = (totalwidth - containerwidth)/2;
+		newwidth = remainingwidth + 'px';
+		$('.container').attr('style', 'float:left');
+		$('.container').css('margin-left', newwidth);
+		
+	};
+	
+	$(window).on('resize',function(){
+		setWidthOfBody();
+	});
+
 	
 	$('#explorationChainToggle').on('click', function(e) {
 		e.preventDefault();
