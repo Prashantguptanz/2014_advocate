@@ -403,9 +403,11 @@ class HorizontalRelationship(models.Model):
         ('includes', 'includes'),
         ('is included in', 'is included in'),
         ('overlaps with', 'overlaps with'),
-        ('excludes', 'excludes')
+        ('excludes', 'excludes'),
+        ('unknown', 'unknown')
     )
-    relationship_name = models.CharField(choices=horizontal_relationship_type, max_length=256)
+    comp_intension_relationship_name = models.CharField(choices=horizontal_relationship_type, max_length=256)
+    extension_relationship_name = models.CharField(choices=horizontal_relationship_type, max_length=256) 
     expired = models.NullBooleanField()
     category1_id = models.IntegerField()
     category1_evol_ver = models.IntegerField()
@@ -415,16 +417,13 @@ class HorizontalRelationship(models.Model):
     category2_comp_ver = models.IntegerField()
     intensional_similarity = models.FloatField(blank=True, null=True)
     extensional_similarity = models.FloatField(blank=True, null=True)
+    extensional_containment = models.FloatField(blank=True, null=True)
     
     class Meta:
         managed = False
         db_table = 'horizontal_relationship'
         unique_together = ("category1_id", "category1_evol_ver", "category1_comp_ver")
         unique_together = ("category2_id", "category2_evol_ver", "category2_comp_ver")
-
-
-
-
 
 class RasterColumns(models.Model):
     r_table_catalog = models.TextField(blank=True)  # This field type is a guess.
@@ -597,7 +596,8 @@ class ChangeEventOperations(models.Model):
         ('Add_Taxonomy', 'Add_Taxonomy'),
         ('Add_Concept', 'Add_Concept'),
         ('Add_Taxonomy_Version', 'Add_Taxonomy_Version'),
-        ('Add_Existing_Concept_To_New_Version_Of_Legend', 'Add_Existing_Concept_To_New_Version_Of_Legend')
+        ('Add_Existing_Concept_To_New_Version_Of_Legend', 'Add_Existing_Concept_To_New_Version_Of_Legend'),
+        ('Add_Concept_Split_From_Existing_To_New_Version_Of_Legend', 'Add_Concept_Split_From_Existing_To_New_Version_Of_Legend')
         
     )
     change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id', primary_key=True)
@@ -656,7 +656,7 @@ class AddTaxonomyVersionOperation(models.Model):
         unique_together = ("legend_id", "old_legend_ver")
         unique_together = ("legend_id", "new_legend_ver")
 
-class AddExistingConceptToNewVersionOfLegendOperation(models.Model):
+class AddExistingConceptToNewVersion(models.Model):
     concept_id = models.ForeignKey(Concept, db_column='concept_id')
     legend_concept_comb_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_comb_id')
     hierarchical_relationship_id = models.ForeignKey(HierarchicalRelationship, db_column = 'hierarchical_relationship_id')
@@ -667,3 +667,14 @@ class AddExistingConceptToNewVersionOfLegendOperation(models.Model):
         managed = False
         db_table = 'Add_Existing_Concept_To_New_Version_Of_Legend_operation'
         
+class AddConSplitFrmExistToNewVer(models.Model):
+    concept_id = models.ForeignKey(Concept, db_column='concept_id')
+    existing_split_concept_id = models.IntegerField()
+    legend_concept_comb_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_comb_id')
+    hierarchical_relationship_id = models.ForeignKey(HierarchicalRelationship, db_column = 'hierarchical_relationship_id')
+    horizontal_relationship_id = models.ForeignKey(HorizontalRelationship, db_column = 'horizontal_relationship_id')
+    category_instantiation_op_id = models.ForeignKey(CategoryInstantiationOperation, db_column = 'category_instantiation_op_id')
+
+    class Meta:
+        managed = False
+        db_table = 'Add_Concept_Split_From_Existing_To_New_Legend_Ver_operation'

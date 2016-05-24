@@ -138,160 +138,171 @@
 	{% endif %}
 	
 	{% if existing_taxonomyName %}
-	<div style="width: 100%; float:center; border-style: solid; border-width: 1px; margin-bottom: 10px; padding: 10px, 10px, 10px, 10px; border-color: #E5E5E5" >
-		<legend style="font-size: 16px;  background-color: gainsboro" align="center">Summary of current exploration</legend>
+	<div style="width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px" >
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >
+			<a role="button" data-toggle="collapse" href="#collapse13" aria-expanded="false" aria-controls="collapse13" style="color: #333; vertical-align:middle">
+			Summary of current exploration</a>
+		</legend>
+		<div id="collapse13" class="collapse in">
 		
-		<p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
-			The current exploration process, resulting from an external trigger of '<strong><em>{{external_trigger}}</em></strong>', models changes in existing taxonomy 
-			<strong><em>{{existing_taxonomyName}}</em></strong> and leads to the following changes.
-		</p>
-		
-		<p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
-			The new classification model is conceptualized as a {{model_type}} with an accuracy of {{model_score}}% as compared to the existing classification model stored 
-			in AdvoCate as {{old_model_type}} with an accuracy of {{old_model_accuracy}}%.		
-		</p>
-		 
-		<p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
-			Below is given the list of categories and the changes with respect to the existing categories:
-		</p> 
-		
- 
-		<table class=" table table-bordered" style=" width:80%; margin: 0 auto">
-			<caption style="margin-bottom: 7px"><strong>Comparison between the categories corresponding to the common concepts in the existing taxonomy and the new modeled taxonomy: </strong></caption>
-			<br />
-			<tr>
-				<th>Concept</th>
-				<th>User accuracy (new)</th>
-				<th>Producer accuracy (new)</th>
-				<th>User accuracy (existing)</th>
-				<th>Producer accuracy (existing)</th>
-				<th>Extensional similarity</th>		 		
-			</tr>
-			{% for concept in common_categories_comparison_details %}
-			<tr>
-				{% for data in concept %}
-				<td>{{data}}</td>
-				{% endfor %}
-			</tr>
-		 	{% endfor %}
-		 </table>
-		 <br /><br />
-		
-		{% if new_categories_details|length|get_digit:"-1" > 0 %}
+			<p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
+				The current exploration process, resulting from an external trigger of '<strong><em>{{external_trigger}}</em></strong>', models changes in existing taxonomy 
+				<strong><em>{{existing_taxonomyName}}</em></strong> and leads to the following changes.
+			</p>
 			
-		<br />	 
-		<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
-			<caption>Details of the categories corresponding to new concepts in the new modeled taxonomy: </caption>
-			<tr>
-				<th>Concept</th>
-				<th>User accuracy</th>
-				<th>Producer accuracy</th>	 		
-			</tr>
-			{% for concept in new_categories_details %}
-			<tr>
-				{% for data in concept %}
-				<td>{{data}}</td>
-				{% endfor %}
-			</tr>
-		 	{% endfor %}
-		 </table>
-		 <br /><br />
-		
-		{% endif %}
-		
-		{% if categories_merged_from_existing_details|length|get_digit:"-1" > 0 %}
+			<p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
+				The new classification model is conceptualized as a {{model_type}} with an accuracy of {{model_score}}% as compared to the existing classification model stored 
+				in AdvoCate as {{old_model_type}} with an accuracy of {{old_model_accuracy}}%.		
+			</p>
+			 
+			<p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
+				Below is given the list of categories and the changes with respect to the existing categories:
+			</p> 
 			
-		<br />	 
-		<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
-			<caption>Details of the categories corresponding to the concepts resulted from merging existing concepts in the taxonomy: </caption>
-			<tr>
-				<th>Concept</th>
-				<th>User accuracy</th>
-				<th>Producer accuracy</th>
-				<th>Existing concept 1</th>
-				<th>Existing concept 2</th>
-				<th>Existing concept 3</th>			
-			</tr>
-			{% for concept in categories_merged_from_existing_details %}
-			<tr>
-				{% for data in concept %}
-				<td>{{data}}</td>
-				{% endfor %}
-			</tr>
-		 	{% endfor %}
-		 </table>
-		 <br /><br />
-		
-		{% endif %}
-		
-		
-		{% if categories_split_from_existing_details|length|get_digit:"-1" > 0 %}
+	 
+			<table class=" table table-bordered" style=" width:80%; margin: 0 auto">
+				<caption style="margin-bottom: 7px"><strong>Comparison between the categories corresponding to the common concepts in the existing taxonomy and the new modeled taxonomy: </strong></caption>
+				<br />
+				<tr>
+					<th>Concept</th>
+					<th>User accuracy (new)</th>
+					<th>Producer accuracy (new)</th>
+					<th>User accuracy (existing)</th>
+					<th>Producer accuracy (existing)</th>
+					<th>
+						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Change trainingset activity" data-content="The extensional similarity is calculated using Jaccard index. The value represents the similarity between two finite sample sets. <br/> The J-index is defined as:<br/> <MATH>J(A,B) = (A &#8745; B) &#8260; (A &#8746; B) </MATH><br/> where A and B are finite sample sets.">
+						Extensional similarity</a>
+					</th>		 		
+				</tr>
+				{% for concept in common_categories_comparison_details %}
+				<tr>
+					{% for data in concept %}
+					<td>{{data}}</td>
+					{% endfor %}
+				</tr>
+			 	{% endfor %}
+			 </table>
+			 <br /><br />
 			
-		<br />	 
-		<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
-			<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to the concepts resulted from splitting an existing concept in the taxonomy: </strong></caption>
-			<tr>
-				<th>New concept</th>
-				<th>Split from</th>
-				<th>User accuracy</th>
-				<th>Producer accuracy</th>		
-			</tr>
-			{% for concept in categories_split_from_existing_details %}
-			<tr>
-				{% for data in concept %}
-				<td>{{data}}</td>
-				{% endfor %}
-			</tr>
-		 	{% endfor %}
-		 </table>
-		 <br /><br />
+			{% if new_categories_details|length|get_digit:"-1" > 0 %}
+				
+			<br />	 
+			<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
+				<caption>Details of the categories corresponding to new concepts in the new modeled taxonomy: </caption>
+				<tr>
+					<th>Concept</th>
+					<th>User accuracy</th>
+					<th>Producer accuracy</th>	 		
+				</tr>
+				{% for concept in new_categories_details %}
+				<tr>
+					{% for data in concept %}
+					<td>{{data}}</td>
+					{% endfor %}
+				</tr>
+			 	{% endfor %}
+			 </table>
+			 <br /><br />
+			
+			{% endif %}
+			
+			{% if categories_merged_from_existing_details|length|get_digit:"-1" > 0 %}
+				
+			<br />	 
+			<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
+				<caption>Details of the categories corresponding to the concepts resulted from merging existing concepts in the taxonomy: </caption>
+				<tr>
+					<th>Concept</th>
+					<th>User accuracy</th>
+					<th>Producer accuracy</th>
+					<th>Existing concept 1</th>
+					<th>Existing concept 2</th>
+					<th>Existing concept 3</th>			
+				</tr>
+				{% for concept in categories_merged_from_existing_details %}
+				<tr>
+					{% for data in concept %}
+					<td>{{data}}</td>
+					{% endfor %}
+				</tr>
+			 	{% endfor %}
+			 </table>
+			 <br /><br />
+			
+			{% endif %}
+			
+			
+			{% if categories_split_from_existing_details|length|get_digit:"-1" > 0 %}
+				
+			<br />	 
+			<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
+				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to the concepts resulted from splitting an existing concept in the taxonomy: </strong></caption>
+				<tr>
+					<th>New concept</th>
+					<th>Split from</th>
+					<th>User accuracy</th>
+					<th>Producer accuracy</th>		
+					<th>
+						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Change trainingset activity" data-content="The extensional containment tells how much extension of the new concept is contained within the extension of the concept it split from.">
+						Extensional containment</a>
+					</th>
+				</tr>
+				{% for concept in categories_split_from_existing_details %}
+				<tr>
+					{% for data in concept %}
+					<td>{{data}}</td>
+					{% endfor %}
+				</tr>
+			 	{% endfor %}
+			 </table>
+			 <br /><br />
+			
+			{% endif %}
+			 <div id="implement" style="margin-left: 10px; margin-bottom: 15px">
+				 <label style="margin-left: 10px; font-weight: normal" for="chooseButtons">Do you wish to implement these changes in AdvoCate:</label>&nbsp; &nbsp;
+				 <button id="yesforchangeinexisting" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
+				 <button id="noforchangeinexisting" class="btn btn-default">  No</button>
+			 </div>
+			 
+			 <div id="newtaxonomyversionorchangeexisting" style="margin-left: 10px; margin-bottom: 15px; display:none">
+				 <label style="margin-left: 10px; font-weight: normal" for="chooseButtons" >Do you wish to create a new taxonomy version or make changes to the existing taxonomy:</label>&nbsp; &nbsp;
+				 <button id="newtaxonomyversion" class="btn btn-default"> New taxonomy version</button>&nbsp; &nbsp;
+				 <button id="changeexistingtaxonomy" class="btn btn-default">  Existing taxonomy</button>
+			 </div>
+			 
+			 <div id="commitsuccessmessage" style="display:none; margin-left: 10px; margin-bottom: 15px" >
+			 	<p id = "successmessage" style="font-size: 14px; margin-left: 10px; margin-right: 10px; color: green"><em> </em>
+			 	</p>
+			</div>
 		
-		{% endif %}
-		 <div id="implement" style="margin-left: 10px; margin-bottom: 15px">
-			 <label style="margin-left: 10px; font-weight: normal" for="chooseButtons">Do you wish to implement these changes in AdvoCate:</label>&nbsp; &nbsp;
-			 <button id="yesforchangeinexisting" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
-			 <button id="noforchangeinexisting" class="btn btn-default">  No</button>
-		 </div>
-		 
-		 <div id="newtaxonomyversionorchangeexisting" style="margin-left: 10px; margin-bottom: 15px; display:none">
-			 <label style="margin-left: 10px; font-weight: normal" for="chooseButtons" >Do you wish to create a new taxonomy version or make changes to the existing taxonomy:</label>&nbsp; &nbsp;
-			 <button id="newtaxonomyversion" class="btn btn-default"> New taxonomy version</button>&nbsp; &nbsp;
-			 <button id="changeexistingtaxonomy" class="btn btn-default">  Existing taxonomy</button>
-		 </div>
-		 
-		 <div id="commitsuccessmessage" style="display:none; margin-left: 10px; margin-bottom: 15px" >
-		 	<p id = "successmessage" style="font-size: 14px; margin-left: 10px; margin-right: 10px; color: green"><em> </em>
-		 	</p>
 		</div>
 		 
-	</div>		
+	</div>	
+		
 	
-	<div id="changeevent" style="display:none; width: 100%; float:center; border-style: solid; border-width: 1px; margin-bottom: 10px; padding: 10px, 10px, 10px, 10px; border-color: #E5E5E5">
-	 <legend style="font-size: 16px; margin-bottom: 15px;  background-color: gainsboro" align="center">Change event</legend>
-	 
-	 <label style="margin-left: 10px" for="listofchangeoperations"> A change event is created to implement the above changes. The change event incorporates the following change operations:</label>
-	 <br /><br />
-	 
-	 
-	 <div id="listofchangeoperations" >
-	 	<dl id = "compositechangeoperations" style=" margin-left: 30px; width: 1050px">
-	 		
-	 	</dl>
-	 </div>
-	 <p style="margin-left: 30px"><em>Note: Click a (composite) change operation in the above table to see the atomic and other composite changes it contains.</em></p>
-	 <br />
-	 
-	 <div id="commit" style="margin-left: 10px; margin-bottom: 15px">
-		<label style="margin-left: 10px" for="chooseButtons">Do you wish to commit these change operations:</label>&nbsp; &nbsp;
-		<button id="yesforcommitfornewtaxonomyversion" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
-		<button id="noforcommitfornewtaxonomyversion" class="btn btn-default">  No</button>
-	 </div>
-		 
-
-		   
-	</div>
-		
-		
+	<div id="changeevent" style="display:none;width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px" >
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >
+			<a role="button" data-toggle="collapse" href="#collapse14" aria-expanded="false" aria-controls="collapse14" style="color: #333; vertical-align:middle">
+			Change event</a>
+		</legend>
+		<div id="collapse14" class="collapse in">
+			<label style="margin-left: 10px" for="listofchangeoperations"> A change event is created to implement the above changes. The change event incorporates the following change operations:</label>
+			<br /><br />
+			<div id="listofchangeoperations" >
+				<dl id = "compositechangeoperations" style=" margin-left: 30px; width: 1050px">
+				
+				</dl>
+			</div>
+			 <p style="margin-left: 30px"><em>Note: Click a (composite) change operation in the above table to see the atomic and other composite changes it contains.</em></p>
+			 <br />
+ 
+			<div id="commit" style="margin-left: 10px; margin-bottom: 15px">
+				<label style="margin-left: 10px" for="chooseButtons">Do you wish to commit these change operations:</label>&nbsp; &nbsp;
+				<button id="yesforcommitfornewtaxonomyversion" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
+				<button id="noforcommitfornewtaxonomyversion" class="btn btn-default">  No</button>
+			</div> 
+		</div>
+	</div>  
 	{% endif %}
 
 </div>

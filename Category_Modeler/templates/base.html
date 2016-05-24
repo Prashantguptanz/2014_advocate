@@ -114,7 +114,7 @@
 				</div>
 			</div>
 			<div class="container">
-				<nav class="navbar navbar-default">
+				<nav class="navbar navbar-default" >
 
 					<div class="navbar-collapse collapse in" id="bs-example-navbar-collapse-1" >
 						<ul id="navbar" class="nav navbar-nav" style="font-size: 16px">
@@ -149,7 +149,7 @@
 						<form class="navbar-form navbar-right" style="padding-top: 8px">
 					    	<label class="label label-default" style ="display: inline;  font-size: 15px">Show exploration process
 					    	<span>
-					    	<input type="checkbox" class="form-control" id="show_exploration" style= "margin-left: 10px;margin-top:0px; width:15px; height:18px; display: inline">
+					    	<input type="checkbox" class="form-control" id="show_exploration" style= "margin-left: 10px;margin-top:0px; width:15px; height:18px; display: inline" checked="checked">
 					    	</span>
 					    	</label>
 					    </form>
@@ -179,7 +179,7 @@
 					{% for x, y, z in current_exploration_chain %}
 					<div style="width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right"></div>
 						{% if x == "Create trainingset" %}
-						<div style="width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #AEBD38; margin: auto; float:right; margin-right:125px">
+						<div style="width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #A1BE95; margin: auto; float:right; margin-right:125px">
 							<span>
 								<a style= "color: #000" href="#" rel="popover" title="{{y}}" data-html="true" data-toggle="popover" data-content="{{z}}" data-placement= "top" data-container=".pop_con"> 
 									{{x}} 
@@ -187,7 +187,7 @@
 							</span>
 						</div>	
 						{% elif x == "Change trainingset" %}
-						<div style="width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #598234; margin: auto; float:right; margin-right:125px">
+						<div style="width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #E2DFA2; margin: auto; float:right; margin-right:125px">
 							<span>
 								<a style= "color: #000" href="#" rel="popover" title="{{y}}" data-html="true" data-toggle="popover" data-content="{{z}}" data-placement= "top" data-container=".pop_con"> 
 									{{x}} 
@@ -195,21 +195,26 @@
 							</span>
 						</div>	
 						{% elif x == "Training activity" %}
-						<div style="width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #68829E; margin: auto; float:right; margin-right:125px">
+						<div style="width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #92AAC7; margin: auto; float:right; margin-right:125px">
 							<span>
 								<a style= "color: #000" href="#" rel="popover" title="{{y}}" data-html="true" data-toggle="popover" data-content="{{z}}" data-placement= "top" data-container=".pop_con"> 
 									{{x}} 
 								</a>
 							</span>
 						</div>	
-						{% else %}
-						<div style="width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #505160; margin: auto; float:right; margin-right:125px">
+						{% elif x == "Classification" %}
+						<div style="width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #ED5752; margin: auto; float:right; margin-right:125px">
 							<span>
 								<a style= "color: #000" href="#" rel="popover" title="{{y}}" data-html="true" data-toggle="popover" data-content="{{z}}" data-placement= "top" data-container=".pop_con"> 
 									{{x}} 
 								</a>
 							</span>
-						</div>							
+						</div>		
+						{% else %}
+						
+						<div style ="width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto; float:right; margin-right:125px">
+							<span>End</span>
+						</div>
 						{% endif %}
 										
 					{% endfor %}

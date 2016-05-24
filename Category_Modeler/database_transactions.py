@@ -1,7 +1,8 @@
 from Category_Modeler.models import Trainingset, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity 
 from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Concept, Legend, LegendConceptCombination, ComputationalIntension
 from Category_Modeler.models import Extension, Category, HierarchicalRelationship, HorizontalRelationship, MeanVector, CovarianceMatrix, ChangeEvent, ChangeEventOperations
-from Category_Modeler.models import AddTaxonomyOperation, AddConceptOperation, SetOfOccurences, CategoryInstantiationOperation, AddTaxonomyVersionOperation, AddExistingConceptToNewVersionOfLegendOperation
+from Category_Modeler.models import AddTaxonomyOperation, AddConceptOperation, SetOfOccurences, CategoryInstantiationOperation, AddTaxonomyVersionOperation, AddExistingConceptToNewVersion
+from Category_Modeler.models import AddConSplitFrmExistToNewVer
 from datetime import datetime
 import numpy
 from django.db import transaction, connection
@@ -66,17 +67,17 @@ class UpdateDatabase:
        
     def create_concept(self, conceptName, mean_vector, covariance_matrix, extension, producer_accuracy, user_accuracy, parentName="", details=""):
         current_concept = Concept(concept_name = conceptName, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance, change_event_id = self.change_event)
-        current_concept.save()
+        current_concept.save(force_insert=True)
         
         connectToLegend = LegendConceptCombination(legend_id = self.request.session['legend_id'], legend_ver = self.request.session['legend_ver'], concept = current_concept, change_event_id = self.change_event)
-        connectToLegend.save()
+        connectToLegend.save(force_insert=True)
         
         if parentName == "":
             parentName = self.request.session['root_concept']
         parent_concept_connection_to_legend = LegendConceptCombination.objects.get(concept__concept_name = parentName,  legend_id = self.request.session['legend_id'], legend_ver = self.request.session['legend_ver'])
         
         addRelationship = HierarchicalRelationship(relationship_name='parent-of', expired=False, concept1 =  parent_concept_connection_to_legend, concept2 = connectToLegend)
-        addRelationship.save()
+        addRelationship.save(force_insert=True)
         
         extension_id = self.create_extension(extension)
         cov_mat_id = self.create_covariance_matrix(covariance_matrix)
@@ -85,11 +86,11 @@ class UpdateDatabase:
         CatInstop_instance = self.create_categories(connectToLegend, comp_int, extension_id)
         
         createConcept_op = AddConceptOperation(concept_id = current_concept, legend_concept_comb_id = connectToLegend, hierarchical_relationship_id= addRelationship, category_instantiation_op_id= CatInstop_instance)
-        createConcept_op.save()
+        createConcept_op.save(force_insert=True)
         newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createConcept_op.id, change_operation='Add_Concept')
-        newOperationForChangeEvent.save()
+        newOperationForChangeEvent.save(force_insert=True)
         
-    def add_existing_concept_to_new_version_of_legend_with_updated_categories(self, conceptName, mean_vector, covariance_matrix, extension, producer_accuracy, user_accuracy, int_similarity, ext_similarity, parentName=""):
+    def add_existing_concept_to_new_version_of_legend_with_updated_categories(self, conceptName, mean_vector, covariance_matrix, extension, producer_accuracy, user_accuracy, int_similarity, ext_similarity, int_relation, ext_relation, parentName=""):
         concept_instance = Concept.objects.get(concept_name = conceptName)
         
         customquery = CustomQueries()
@@ -112,14 +113,49 @@ class UpdateDatabase:
         comp_int = self.create_computational_intension(vector_id, cov_mat_id, producer_accuracy, user_accuracy)
         CatInstop_instance = self.create_categories(connectToLegend, comp_int, extension_id)
         
-        addHorizontalRelationship = HorizontalRelationship(relationship_name='overlaps with', expired=False, category1_id = CatInstop_instance.category_id, category1_evol_ver = CatInstop_instance.category_evol_ver, category1_comp_ver=  CatInstop_instance.category_comp_ver, category2_id = old_category[0], category2_evol_ver = old_category[1], category2_comp_ver=  old_category[2],intensional_similarity = int_similarity, extensional_similarity = ext_similarity)
+        addHorizontalRelationship = HorizontalRelationship(comp_intension_relationship_name = int_relation, extension_relationship_name= ext_relation, expired=False, category1_id = CatInstop_instance.category_id, category1_evol_ver = CatInstop_instance.category_evol_ver, category1_comp_ver=  CatInstop_instance.category_comp_ver, category2_id = old_category[0], category2_evol_ver = old_category[1], category2_comp_ver=  old_category[2],intensional_similarity = int_similarity, extensional_similarity = ext_similarity)
+        addHorizontalRelationship.save(force_insert=True)
         
-        new_op = AddExistingConceptToNewVersionOfLegendOperation(concept_id = concept_instance, legend_concept_comb_id = connectToLegend, hierarchical_relationship_id= addRelationship, horizontal_relationship_id= addHorizontalRelationship, category_instantiation_op_id= CatInstop_instance)
+        new_op = AddExistingConceptToNewVersion(concept_id = concept_instance, legend_concept_comb_id = connectToLegend, hierarchical_relationship_id= addRelationship, horizontal_relationship_id= addHorizontalRelationship, category_instantiation_op_id= CatInstop_instance)
         new_op.save(force_insert=True)
         newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = new_op.id, change_operation='Add_Existing_Concept_To_New_Version_Of_Legend')
         newOperationForChangeEvent.save(force_insert=True)
+        
+    def add_concept_split_from_existing_concept_to_new_version_of_legend(self, conceptName, existingConcept, mean_vector, covariance_matrix, extension, producer_accuracy, user_accuracy, int_similarity, ext_containment, int_relation, ext_relation, parentName="", details=""):
+        print conceptName, existingConcept, mean_vector,producer_accuracy, user_accuracy, int_similarity, ext_containment, int_relation, ext_relation
+        current_concept = Concept(concept_name = conceptName, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance, change_event_id = self.change_event)
+        current_concept.save(force_insert=True)
+        
+        customquery = CustomQueries()
+        oldversion = self.request.session['existing_taxonomy_ver'] - 1
+        existing_category_that_split = customquery.get_category_details_of_a_concept_in_a_legend(self.request.session['existing_taxonomy_id'], oldversion, existingConcept)
+        
+        connectToLegend = LegendConceptCombination(legend_id = self.request.session['existing_taxonomy_id'], legend_ver = self.request.session['existing_taxonomy_ver'], concept = current_concept, change_event_id = self.change_event)
+        connectToLegend.save(force_insert=True)
+        
+        if parentName == "":
+            parentName = self.request.session['root_concept']
+        parent_concept_connection_to_legend = LegendConceptCombination.objects.get(concept__concept_name = parentName,  legend_id = self.request.session['existing_taxonomy_id'], legend_ver = self.request.session['existing_taxonomy_ver'])
+        
+        addRelationship = HierarchicalRelationship(relationship_name='parent-of', expired=False, concept1 =  parent_concept_connection_to_legend, concept2 = connectToLegend)
+        addRelationship.save(force_insert=True)
+        
+        extension_id = self.create_extension(extension)
+        cov_mat_id = self.create_covariance_matrix(covariance_matrix)
+        vector_id = self.create_mean_vector(mean_vector)
+        comp_int = self.create_computational_intension(vector_id, cov_mat_id, producer_accuracy, user_accuracy)
+        CatInstop_instance = self.create_categories(connectToLegend, comp_int, extension_id)
+        
+        addHorizontalRelationship = HorizontalRelationship(comp_intension_relationship_name = int_relation, extension_relationship_name= ext_relation, expired=False, category1_id = CatInstop_instance.category_id, category1_evol_ver = CatInstop_instance.category_evol_ver, category1_comp_ver=  CatInstop_instance.category_comp_ver, category2_id = existing_category_that_split[0], category2_evol_ver = existing_category_that_split[1], category2_comp_ver=  existing_category_that_split[2],intensional_similarity = int_similarity, extensional_containment = ext_containment)
+        addHorizontalRelationship.save(force_insert=True)
+        
+        new_op = AddConSplitFrmExistToNewVer(concept_id = current_concept, existing_split_concept_id = existing_category_that_split[0], legend_concept_comb_id = connectToLegend, hierarchical_relationship_id= addRelationship, horizontal_relationship_id= addHorizontalRelationship, category_instantiation_op_id= CatInstop_instance)
+        new_op.save(force_insert=True)
+        print self.change_event.id
+        print new_op.id
+        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = new_op.id, change_operation='Add_Concept_Split_From_Existing_To_New_Version_Of_Legend')
+        newOperationForChangeEvent.save(force_insert=True)
 
-                
         
     def create_categories(self, legend_concept_comb_id, comp_int_id, ext_id):
         if Category.objects.all().exists():
@@ -131,7 +167,7 @@ class UpdateDatabase:
         cat.save(force_insert=True)
         
         CatInstop = CategoryInstantiationOperation(legend_concept_id = legend_concept_comb_id, comp_int_id = comp_int_id, ext_id = ext_id, category_id = cat.category_id, category_evol_ver = cat.category_evol_ver, category_comp_ver = cat.category_comp_ver)
-        CatInstop.save()
+        CatInstop.save(force_insert=True)
         
         return CatInstop
             
@@ -153,7 +189,7 @@ class UpdateDatabase:
         classification_activity_instance = ClassificationActivity.objects.get(id = activity_id)
         
         ext = Extension(set_of_occurences_id = setofocc_id, classification_activity_id = classification_activity_instance)
-        ext.save()
+        ext.save(force_insert=True)
         return ext
         
     def create_mean_vector(self, mean_vector):
@@ -162,7 +198,7 @@ class UpdateDatabase:
             meanVector = MeanVector(band1 = mean_vector[0], band2 = mean_vector[1], band3 = mean_vector[2])
         else:
             meanVector = MeanVector(band1 = mean_vector[0], band2 = mean_vector[1], band3 = mean_vector[2], band4 = mean_vector[3], band5 = mean_vector[4], band6 = mean_vector[5], band7 = mean_vector[6], band8 = mean_vector[7])
-        meanVector.save()
+        meanVector.save(force_insert=True)
         return meanVector.id
     
     def create_covariance_matrix(self, covariance_matrix):
@@ -191,7 +227,7 @@ class UpdateDatabase:
         
         learning_activity_instance = LearningActivity.objects.get(id = activity_id)
         comp_int = ComputationalIntension(mean_vector_id = meanvector_id, covariance_matrix_id = cov_mat_id, learning_activity_id=learning_activity_instance, producer_accuracy = prodacc, user_accuracy = useracc)
-        comp_int.save()
+        comp_int.save(force_insert=True)
         return comp_int
 
 class CustomQueries:
@@ -316,15 +352,14 @@ class CustomQueries:
         
         return row[0]
         
-    def get_category_details_of_a_concept_in_a_legend(self, lid, ver, concept_name):
+    def get_category_details_of_a_concept_in_a_legend(self, id, ver, concept):
         cursor = connection.cursor()
         
-        cursor.execute("select ca.category_id, ca.category_evol_ver, ca.category_comp_ver from category ca, concept c, legend_concept_combination lcc where lcc.id  = ca.legend_concept_combination_id and \
-l                       lcc.legend_id = %s and lcc.legend_ver = %s and lcc.concept_id = c.id and c.concept_name=%s", [lid, ver, concept_name])
+        cursor.execute("select ca.category_id, ca.category_evol_ver, ca.category_comp_ver from category ca, concept c, legend_concept_combination l where l.id = ca.legend_concept_combination_id and l.concept_id = c.id and l.legend_id = %s and l.legend_ver = %s and c.concept_name= %s", [id, ver, concept])
         
         row = cursor.fetchone()
-        print row[0]
-        return row[0]
+        
+        return row
     
     def getDetailsOfCreateTrainingSetActivity(self, ctaid):
         cursor = connection.cursor()
