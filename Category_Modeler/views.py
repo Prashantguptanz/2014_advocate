@@ -307,9 +307,11 @@ def trainingsampleprocessing(request):
                 
                 #adding details for current exploration details for visualization
                 current_step = ['Create trainingset', title, data_content]
-                
+
                 if 'current_exploration_chain_viz' in request.session:
                     current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+                    if current_exploration_chain_viz[-1][0] == 'End':
+                        current_exploration_chain_viz.pop()
                     current_exploration_chain_viz.append(current_step)
                     request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
                 else:
@@ -323,7 +325,7 @@ def trainingsampleprocessing(request):
 
             conceptType = data['ConceptType']
             create_ts_activity_instance = CreateTrainingsetActivity.objects.get(id = int(request.session['create_trainingset_activity_id']))
-            old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])
+            old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
             create_ts_activity_instance.reference_trainingset_id = old_trainingset[0]
             create_ts_activity_instance.reference_trainingset_ver = old_trainingset[1]
             create_ts_activity_instance.save()
@@ -476,8 +478,12 @@ def trainingsampleprocessing(request):
                 namesofsplitconcepts = conceptstosplitinto.split(',')
                 firstConceptNameFromSplit = namesofsplitconcepts[0]
                 secondConceptNameFromSplit = namesofsplitconcepts[1]
+                print conceptToSplit
+                print firstConceptNameFromSplit
+                print secondConceptNameFromSplit
                 
                 trainingFilesList1 = request.FILES.getlist('filesforfirstconcept')
+                print trainingFilesList1
                 researcherName1 = data['FieldResearcherName1'];
                 trainingstart1 = data['TrainingTimePeriodStartDate1'];
                 trainingend1 = data['TrainingTimePeriodEndDate1'];
@@ -485,6 +491,7 @@ def trainingsampleprocessing(request):
                 otherDetails1 = data['OtherDetails1'];
                 
                 trainingFilesList2 = request.FILES.getlist('filesforsecondconcept')
+                print trainingFilesList2
                 researcherName2 = data['FieldResearcherName2'];
                 trainingstart2 = data['TrainingTimePeriodStartDate2'];
                 trainingend2 = data['TrainingTimePeriodEndDate2'];
@@ -495,7 +502,9 @@ def trainingsampleprocessing(request):
                 samplefilename1 = firstConceptNameFromSplit + str(datetime.now()) + ".csv"
                 samplefilename2 = secondConceptNameFromSplit + str(datetime.now()) + ".csv"
                 trainingSamplesFileList1 = [trainingSamples.name for trainingSamples in trainingFilesList1]  
-                trainingSamplesFileList2 = [trainingSamples.name for trainingSamples in trainingFilesList2]  
+                trainingSamplesFileList2 = [trainingSamples.name for trainingSamples in trainingFilesList2]
+                print trainingSamplesFileList1
+                print trainingSamplesFileList2
                 managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList1, samplefilename1, EXISTING_TRAINING_SAMPLES_LOCATION, firstConceptNameFromSplit)
                 managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList2, samplefilename2, EXISTING_TRAINING_SAMPLES_LOCATION, secondConceptNameFromSplit)
                 
@@ -663,12 +672,15 @@ def trainingsampleprocessing(request):
                 
                 if 'current_exploration_chain_viz' in request.session:
                     current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+                    if current_exploration_chain_viz[-1][0] == 'End':
+                        current_exploration_chain_viz.pop()
                     current_exploration_chain_viz.append(current_step)
                     request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
                 else:
                     request.session['current_exploration_chain_viz'] = [current_step]
+               
                 
-                if isinstance(common_categories[0], list)==False:
+                if len(common_categories) != 0 and isinstance(common_categories[0], list)==False:
                     common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
                     return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories, 'common_categories_message':common_categories_message})
         
@@ -677,6 +689,7 @@ def trainingsampleprocessing(request):
                 
             return HttpResponse("")
         else:
+            print "i am here"
             trainingfilepkey = data['1']
             trid, ver = trainingfilepkey.split('+')
             request.session['current_training_file_id'] = trid
@@ -718,15 +731,14 @@ def trainingsampleprocessing(request):
 
             
             if 'existing_taxonomy_name' in request.session:    
-                old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])
-                print old_trainingset
+                old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
                 new_training_sample = TrainingSet(request.session['current_training_file_name'])
                 old_training_sample = TrainingSet(old_trainingset[2])
                 common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
                 if isinstance(common_categories[0], list)==False:
                     common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
                     return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories, 'common_categories_message':common_categories_message})
-        
+                
                 return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories})
 
             return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes})        
@@ -737,7 +749,7 @@ def trainingsampleprocessing(request):
                 training_set_list = Trainingset.objects.all()  # @UndefinedVariable
                 
             customQuery = CustomQueries()
-            old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[2]
+            old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
             old_training_sample = TrainingSet(old_trainingset_name)
             category_list = list(numpy.unique(old_training_sample.target))
             if 'current_exploration_chain_viz' in request.session:
@@ -1054,6 +1066,8 @@ def applyeditoperations(request):
     
     if 'current_exploration_chain_viz' in request.session:
         current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+        if current_exploration_chain_viz[-1][0] == 'End':
+            current_exploration_chain_viz.pop()
         current_exploration_chain_viz.append(current_step)
         request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
     else:
@@ -1080,7 +1094,7 @@ def applyeditoperations(request):
         trainingset.close()
     
     if 'existing_taxonomy_name' in request.session:
-        old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[2]
+        old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
         new_training_sample = TrainingSet(request.session['current_training_file_name'])
         old_training_sample = TrainingSet(old_trainingset_name)
         common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
@@ -1115,6 +1129,7 @@ def changethresholdlimits(request):
 
 @login_required
 def signaturefile(request):
+    request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
     if 'currenteditoperations' in request.session:
         del request.session['currenteditoperations']
         request.session.modified = True
@@ -1222,6 +1237,8 @@ def signaturefile(request):
         
         if 'current_exploration_chain_viz' in request.session:
             current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+            if current_exploration_chain_viz[-1][0] == 'End':
+                current_exploration_chain_viz.pop()
             current_exploration_chain_viz.append(current_step)
             request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
         else:
@@ -1295,7 +1312,7 @@ def signaturefile(request):
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
 
-                old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[2]
+                old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
                 old_trainingfile = TrainingSet(old_trainingset_name)
                 old_covariance_mat = old_trainingfile.create_covariance_matrix()
                 old_mean_vectors = old_trainingfile.create_mean_vectors()
@@ -1340,7 +1357,7 @@ def signaturefile(request):
                         single_category_comparison.append(old_category_details[0][3])
                         single_category_comparison.append(old_category_details[0][0])
                         single_category_comparison.append(old_category_details[0][1])
-                        new_index = numpy.where(mean_vectors = common_category)[0][0]
+                        new_index = numpy.where(mean_vectors == common_category)[0][0]
                         old_index = numpy.where(old_mean_vectors = common_category)[0][0]
                         model1 = NormalDistributionIntensionalModel(mean_vectors[new_index][1], covariance_mat[new_index][1])
                         model2 = NormalDistributionIntensionalModel(old_mean_vectors[old_index][1], old_covariance_mat[old_index][1])
@@ -1427,7 +1444,7 @@ def signaturefile(request):
             
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
-                old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[2]
+                old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
                 old_trainingfile = TrainingSet(old_trainingset_name)
                 new_categories = list(numpy.unique(trainingfile.target))
                 old_categories = list(numpy.unique(old_trainingfile.target))
@@ -1553,6 +1570,8 @@ def supervised(request):
             
             if 'current_exploration_chain_viz' in request.session:
                 current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+                if current_exploration_chain_viz[-1][0] == 'End':
+                    current_exploration_chain_viz.pop()
                 current_exploration_chain_viz.append(current_step)
                 request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
             else:
@@ -1560,7 +1579,7 @@ def supervised(request):
             
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
-                old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[2]
+                old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
                 trs = TrainingSet(old_trainingset)
                 oldCategories = list(numpy.unique(trs.target))
                 change_matrix, J_Index_for_common_categories, extensional_containment_for_categories_split_from_existing, extensional_containment_for_category_merged_from_existing = create_change_matrix(request, oldCategories, predictedValue, rows, columns)
@@ -1780,12 +1799,13 @@ def changeRecognizer(request):
                     exploration_chain_details.append([data_term])
                 else:
                     exploration_chain_details.append(["Classification activity"])
-                
-            data_content = ""
-            current_step = ['End', 'End', data_content]
+            
             current_exploration_chain_viz = request.session['current_exploration_chain_viz']
-            current_exploration_chain_viz.append(current_step)
-            request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
+            last_data_content = current_exploration_chain_viz[-1]
+            if last_data_content[0] != 'End':
+                current_step = ['End', 'End', ""]
+                current_exploration_chain_viz.append(current_step)
+                request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
 
             return render(request, 'changerecognition.html', {'user_name':user_name, 'new_taxonomyName': new_taxonomy, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'exploration_chain':exploration_chain_details, 'conceptsList':concepts_in_current_taxonomy, 'modelType': model_type, 'modelScore': model_accuracy, 'userAccuracies': user_accuracies, 'producerAccuracies': producer_accuracies})
     else:
@@ -1802,7 +1822,7 @@ def changeRecognizer(request):
         concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
         user_accuracies = request.session['user_accuracies']
         producer_accuracies = request.session['producer_accuracies']
-        old_trainingset = TrainingSet(customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_name'])[2])
+        old_trainingset = TrainingSet(customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2])
         oldCategories = list(numpy.unique(old_trainingset.target))
         
         #categories common to newly modeled set of categories and the categories stored in the latest version of the legend
@@ -1976,7 +1996,7 @@ def get_addConcept_op_details(taxonomy_name, taxonomy_version,  parent_concept_n
     if taxonomy_version == 1:
         compositeOp_details.append("Add '" + concept_name + "' to '" + taxonomy_name + "'")
     else:
-        compositeOp_details.append("Add '" + concept_name + "' to '" + taxonomy_name + "'" + " Ver_" + taxonomy_version)
+        compositeOp_details.append("Add '" + concept_name + "' to '" + taxonomy_name + "'" + " Ver_" + str(taxonomy_version))
     compositeOp_details.append("Add hierarchical relationship - '" + parent_concept_name + "' parent of '" + concept_name + "'")
     compositeOp_details.append("Category Instantiation ('" + concept_name + "')")
     #catInst = []
@@ -2049,6 +2069,10 @@ def applyChangeOperations(request):
         extension = predicted_file.create_extension(request.session['current_test_file_columns'], request.session['current_test_file_rows'], request.session['current_training_file_name'])
         for i in range(len(concepts_in_current_taxonomy)):
             change_event_queries.create_concept(concepts_in_current_taxonomy[i], mean_vectors[i][1], covariance_mat[i][1],  extension[i], producer_accuracies[i], user_accuracies[i])
+        del request.session['new_taxonomy_name']
+        del request.session['new_taxonomy_description']
+        request.session.modified = True
+        
     elif 'existing_taxonomy_name' in request.session and 'create_new_taxonomy_version' in request.session:
         change_event_queries = UpdateDatabase(request)
         change_event_queries.create_new_legend_version()
@@ -2060,10 +2084,9 @@ def applyChangeOperations(request):
         user_accuracies = request.session['user_accuracies']
         producer_accuracies = request.session['producer_accuracies']
         extension = predicted_file.create_extension(request.session['current_test_file_columns'], request.session['current_test_file_rows'], request.session['current_training_file_name'])
-        J_Index_for_common_categories = request.session['J_Index_for_common_categories']
-        extensional_containment_for_categories_split_from_existing = request.session['extensional_containment_for_categories_split_from_existing']
-
+        
         if 'existing_categories' in request.session:
+            J_Index_for_common_categories = request.session['J_Index_for_common_categories']
             existing_categories = request.session['existing_categories']
             for each_existing_category in existing_categories:
                 i = concepts_in_current_taxonomy.index(each_existing_category)
@@ -2088,7 +2111,7 @@ def applyChangeOperations(request):
                 else:
                     int_relation = "overlaps with"
                     
-                if extensional_similarity ==0.0:
+                if extensional_similarity == 0.0:
                     ext_relation = "excludes"
                 elif extensional_similarity >0.95:
                     ext_relation = "same as"
@@ -2104,7 +2127,8 @@ def applyChangeOperations(request):
         
         if 'categories_split_from_existing' in request.session:
             categories_split_from_existing = request.session['categories_split_from_existing']
-            
+            extensional_containment_for_categories_split_from_existing = request.session['extensional_containment_for_categories_split_from_existing']
+                        
             for each_set_of_categories_split_from_an_existing_category in categories_split_from_existing:
                 existing_category_that_is_split = each_set_of_categories_split_from_an_existing_category[0]
                 for i in range(1, len(each_set_of_categories_split_from_an_existing_category)):
@@ -2129,27 +2153,72 @@ def applyChangeOperations(request):
                         int_relation = "excludes"
                     else:
                         int_relation = "overlaps with"
-                    ext_relation = "includes"
+                    ext_relation = "is included in"
                     
                     change_event_queries.add_concept_split_from_existing_concept_to_new_version_of_legend(each_set_of_categories_split_from_an_existing_category[i], existing_category_that_is_split, mean_vectors[index][1], covariance_mat[index][1], extension[index], producer_accuracies[index], user_accuracies[index], intensional_similarity, extensional_containment, int_relation, ext_relation)
-   
-   # del request.session['new_taxonomy_name']
-   # del request.session['new_taxonomy_description']
-   # del request.session['exploration_chain_id']
-   # del request.session['exploration_chain_step']
-   # del request.session['current_training_file_name']
-   # del request.session['current_training_file_id']
-   # del request.session['current_training_file_ver']
-    #del request.session['current_model_name']
-   # del request.session['current_model_id']
-   # del request.session['current_test_file_name']
-   # del request.session['current_predicted_file_name']
-  #  del request.session['current_test_file_columns']
-   # del request.session['current_test_file_rows']
-   # del request.session['legend_id'] 
- #   del request.session['legend_ver']
- #   del request.session['root_concept']
-  #  request.session.modified = True
+        
+        if 'categories_merged_from_existing' in request.session:
+            categories_merged_from_existing = request.session['categories_merged_from_existing']
+            extensional_containment_for_category_merged_from_existing = request.session['extensional_containment_for_category_merged_from_existing']
+            for new_category_resulted_from_merging_existing_categories in categories_merged_from_existing:
+                new_category = new_category_resulted_from_merging_existing_categories[-1]
+                index = concepts_in_current_taxonomy.index(new_category)
+                extensional_containment = []
+                merged_categories = new_category_resulted_from_merging_existing_categories
+                merged_categories.pop(0)
+                for each_set in extensional_containment_for_category_merged_from_existing:
+                    if new_category in each_set:
+                        extensional_containment = each_set
+                        extensional_containment.pop(0)
+                        break
+                intensional_similarity = [0.0 for x in merged_categories]
+                if 'merged_categories_computational_intension_comparison' in request.session:
+                    merged_categories_computational_intension_comparison = request.session['merged_categories_computational_intension_comparison']
+                    for i, each_category_merged in enumerate(merged_categories):
+                        for each_set in merged_categories_computational_intension_comparison:
+                            if new_category == each_set[0] and each_category_merged == each_set[1]:
+                                intensional_similarity[i] = each_set[2]
+                                break
+                            
+                int_relation = []
+                for a in intensional_similarity:
+                    if a == 0.0:
+                        int_relation.append("unknown")
+                    elif a <0.3:
+                        int_relation.append("same as")
+                    elif a >=1.4:
+                        int_relation.append("excludes")
+                    else:
+                        int_relation.append("overlaps with")
+                ext_relation = ["includes", "includes", "includes"]
+                
+                change_event_queries.add_concept_resulted_from_merging_existing_concept_to_new_version_of_legend(new_category, merged_categories, mean_vectors[index][1], covariance_mat[index][1], extension[index], producer_accuracies[index], user_accuracies[index], intensional_similarity, extensional_containment, int_relation, ext_relation)
+        
+                
+                    
+                    
+        
+        del request.session['existing_taxonomy_name']
+        del request.session['existing_taxonomy_id']
+        del request.session['existing_taxonomy_ver']
+        del request.session['create_new_taxonomy_version']
+        request.session.modified = True
+        
+    del request.session['exploration_chain_id']
+    del request.session['exploration_chain_step']
+    del request.session['current_training_file_name']
+    del request.session['current_training_file_id']
+    del request.session['current_training_file_ver']
+    del request.session['current_model_name']
+    del request.session['current_model_id']
+    del request.session['current_test_file_name']
+    del request.session['current_predicted_file_name']
+    del request.session['current_test_file_columns']
+    del request.session['current_test_file_rows']
+    del request.session['legend_id'] 
+    del request.session['legend_ver']
+    del request.session['root_concept']
+    request.session.modified = True
     return HttpResponse("The changes are committed and stored in the database. Choose an activity from the Home page to continue further!")
     
 @login_required

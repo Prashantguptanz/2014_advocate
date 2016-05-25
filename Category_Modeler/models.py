@@ -597,7 +597,8 @@ class ChangeEventOperations(models.Model):
         ('Add_Concept', 'Add_Concept'),
         ('Add_Taxonomy_Version', 'Add_Taxonomy_Version'),
         ('Add_Existing_Concept_To_New_Version_Of_Legend', 'Add_Existing_Concept_To_New_Version_Of_Legend'),
-        ('Add_Concept_Split_From_Existing_To_New_Version_Of_Legend', 'Add_Concept_Split_From_Existing_To_New_Version_Of_Legend')
+        ('Add_Concept_Split_From_Existing_To_New_Version_Of_Legend', 'Add_Concept_Split_From_Existing_To_New_Version_Of_Legend'),
+        ('Add_Merged_Concept_To_New_Version_Of_Legend', 'Add_Merged_Concept_To_New_Version_Of_Legend')
         
     )
     change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id', primary_key=True)
@@ -678,3 +679,19 @@ class AddConSplitFrmExistToNewVer(models.Model):
     class Meta:
         managed = False
         db_table = 'Add_Concept_Split_From_Existing_To_New_Legend_Ver_operation'
+        
+class AddMergedConToNewVerOp(models.Model):
+    concept_id = models.ForeignKey(Concept, db_column='concept_id')
+    existing_concept_id1 = models.IntegerField()
+    existing_concept_id2 = models.IntegerField()
+    existing_concept_id3 = models.IntegerField(blank=True, null=True)
+    legend_concept_comb = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_comb_id')
+    hierarchical_relationship = models.ForeignKey(HierarchicalRelationship, db_column = 'hierarchical_relationship_id')
+    horizontal_relationship_id1 = models.ForeignKey(HorizontalRelationship, related_name='horizontal_relationship_id1')
+    horizontal_relationship_id2 = models.ForeignKey(HorizontalRelationship, related_name='horizontal_relationship_id2')
+    horizontal_relationship_id3 = models.ForeignKey(HorizontalRelationship, related_name='horizontal_relationship_id3', blank=True, null=True)
+    category_instantiation_op = models.ForeignKey(CategoryInstantiationOperation, db_column = 'category_instantiation_op_id')
+
+    class Meta:
+        managed = False
+        db_table = 'Add_Merged_Concept_To_New_Legend_Ver_operation'
