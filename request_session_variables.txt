@@ -51,6 +51,8 @@ current_predicted_file_name
 current_test_file_columns
 current_test_file_rows
 
+create_new_taxonomy_version
+change_existing_taxonomy
 
 legend_id
 legend_ver

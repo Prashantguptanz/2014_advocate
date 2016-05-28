@@ -764,9 +764,16 @@ $(function() {
 						var classes = response['classes'];
 						$('#instances').html(trainingdata.length - 1);
 						$('#Attributes').html(trainingdata[0].length);
-
+						
+						$('#show_exploration').prop("checked", true);
 						$('#trainingdataTable').show();
 						hot.loadData(trainingdata);
+						$('#exploration_path_viz').show();
+						totalwidth = $(window).width();
+						containerwidth = 1170;
+						remainingwidth = (totalwidth - containerwidth)/2;
+						width_of_exp =(remainingwidth-50) + 'px';
+						$('.pop_con').css('width', width_of_exp);
 						
 						x = "<option>Choose a concept</option>";
 						b = "";
@@ -966,13 +973,16 @@ $(function() {
 					}
 					a = a + "</table></div>";
 					
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
-					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
-				
-					for (var i = 0; i < response['new_categories'].length; i++){
-						a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
+					if (response['new_categories'].length!=0){
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
+					
+						for (var i = 0; i < response['new_categories'].length; i++){
+							a = a + "<li class=\"list-group-item\">" + response['new_categories'][i] + "</li>";
+						}
+						a = a + "</ul></div>";
 					}
-					a = a + "</ul></div>";
+					
 					
 					if (response['deprecated_categories'].length!=0){
 						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
@@ -1195,7 +1205,12 @@ $(function() {
 				$('#Attributes').html(trainingdata[0].length);
 				hot.loadData(trainingdata);
 				$('#applyeditoperations').attr('disabled', 'disabled');
-				
+				$('#exploration_path_viz').show();
+				totalwidth = $(window).width();
+				containerwidth = 1170;
+				remainingwidth = (totalwidth - containerwidth)/2;
+				width_of_exp =(remainingwidth-50) + 'px';
+				$('.pop_con').css('width', width_of_exp);
 				if (response['common_categories_message']){
 					$('#trainingsetcomparison').show();
 					var a = "<label style=\"font-size: 14px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
@@ -1531,8 +1546,8 @@ $(function() {
 										
 									}
 									if (response['common_categories_comparison'] && response['common_categories_comparison'][0].length==10){
-										a = a + "<table style=\"width:95%\" align=\"center\"class=\" table table-bordered\"><tr><th>Category</th><th>Validation</th>" +
-												"<th>Prod accuracy</th><th>User accuracy</th><th>Validation (new)</th><th>Prod accuracy (new)</th><th>User accuracy (new)</th><th>JM distance</th></tr>";
+										a = a + "<table style=\"width:95%\" align=\"center\"class=\" table table-bordered\"><tr><th>Category</th><th>Model</th><th>Validation</th>" +
+												"<th>Prod accuracy</th><th>User accuracy</th><th>Model (new)</th><th>Validation (new)</th><th>Prod accuracy (new)</th><th>User accuracy (new)</th><th>JM distance</th></tr>";
 										for (var i=0; i< response['common_categories_comparison'].length; i++){
 											a = a + "<tr><td>" + response['common_categories_comparison'][i][0] + "</td>";
 											a = a + "<td>" + response['common_categories_comparison'][i][6] + "</td>";
@@ -1869,6 +1884,9 @@ $(function() {
 							$('#collapse10').html(a);
 							
 						}
+						
+						$('#collapse8').removeClass("collapse in").addClass("collapse");
+						$('#collapse10').removeClass("collapse in").addClass("collapse");
 						if (response['new_taxonomy']){
 							if (response['new_taxonomy'] == 'True'){
 								x = "<div style = \"width:220px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Creating new taxonomy</span></div>";
@@ -1977,6 +1995,28 @@ $(function() {
 				$('#collapse13').removeClass("collapse in").addClass("collapse");
 				
 			});
+			
+		});
+		
+		$('#changeexistingtaxonomy').on('click', function(e) {
+			e.preventDefault();
+			$('#newtaxonomyversion').attr('disabled', 'disabled');
+			$('#changeexistingtaxonomy').attr('disabled', 'disabled');
+			$('#thresholdlimitforchange').show();
+		});
+		
+		$('#yesforthresholdlimit').on('click', function(e) {
+			e.preventDefault();
+			$('#yesforthresholdlimit').attr('disabled', 'disabled');
+			$('#noforthresholdlimit').attr('disabled', 'disabled');
+			$('#userinputforchangeevent').show();
+			$('#thresholdlimitforchangedetails').show();
+		});
+		
+		$('#noforthresholdlimit').on('click', function(e) {
+			e.preventDefault();
+			$('#yesforthresholdlimit').attr('disabled', 'disabled');
+			$('#noforthresholdlimit').attr('disabled', 'disabled');
 			
 		});
 		

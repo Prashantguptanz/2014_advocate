@@ -1,5 +1,5 @@
 {% extends "base.html" %} {% block content %}
-<div class="container">
+<div class="container" style="margin-bottom: 50px">
 	
 	{% csrf_token %}
 	
@@ -156,10 +156,12 @@
 			</p>
 			 
 			<p style="font-size: 14px; margin-left: 10px; margin-right: 10px">
-				Below is given the list of categories and the changes with respect to the existing categories:
+				Below is given the different lists of categories and the changes that occurred:
 			</p> 
 			
-	 
+	 		
+	 		{% if common_categories_comparison_details|length|get_digit:"-1" > 0 %}
+	 		
 			<table class=" table table-bordered" style=" width:80%; margin: 0 auto">
 				<caption style="margin-bottom: 7px"><strong>Comparison between the categories corresponding to the common concepts in the existing taxonomy and the new modeled taxonomy: </strong></caption>
 				<br />
@@ -172,23 +174,35 @@
 					<th>
 						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Change trainingset activity" data-content="The extensional similarity is calculated using Jaccard index. The value represents the similarity between two finite sample sets. <br/> The J-index is defined as:<br/> <MATH>J(A,B) = (A &#8745; B) &#8260; (A &#8746; B) </MATH><br/> where A and B are finite sample sets.">
 						Extensional similarity</a>
-					</th>		 		
+					</th>
+					<th>J M Distance</th>	 		
 				</tr>
 				{% for concept in common_categories_comparison_details %}
-				<tr>
-					{% for data in concept %}
-					<td>{{data}}</td>
-					{% endfor %}
-				</tr>
+					{% if concept|length|get_digit:"-1" == 7 %}
+					<tr>
+						{% for data in concept %}
+						<td>{{data}}</td>
+						{% endfor %}
+					</tr>
+					{% else %}
+					<tr>
+						{% for data in concept %}
+						<td>{{data}}</td>
+						{% endfor %}
+						<td>N/A</td>
+					</tr>
+					{% endif %}
 			 	{% endfor %}
 			 </table>
 			 <br /><br />
+			 
+			 {% endif %}
 			
 			{% if new_categories_details|length|get_digit:"-1" > 0 %}
 				
 			<br />	 
 			<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
-				<caption>Details of the categories corresponding to new concepts in the new modeled taxonomy: </caption>
+				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to new concepts in the new modeled taxonomy: </strong></caption>
 				<tr>
 					<th>Concept</th>
 					<th>User accuracy</th>
@@ -209,15 +223,21 @@
 			{% if categories_merged_from_existing_details|length|get_digit:"-1" > 0 %}
 				
 			<br />	 
-			<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
-				<caption>Details of the categories corresponding to the concepts resulted from merging existing concepts in the taxonomy: </caption>
+			<table class=" table table-bordered" style=" width:80%; margin: 0 auto">
+				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to the concepts resulted from merging existing concepts in the taxonomy: </strong></caption>
 				<tr>
-					<th>Concept</th>
+					<th>New merged concept</th>
 					<th>User accuracy</th>
 					<th>Producer accuracy</th>
 					<th>Existing concept 1</th>
+					<th>
+						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Extensional containment" data-content="The extensional containment tells how much extension of the new concept is contained within the extension of the concept it split from.">
+						Extensional containment</a>
+					</th>
 					<th>Existing concept 2</th>
-					<th>Existing concept 3</th>			
+					<th>Extensional containment</th>
+					<th>Existing concept 3</th>
+					<th>Extensional containment</th>	
 				</tr>
 				{% for concept in categories_merged_from_existing_details %}
 				<tr>
@@ -243,7 +263,7 @@
 					<th>User accuracy</th>
 					<th>Producer accuracy</th>		
 					<th>
-						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Change trainingset activity" data-content="The extensional containment tells how much extension of the new concept is contained within the extension of the concept it split from.">
+						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Extensional containment" data-content="The extensional containment tells how much extension of the existing concept is contained within the extension of the new merged concept.">
 						Extensional containment</a>
 					</th>
 				</tr>
@@ -258,6 +278,7 @@
 			 <br /><br />
 			
 			{% endif %}
+			
 			 <div id="implement" style="margin-left: 10px; margin-bottom: 15px">
 				 <label style="margin-left: 10px; font-weight: normal" for="chooseButtons">Do you wish to implement these changes in AdvoCate:</label>&nbsp; &nbsp;
 				 <button id="yesforchangeinexisting" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
@@ -270,6 +291,19 @@
 				 <button id="changeexistingtaxonomy" class="btn btn-default">  Existing taxonomy</button>
 			 </div>
 			 
+			 <div id="thresholdlimitforchange" style="display:none; margin-left: 20px; margin-bottom: 15px; margin-right: 20px" >
+			 	<p> 
+			 		AdvoCate provides an optional feature -
+			 		<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Extensional containment" data-content="The threshold limit of change (&#955;<sub>int</sub>, &#955;<sub>ext</sub>) allows AdvoCate to determine the type of change. If Change in extension > &#955;<sub>ext</sub> for a category, then AdvoCate advises to create a new evolutionary version of the category, otherwise a user may create a new competing version of the category dependeing on the chenge in computational intension.">
+						Threshold limit of change</a>
+					- to quantify the extent of change in the intension and extension of a concept and find its relation to the concept's identity. 
+			 	</p>
+			 	<label style="font-weight: normal" for="" >Do you wish to use the threshold limit feature: </label>&nbsp; &nbsp;
+				 <button id="yesforthresholdlimit" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
+				 <button id="noforthresholdlimit" class="btn btn-default">  No</button>
+	
+			</div>	
+			 
 			 <div id="commitsuccessmessage" style="display:none; margin-left: 10px; margin-bottom: 15px" >
 			 	<p id = "successmessage" style="font-size: 14px; margin-left: 10px; margin-right: 10px; color: green"><em> </em>
 			 	</p>
@@ -278,7 +312,40 @@
 		</div>
 		 
 	</div>	
-		
+	
+	<div id="userinputforchangeevent" style="display:none;width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px" >
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >
+			<a role="button" data-toggle="collapse" href="#collapse15" aria-expanded="false" aria-controls="collapse14" style="color: #333; vertical-align:middle">
+			User input to create change event</a>
+		</legend>
+		<div id="collapse15" class="collapse in">
+			<div id="thresholdlimitforchangedetails" style="display:none; margin-left:20px; margin-bottom:20px">
+			 	<br /><br />
+			 	<label style = "font-weight: normal ">(Default values)</label>
+			 	<span>
+			 	<label style = "font-weight: normal; margin-left: 15px ">&#955;<sub>ext</sub> : </label>
+				
+					<input style="margin-left: 15px" id="ext_change_limit" name = "ext_change_limit" disabled="disabled" type="text" size="10" value="0.50" required />
+				</span>
+				
+				<label style = "margin-left: 40px; font-weight: normal ">&#955;<sub>int</sub> : </label>
+				<span>
+					<input style="margin-left: 15px" id="int_change_limit" name = "int_change_limit" disabled="disabled" type="text" size="10" value="0.50" required />
+				</span>
+				<span>
+				<button style="margin-left: 50px" id="changethresholdvalues" class="btn btn-default"> Change</button>&nbsp; &nbsp;
+			 	<button id="submitthresholdvalues" class="btn btn-default" style="display:none">  Submit</button>
+			 	</span>
+			 </div>
+			 
+			 <div id = "userinput">
+			 	
+			 </div>
+			
+		</div>
+	</div>
+	
+
 	
 	<div id="changeevent" style="display:none;width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px" >
 		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >

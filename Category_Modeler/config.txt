@@ -1,2 +1,2 @@
-Built-up Area;Water Bodies;Vegetation;Pasture;Shadow;Cloud;
-99,255,97;242,246,255;212,255,197;255,116,103;125,255,188;192,140,255;
+Woody Vegetation;Inland Water;Open Space;Grassland;Suburban;Mangrove;Shadow;Water;Urban;Cloud;
+255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;
