@@ -1289,46 +1289,90 @@ def signaturefile(request):
                 jmdistances_complete_list.append(complete_jmdistance_for_each_pair)
                     
             
-            
+            # getting a list of unique overlapping pairs using JM distance among categories - overlapping pairs are considered if the JM distance between them is less than the threshold limit
             listofcategories = clf.classes_.tolist()
-            overlapping_pairs = []
+            overlapping_pairs_jm_list = []
             for eachPair in jmdistances_list:
                 if float(eachPair[2])<float(request.session['jm_distance_limit']):
-                    overlapping_pairs.append(eachPair)
-            sorted_overlapping_pairs = sorted(overlapping_pairs, key=itemgetter(2))     
+                    overlapping_pairs_jm_list.append(eachPair)
+            overlapping_pairs_sorted_by_jm_distance = sorted(overlapping_pairs_jm_list, key=itemgetter(2))     
             
-            positive_pairs = []
-            negative_pairs = []
-            for index in range(len(sorted_overlapping_pairs)):
+            list_of_unique_overlapping_categories = []
+            for index in range(len(overlapping_pairs_sorted_by_jm_distance)):
                 if index==0:
-                    positive_pairs.append(sorted_overlapping_pairs[index])
+                    list_of_unique_overlapping_categories.append(overlapping_pairs_sorted_by_jm_distance[index])
                 else:
-                    positive_pair= True
-                    for pair in positive_pairs:
-                        if sorted_overlapping_pairs[index][0] in pair or sorted_overlapping_pairs[index][1] in pair:
-                            negative_pairs.append(sorted_overlapping_pairs[index])
-                            positive_pair = False
+                    is_pair_unique = True
+                    for pair in list_of_unique_overlapping_categories:
+                        if overlapping_pairs_sorted_by_jm_distance[index][0] in pair or overlapping_pairs_sorted_by_jm_distance[index][1] in pair:
+                            is_pair_unique = False
                             break
-                    if positive_pair == True:
-                        positive_pairs.append(sorted_overlapping_pairs[index])
+                    if is_pair_unique == True:
+                        list_of_unique_overlapping_categories.append(overlapping_pairs_sorted_by_jm_distance[index])
             
-                      
-            suggestion_list=[]
-            for eachPair in positive_pairs:
+            #getting a list of categories with low accuracies based on the threshold limit
+            categories_with_low_accuracies = []
+            acc_limit = float(request.session['accuracy_limit'])
+            for index in range(len(listofcategories)):
+                if (float(prodacc[index]) < acc_limit and float(useracc[index]) < acc_limit) or ((float(prodacc[index]) + float(useracc[index]))<(2.0*acc_limit)):
+                    categories_with_low_accuracies.append(listofcategories[index])
+            
+            
+            #generating suggestions based on unique overlapping pairs with low accuracies
+            suggestions_based_on_overlapping_pairs_with_low_accuracies = []
+            for eachPair in list_of_unique_overlapping_categories:
                 single_suggestion=[]
                 index1 = listofcategories.index(eachPair[0])
                 index2 = listofcategories.index(eachPair[1])
-                acc_limit = float(request.session['accuracy_limit'])*2.0
                 
-                if float(prodacc[index1]) + float(useracc[index1]) < float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index1]) + float(useracc[index1])<acc_limit:
+                if float(prodacc[index1]) + float(useracc[index1]) < float(prodacc[index2]) + float(useracc[index2]):
                     single_suggestion.append(listofcategories[index1])
                     single_suggestion.append(listofcategories[index2])
-                    suggestion_list.append(single_suggestion)
-                elif float(prodacc[index1]) + float(useracc[index1]) > float(prodacc[index2]) + float(useracc[index2]) and float(prodacc[index2]) + float(useracc[index2]) <acc_limit:
+                    suggestions_based_on_overlapping_pairs_with_low_accuracies.append(single_suggestion)
+                else:
                     single_suggestion.append(listofcategories[index2])
                     single_suggestion.append(listofcategories[index1])
-                    suggestion_list.append(single_suggestion)
+                    suggestions_based_on_overlapping_pairs_with_low_accuracies.append(single_suggestion)
+                    
+            print suggestions_based_on_overlapping_pairs_with_low_accuracies
             
+            #generating suggestions based on categories with low accuracies being confused with other categories (using confusion matrix)
+            confusing_categories_with_low_accuracies=[]
+            for category in categories_with_low_accuracies:
+                index = listofcategories.index(category)
+                confusion1_of_category_with_others = cm[index]
+                confusion2_of_category_with_others = [row[index] for row in cm]
+                total_confusion_of_category_with_others = [x+y for x, y in zip(confusion1_of_category_with_others, confusion2_of_category_with_others)]
+                highest_confusion_with_index = find_index_of_highest_number_except_a_given_index(total_confusion_of_category_with_others, index)
+                confusion = float(float(total_confusion_of_category_with_others[highest_confusion_with_index])/float(sum(total_confusion_of_category_with_others)))
+                confusing_categories_with_low_accuracies.append([category, listofcategories[highest_confusion_with_index], confusion])
+                
+            confusing_categories_with_low_accuracies_sorted_by_confusion_percent = sorted(confusing_categories_with_low_accuracies, key=itemgetter(2), reverse=True)
+            
+            suggestions_based_on_categories_with_low_accuracies_and_high_confusion = [confusing_categories_with_low_accuracies_sorted_by_confusion_percent[0]]
+            for i in range(1, len(confusing_categories_with_low_accuracies_sorted_by_confusion_percent)):
+                current_suggestion = confusing_categories_with_low_accuracies_sorted_by_confusion_percent[i]
+                is_unique= True
+                for suggestion in suggestions_based_on_categories_with_low_accuracies_and_high_confusion:
+                    if current_suggestion[0] in suggestion or current_suggestion[1] in suggestion:
+                        is_unique = False
+                        break;
+                if is_unique == True:
+                    suggestions_based_on_categories_with_low_accuracies_and_high_confusion.append(current_suggestion)
+            print suggestions_based_on_categories_with_low_accuracies_and_high_confusion
+            
+            #Generating unique suggestions using JM distance among categories, producer and user accuracies, and confusion matrix
+            final_suggestion_list = suggestions_based_on_overlapping_pairs_with_low_accuracies
+            for suggestion1 in suggestions_based_on_categories_with_low_accuracies_and_high_confusion:
+                suggestion1_not_in_suggestion2 = True
+                for suggestion2 in suggestions_based_on_overlapping_pairs_with_low_accuracies:
+                    if suggestion1[0] in suggestion2 or suggestion1[1] in suggestion2:
+                        suggestion1_not_in_suggestion2 = False
+                        break;
+                if suggestion1_not_in_suggestion2 == True:
+                    final_suggestion_list.append([suggestion1[0], suggestion1[1]])
+            print final_suggestion_list
+                                
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
 
@@ -1358,7 +1402,7 @@ def signaturefile(request):
                         single_category_comparison.append(old_category_details[0][0])
                         single_category_comparison.append(old_category_details[0][1])
                         common_categories_comparison.append(single_category_comparison)
-                    return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison})
+                    return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': final_suggestion_list, 'common_categories_comparison': common_categories_comparison})
                 else:
                     existing_categories_comparison_to_store = []
 
@@ -1432,18 +1476,11 @@ def signaturefile(request):
                     if len(categories_merged_from_existing_comparison_to_store) !=0:
                         request.session['merged_categories_computational_intension_comparison'] = categories_merged_from_existing_comparison_to_store
                     
-                    return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'],'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list, 'common_categories_comparison': common_categories_comparison, 'split_categories_comparison': categories_split_from_existing_comparison_to_store, 'merged_categories_comparison': categories_merged_from_existing_comparison_to_store})
+                    return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'],'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': final_suggestion_list, 'common_categories_comparison': common_categories_comparison, 'split_categories_comparison': categories_split_from_existing_comparison_to_store, 'merged_categories_comparison': categories_merged_from_existing_comparison_to_store})
                
-            return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': suggestion_list})
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': final_suggestion_list})
         
         elif (classifiername=="Decision Tree"):
-            #print clf.tree_.__getstate__()
-            #print clf.tree_.children_left
-            #print clf.tree_.children_right
-            #print clf.tree_.feature
-            #print clf.tree_.threshold
-            #print clf.tree_.value
-            newModel = DecisionTreeIntensionalModel(clf)
             dot_data = StringIO()
             tree.export_graphviz(clf, out_file=dot_data)
             graph = pydot.graph_from_dot_data(dot_data.getvalue())
@@ -1451,30 +1488,36 @@ def signaturefile(request):
             graph.write_png('%s%s' %(IMAGE_LOCATION, tree_name))
             
             listofcategories = clf.classes_.tolist()
-            categories_with_low_accuracies = []
+            categories_with_low_accuracies1 = []
             acc_limit = float(request.session['accuracy_limit'])
             
             for index in range(len(listofcategories)):
                 if (float(prodacc[index]) < acc_limit and float(useracc[index]) < acc_limit) or ((float(prodacc[index]) + float(useracc[index]))<(2.0*acc_limit)):
-                    categories_with_low_accuracies.append(listofcategories[index])
+                    categories_with_low_accuracies1.append(listofcategories[index])
             
-            suggestion_list=[]
-            for category in categories_with_low_accuracies:
+            confusing_categories_with_low_accuracies1=[]
+            for category in categories_with_low_accuracies1:
                 index = listofcategories.index(category)
                 confusion1_of_category_with_others = cm[index]
                 confusion2_of_category_with_others = [row[index] for row in cm]
                 total_confusion_of_category_with_others = [x+y for x, y in zip(confusion1_of_category_with_others, confusion2_of_category_with_others)]
-                print category
-                print total_confusion_of_category_with_others
                 highest_confusion_with_index = find_index_of_highest_number_except_a_given_index(total_confusion_of_category_with_others, index)
-                if float(prodacc[index]) + float(useracc[index]) < float(prodacc[highest_confusion_with_index]) + float(useracc[highest_confusion_with_index]):
-                    suggestion_list.append([category, listofcategories[highest_confusion_with_index]])
-                else:
-                    suggestion_list.append([listofcategories[highest_confusion_with_index], category])
+                confusion = float(float(total_confusion_of_category_with_others[highest_confusion_with_index])/float(sum(total_confusion_of_category_with_others)))
+                confusing_categories_with_low_accuracies1.append([category, listofcategories[highest_confusion_with_index], confusion])
+                
+            confusing_categories_with_low_accuracies_sorted_by_confusion_percent1 = sorted(confusing_categories_with_low_accuracies1, key=itemgetter(2), reverse=True)
             
-            unique_suggestion_list = [list(t) for t in set(tuple(element) for element in suggestion_list)]    
-            
-            
+            final_suggestion_list1 = [confusing_categories_with_low_accuracies_sorted_by_confusion_percent1[0]]
+            for i in range(1, len(confusing_categories_with_low_accuracies_sorted_by_confusion_percent1)):
+                current_suggestion = confusing_categories_with_low_accuracies_sorted_by_confusion_percent1[i]
+                is_unique= True
+                for suggestion in final_suggestion_list1:
+                    if current_suggestion[0] in suggestion or current_suggestion[1] in suggestion:
+                        is_unique = False
+                        break;
+                if is_unique == True:
+                    final_suggestion_list1.append(current_suggestion)
+ 
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
                 old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
@@ -1499,9 +1542,9 @@ def signaturefile(request):
                     single_category_comparison.append(old_category_details[0][0])
                     single_category_comparison.append(old_category_details[0][1])
                     common_categories_comparison.append(single_category_comparison)
-                return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'suggestion_list': unique_suggestion_list, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc, 'common_categories_comparison':common_categories_comparison})
+                return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'suggestion_list': final_suggestion_list1, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc, 'common_categories_comparison':common_categories_comparison})
                 
-            return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'suggestion_list': unique_suggestion_list, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc})
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'suggestion_list': final_suggestion_list1, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc})
         else:
             return ""   
     else:
@@ -2017,13 +2060,13 @@ def createChangeEventForExistingTaxonomy(request):
             catgeory_details = category.split(' ')
             print catgeory_details
             if catgeory_details[1] == "evol":
-            
-            elif catgeory_details[1] == "evol":
-                
+                print catgeory_details[1]
+            elif catgeory_details[1] == "comp":
+                print catgeory_details[1]
             elif catgeory_details[1] == "merge":
-                
+                print catgeory_details[1]
             else:
-                
+                print catgeory_details[1]
     return HttpResponse("")
     #request.session['change_existing_taxonomy'] = True
     #compositeChangeOperations = []
