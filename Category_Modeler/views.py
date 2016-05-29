@@ -2170,14 +2170,14 @@ def applyChangeOperations(request):
                 extensional_similarity =0.00
                 for category_andJ_index in J_Index_for_common_categories:
                     if each_existing_category in category_andJ_index:
-                        extensional_similarity = category_andJ_index[1]
+                        extensional_similarity = float(category_andJ_index[1])
                         break
                 intensional_similarity = 0.00
                 if 'existing_categories_computational_intension_comparison' in request.session:
                     existing_categories_computational_intension_comparison = request.session['existing_categories_computational_intension_comparison']
                     for each_category_compint_comparison in existing_categories_computational_intension_comparison:
                         if each_category_compint_comparison[0] == each_existing_category:
-                            intensional_similarity = each_category_compint_comparison[1]
+                            intensional_similarity = float(each_category_compint_comparison[1])
                             break
                 if intensional_similarity ==0.0:
                     int_relation = "unknown"
@@ -2214,14 +2214,14 @@ def applyChangeOperations(request):
                     index = concepts_in_current_taxonomy.index(each_set_of_categories_split_from_an_existing_category[i])
                     for extensional_containment_for_category in extensional_containment_for_categories_split_from_existing:
                         if each_set_of_categories_split_from_an_existing_category[i] in extensional_containment_for_category:
-                            extensional_containment = extensional_containment_for_category[1]
+                            extensional_containment = float(extensional_containment_for_category[1])
                     
                     intensional_similarity = 0.00
                     if 'split_categories_computational_intension_comparison' in request.session:
                         split_categories_computational_intension_comparison = request.session['split_categories_computational_intension_comparison']
                         for each_set in split_categories_computational_intension_comparison:
                             if each_set_of_categories_split_from_an_existing_category[i] in each_set:
-                                intensional_similarity = each_set[2]
+                                intensional_similarity = float(each_set[2])
                     
                     if intensional_similarity ==0.0:
                         int_relation = "unknown"
@@ -2255,7 +2255,7 @@ def applyChangeOperations(request):
                     for i, each_category_merged in enumerate(merged_categories):
                         for each_set in merged_categories_computational_intension_comparison:
                             if new_category == each_set[0] and each_category_merged == each_set[1]:
-                                intensional_similarity[i] = each_set[2]
+                                intensional_similarity[i] = float(each_set[2])
                                 break
                             
                 int_relation = []
