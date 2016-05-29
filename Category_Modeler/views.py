@@ -577,8 +577,6 @@ def trainingsampleprocessing(request):
                 tr.save(force_insert=True)
                 request.session['current_training_file_id'] = tr.trainingset_id
                 request.session['current_training_file_ver'] = tr.trainingset_ver
-                print request.session['current_training_file_id']
-                print request.session['current_training_file_ver']
                 
                 create_ts_activity_instance.trainingset_id = request.session['current_training_file_id']
                 create_ts_activity_instance.trainingset_ver = request.session['current_training_file_ver']
@@ -688,8 +686,8 @@ def trainingsampleprocessing(request):
             trid, ver = trainingfilepkey.split('+')
             print trid, ver
             if 'current_training_file_id' in request.session:
+                print "I am here"
                 if int(request.session['current_training_file_id']) == int(trid) and int(request.session['current_training_file_ver']) == int(ver):
-                    print "I am here"
                     request.session['current_training_file_id'] = trid
                     request.session['current_training_file_ver'] = ver
                 else:
@@ -718,6 +716,7 @@ def trainingsampleprocessing(request):
             
             if 'existing_categories' not in request.session and 'new_categories' not in request.session and 'categories_split_from_existing' not in request.session:
                 request.session['existing_categories'] = classes
+                print request.session['existing_categories']
                 
             with open('%s%s' % (trainingfilelocation, trainingfilename), 'rU') as trainingset:
                 datareader = csv.reader(trainingset, delimiter=',')
@@ -1996,10 +1995,24 @@ def createChangeEventForNewTaxonomyVersion(request):
     return JsonResponse({'listOfOperations': compositeChangeOperations});
 
 def getUserInputToCreateChangeEvent(request):
+    existing_categories = []
     if 'existing_categories' in request.session:
         existing_categories = request.session['existing_categories']
+    categories_merged_from_existing = []
+    if 'categories_merged_from_existing' in request.session:
+        categories_merged_from_existing = request.session['categories_merged_from_existing']
+        print categories_merged_from_existing
+    categories_split_from_existing = []
+    if 'categories_split_from_existing' in request.session:
+        categories_split_from_existing = request.session['categories_split_from_existing']
+    return JsonResponse({'existing_categories': existing_categories, 'categories_merged_from_existing': categories_merged_from_existing, 'categories_split_from_existing': categories_split_from_existing});
+                                    
+        
 
 def createChangeEventForExistingTaxonomy(request):
+     if request.method == 'POST' and request.is_ajax():
+        data = request.POST
+    
     request.session['change_existing_taxonomy'] = True
     compositeChangeOperations = []
     
@@ -2169,6 +2182,7 @@ def applyChangeOperations(request):
                     ext_relation = "same as"
                 else:
                     ext_relation = "overlaps with"
+                    
                 change_event_queries.add_existing_concept_to_new_version_of_legend_with_updated_categories(each_existing_category, mean_vectors[i][1], covariance_mat[i][1],  extension[i], producer_accuracies[i], user_accuracies[i], intensional_similarity, extensional_similarity, int_relation, ext_relation)
     
         if 'new_categories' in request.session:

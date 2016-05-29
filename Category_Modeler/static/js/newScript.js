@@ -417,6 +417,16 @@ $(function() {
 				contentType : false,
 				data : formdata,
 				success : function(response) {
+					$('#show_exploration').prop("checked", true);
+					$('#trainingdataTable').show();
+					hot.loadData(trainingdata);
+					$('#show_exploration').prop("checked", true);
+					$('#exploration_path_viz').show();
+					totalwidth = $(window).width();
+					containerwidth = 1170;
+					remainingwidth = (totalwidth - containerwidth)/2;
+					width_of_exp =(remainingwidth-50) + 'px';
+					$('.pop_con').css('width', width_of_exp);
 					$('#newconceptsanddetails').hide();
 					$('#viewandedittrainingset').show();
 					var trainingdata = response['trainingset'];
@@ -461,11 +471,12 @@ $(function() {
 								bgcolor = "#ED5752";
 							}
 							x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-							bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+							bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
 							"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></div>";
 						}
-						$('pop_con').popover(popOverSettings);
 						$('#collapse0').html(x);
+						$('pop_con').popover(popOverSettings);
+						
 					}
 					
 				}
@@ -872,11 +883,12 @@ $(function() {
 									bgcolor = "#ED5752";
 								}
 								x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-								bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+								bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
 								"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></div>";
 							}
-							$('pop_con').popover(popOverSettings);
 							$('#collapse0').html(x);
+							$('pop_con').popover(popOverSettings);
+							
 						}
 						
 					}
@@ -1205,6 +1217,7 @@ $(function() {
 				$('#Attributes').html(trainingdata[0].length);
 				hot.loadData(trainingdata);
 				$('#applyeditoperations').attr('disabled', 'disabled');
+				$('#show_exploration').prop("checked", true);
 				$('#exploration_path_viz').show();
 				totalwidth = $(window).width();
 				containerwidth = 1170;
@@ -1297,7 +1310,7 @@ $(function() {
 							bgcolor = "#ED5752";
 						}
 						x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-							bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+							bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
 							"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></div>";
 					}
 					$('#collapse0').html(x);
@@ -1611,7 +1624,7 @@ $(function() {
 											bgcolor = "#ED5752";
 										}
 										x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-											bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+											bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
 											"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></span></div>";
 									}
 									$('#collapse0').html(x);
@@ -1758,7 +1771,7 @@ $(function() {
 											bgcolor = "#ED5752";
 										}
 										x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-											bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+											bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
 											"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></span></div>";
 									}
 									$('#collapse0').html(x);
@@ -1802,7 +1815,7 @@ $(function() {
 											bgcolor = "#ED5752";
 										}
 										x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-											bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+											bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
 											"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></div>";
 									}
 									$('#collapse0').html(x);
@@ -1909,7 +1922,7 @@ $(function() {
 									bgcolor = "#ED5752";
 								}
 								x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-									bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"#\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+									bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
 									"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></span></div>";
 							}
 							$('#collapse0').html(x);
@@ -2017,8 +2030,117 @@ $(function() {
 			e.preventDefault();
 			$('#yesforthresholdlimit').attr('disabled', 'disabled');
 			$('#noforthresholdlimit').attr('disabled', 'disabled');
+			$.get("http://127.0.0.1:8000/AdvoCate/getUserInputToCreateChangeEvent/", function(response){
+				var a = "<br /><br /><form class=\"form-group\" id=\"userinputdetails\">";
+				if (response['existing_categories'].length >0){
+					a = a + "<label style=\"font-size: 15px\"> User input for changes in existing catgeories:</label>";
+					
+					a = a +	"<table class=\"table\" style=\" margin: 20px; width: 70%\" id=\"common_categories_change_table\">";
+					for (var i = 0; i < response['existing_categories'].length; i++){											
+						a = a + "<tr><td>" + response['existing_categories'][i] + "</td><td>Create a new version? &nbsp;&nbsp;&nbsp;&nbsp;" +
+							"<div class=\"radiox\" style=\"margin:0; display:inline\">" + "<input type=\"radio\" name=\"" + response['existing_categories'][i] + "\" value=\"1\" class=\"yesornofornewversion\"/>&nbsp;Yes" +
+							"<input type=\"radio\" name=\"" + response['existing_categories'][i] + "\" value=\"2\" class=\"yesornofornewversion\" style=\"margin-left:20px\"/>&nbsp;No</div></td><td>" + 
+							
+							"<div class=\"radiox\" style=\"display:none; margin:0\">" + "<input type=\"radio\" name=\"EvolOrComp" + i + "\" value=\"1\" class=\"EvolOrComp\"/>&nbsp;Evolutionary" +
+							"<input type=\"radio\" name=\"EvolOrComp" + i + "\" value=\"2\" class=\"EvolOrComp\" style=\"margin-left:20px\"/>&nbsp;Competing</div></td></tr>";
+							
+					}
+					a = a + "</table><br /><br />";
+										
+				}
+				
+				if (response['categories_merged_from_existing'].length >0){
+					a = a + "<label style=\"font-size: 15px\"> User input for merged catgeories:</label>";
+					a = a +	"<table class=\"table\" style=\" margin: 20px; width: 50%\" id=\"merged_categories_change_table\">";
+					for (var i = 0; i < response['categories_merged_from_existing'].length; i++){
+						var x = response['categories_merged_from_existing'][i][response['categories_merged_from_existing'].length-1];
+						a = a + "<tr><td>" + x + "</td><td> " +
+							"<div class=\"radiox\" style=\"margin:0; display:inline\">" + "<input type=\"radio\" name=\"" + x + "\" value=\"1\" class=\"mergeorgroup\"/>&nbsp;" +
+							"<a href=\"javascript://\" data-toggle=\"popover\" data-placement=\"top\" data-html=\"true\" data-container=\"body\"  title=\"Group operation\" data-content=\"The " +
+							"group operation creates the  merged category and add it as the parent of the existig category.\">Group</a>" + 
+							"<input type=\"radio\" name=\"" + x + "\" value=\"2\" class=\"mergeorgroup\" style=\"margin-left:20px\"/>&nbsp;" +
+							"<a href=\"javascript://\" data-toggle=\"popover\" data-placement=\"top\" data-html=\"true\" data-container=\"body\"  title=\"Merge operation\" data-content=\"The " +
+							"merge operation retires the existing categories that are merged and add the new merged category as a child to the parent category of retired categories.\">Merge</a>" +
+							"</div></td></tr>" ;
+					}
+					a = a + "</table>";
+					
+				}
+				
+				a = a + "<input type=\"submit\" id=\"submituserinput\" value=\"Submit\" class=\"btn btn-default\" style=\"margin:20px\"/></form>";
+				
+				$('#userinput').html(a);
+				$('[data-toggle="popover"]').popover();
+			});
+			$('#userinputforchangeevent').show();
+			$('#collapse13').removeClass("collapse in").addClass("collapse");
 			
 		});
+		
+		$('#userinput').on('click', '.yesornofornewversion', function(e){
+			$this = $(this);
+			if ($this.val() =='1'){
+				$this.closest('td').next().find('div').show();
+			}
+			else{
+				$this.closest('td').next().find('.EvolOrComp').prop('checked', false);
+				$this.closest('td').next().find('div').hide();
+			}
+		});
+		
+		$('#userinput').on('click', '#submituserinput', function(e){
+			e.preventDefault();
+			$this = $('#userinput form');
+			var a = 1;
+			data = {};
+			for (var i=0; i< ($this[0].length)-1; i++){
+				if (($this[0][i]).className == 'yesornofornewversion'){
+					if ($($this[0][i]).is(':checked')){
+						x = $($this[0][i]).attr('name');
+						if ($($this[0][i+2]).is(':checked')){
+							data[a] = x + " evol";
+						}
+						else{
+							data[a] = x + " comp";
+						}
+						a = a + 1;
+						i = i + 3;
+					}
+					else{
+						i = i + 3;
+					}
+				}
+				else{
+					if ($($this[0][i]).is(':checked')){
+						x = $($this[0][i]).attr('name');
+						data[a] = x + " group";
+					}
+					else{
+						x = $($this[0][i]).attr('name');
+						data[a] = x + " merge";
+					}
+					a = a + 1;
+					i = i + 1;
+				}
+				
+			}
+			
+			$.ajax({
+				type : "POST",
+				url : "http://127.0.0.1:8000/AdvoCate/createChangeEventForExistingTaxonomy/",
+				async : true,
+				processData : false,
+				contentType : false,
+				data : data,
+				success : function(response) {
+					
+				}
+			});
+			
+		});
+		
+		
+		
 		
 		$('#compositechangeoperations').on('click', 'dt', function(e) {
 			e.preventDefault();

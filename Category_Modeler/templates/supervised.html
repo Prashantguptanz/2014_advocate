@@ -22,7 +22,7 @@
 					<label style="margin-left: 15px">Pick a color for each category:</label><br /><br />
 					{% for concept  in concepts %}					
 					<label style="margin-left: 15px; margin-bottom:15px; font-weight: normal" >{{concept}}:</label> 
-					<input id= {{concept}} type="text" class="jscolor {position:'right'}" style="display: inline; margin-right: 900px; float: right; width:70px" required/>
+					<input id= {{concept}} type="text" class="jscolor {position:'right', valueElement:null}" style="display: inline; margin-right: 900px; float: right; width:70px" required/>
 					<br />
 					{% endfor %}
 				</div>
