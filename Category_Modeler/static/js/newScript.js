@@ -419,7 +419,6 @@ $(function() {
 				success : function(response) {
 					$('#show_exploration').prop("checked", true);
 					$('#trainingdataTable').show();
-					hot.loadData(trainingdata);
 					$('#show_exploration').prop("checked", true);
 					$('#exploration_path_viz').show();
 					totalwidth = $(window).width();
@@ -431,6 +430,7 @@ $(function() {
 					$('#viewandedittrainingset').show();
 					var trainingdata = response['trainingset'];
 					var classes = response['classes'];
+					hot.loadData(trainingdata);
 					$('#instances').html(trainingdata.length - 1);
 					$('#Attributes').html(trainingdata[0].length);
 
@@ -2124,17 +2124,9 @@ $(function() {
 				}
 				
 			}
-			
-			$.ajax({
-				type : "POST",
-				url : "http://127.0.0.1:8000/AdvoCate/createChangeEventForExistingTaxonomy/",
-				async : true,
-				processData : false,
-				contentType : false,
-				data : data,
-				success : function(response) {
-					
-				}
+			console.log(data);
+			$.post("http://127.0.0.1:8000/AdvoCate/createChangeEventForExistingTaxonomy/", data, function(response) {
+				
 			});
 			
 		});

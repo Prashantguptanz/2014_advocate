@@ -2010,11 +2010,23 @@ def getUserInputToCreateChangeEvent(request):
         
 
 def createChangeEventForExistingTaxonomy(request):
-     if request.method == 'POST' and request.is_ajax():
+    if request.method == 'POST' and request.is_ajax():
         data = request.POST
-    
-    request.session['change_existing_taxonomy'] = True
-    compositeChangeOperations = []
+        for i in range(1, len(data)+1):
+            category = data[str(i)]
+            catgeory_details = category.split(' ')
+            print catgeory_details
+            if catgeory_details[1] == "evol":
+            
+            elif catgeory_details[1] == "evol":
+                
+            elif catgeory_details[1] == "merge":
+                
+            else:
+                
+    return HttpResponse("")
+    #request.session['change_existing_taxonomy'] = True
+    #compositeChangeOperations = []
     
 
 def get_addTaxonomy_op_details(taxonomy_name):
