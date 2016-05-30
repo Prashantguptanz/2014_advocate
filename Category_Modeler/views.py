@@ -2053,23 +2053,122 @@ def getUserInputToCreateChangeEvent(request):
         
 
 def createChangeEventForExistingTaxonomy(request):
+    
+    if 'add_evolutionary_version' in request.session:
+        del request.session['add_evolutionary_version']
+    if 'add_competing_version' in request.session:
+        del request.session['add_competing_version']
+    if 'merge_categories' in request.session:
+        del request.session['merge_categories']
+    if 'merge_categories' in request.session:
+        del request.session['merge_categories']
+    request.session.modified = True
+    
     if request.method == 'POST' and request.is_ajax():
         data = request.POST
         for i in range(1, len(data)+1):
             category = data[str(i)]
-            catgeory_details = category.split(' ')
-            print catgeory_details
+            catgeory_details = category.rsplit(' ', 1)
+            print catgeory_details[0] + ", " + catgeory_details[1]
             if catgeory_details[1] == "evol":
-                print catgeory_details[1]
+                if 'add_evolutionary_version' in request.session:
+                    add_evolutionary_version = request.session['add_evolutionary_version']
+                    add_evolutionary_version.append(catgeory_details[0])
+                    print add_evolutionary_version
+                    request.session['add_evolutionary_version'] = add_evolutionary_version
+                    print request.session['add_evolutionary_version']
+                else:
+                    add_evolutionary_version = [catgeory_details[0]]
+                    request.session['add_evolutionary_version'] = add_evolutionary_version
             elif catgeory_details[1] == "comp":
-                print catgeory_details[1]
+                if 'add_competing_version' in request.session:
+                    add_competing_version = request.session['add_competing_version']
+                    add_competing_version.append(catgeory_details[0])
+                    request.session['add_competing_version'] = add_competing_version
+                else:
+                    add_competing_version = [catgeory_details[0]]
+                    request.session['add_competing_version'] = add_competing_version
             elif catgeory_details[1] == "merge":
-                print catgeory_details[1]
+                categories_merged_from_existing = request.session['categories_merged_from_existing']
+                existing_categories_that_are_merged_along_with_merged_category = []
+                for each_set in categories_merged_from_existing:
+                    if catgeory_details[0] in each_set:
+                        existing_categories_that_are_merged_along_with_merged_category = each_set
+                        break;
+                    
+                if 'merge_categories' in request.session:
+                    merge_categories = request.session['merge_categories']
+                    merge_categories.append(existing_categories_that_are_merged_along_with_merged_category)
+                    request.session['merge_categories'] = merge_categories
+                else:
+                    request.session['merge_categories'] = [existing_categories_that_are_merged_along_with_merged_category]
             else:
-                print catgeory_details[1]
-    return HttpResponse("")
-    #request.session['change_existing_taxonomy'] = True
-    #compositeChangeOperations = []
+                categories_merged_from_existing = request.session['categories_merged_from_existing']
+                existing_categories_that_are_merged_along_with_merged_category = []
+                for each_set in categories_merged_from_existing:
+                    if catgeory_details[0] in each_set:
+                        existing_categories_that_are_merged_along_with_merged_category = each_set
+                        break;
+                    
+                if 'group_categories' in request.session:
+                    group_categories = request.session['group_categories']
+                    group_categories.append(existing_categories_that_are_merged_along_with_merged_category)
+                    request.session['group_categories'] = group_categories
+                else:
+                    request.session['group_categories'] = [existing_categories_that_are_merged_along_with_merged_category]
+    
+        print request.session['add_competing_version']
+        print request.session['add_evolutionary_version']
+        print request.session['merge_categories']
+        print request.session['group_categories']
+    
+        request.session['create_new_taxonomy_version'] = False
+        compositeChangeOperations = []
+        version = request.session['existing_taxonomy_ver']
+        root_concept = "root_" + request.session['existing_taxonomy_name'] + str(version)
+        
+        if 'new_categories' in request.session:
+            new_categories = request.session['new_categories']         
+            for category in new_categories:
+                changeOperation = get_addConcept_op_details(request.session['existing_taxonomy_name'], version, root_concept, category)
+                compositeChangeOperations.append(changeOperation)
+        
+        if 'add_evolutionary_version' in request.session:
+            add_evolutionary_version = request.session['add_evolutionary_version']
+            for category in add_evolutionary_version:
+                changeOperation = get_addEvolutionaryVersion_op_details(request.session['existing_taxonomy_name'], version, category)
+                compositeChangeOperations.append(changeOperation)
+        
+        if 'add_competing_version' in request.session:
+            add_competing_version = request.session['add_competing_version']
+            for category in add_competing_version:
+                changeOperation = get_addCompetingVersion_op_details(request.session['existing_taxonomy_name'], version, category)
+                compositeChangeOperations.append(changeOperation)
+        
+                
+        if 'merge_categories' in request.session:
+            merge_categories = request.session['merge_categories']
+            for category in merge_categories:
+                new_concept = category[-1]
+                changeOperation = get_addMergedConceptFromExistingConceptsForNewTaxonomyVersion_op_details(request.session['existing_taxonomy_name'], version, request.session['existing_taxonomy_ver'], root_concept, new_concept, category[:-1])
+                compositeChangeOperations.append(changeOperation)
+        
+        if 'group_categories' in request.session:
+            group_categories = request.session['group_categories']
+            for category in group_categories:
+                new_concept = category[-1]
+                changeOperation = get_addMergedConceptFromExistingConceptsForNewTaxonomyVersion_op_details(request.session['existing_taxonomy_name'], version, request.session['existing_taxonomy_ver'], root_concept, new_concept, category[:-1])
+                compositeChangeOperations.append(changeOperation)
+        
+        if 'categories_split_from_existing' in request.session:
+            categories_split_from_existing = request.session['categories_split_from_existing']
+            for category in categories_split_from_existing:
+                split_concept = category[0]
+                for i in range(1, len(category)):
+                    changeOperation = get_addNewConceptSplitFromExistingConceptForNewTaxonomyVersion_op_details(request.session['existing_taxonomy_name'], version, request.session['existing_taxonomy_ver'], root_concept, category[i], split_concept)
+                    compositeChangeOperations.append(changeOperation)
+        
+        return JsonResponse({'listOfOperations': compositeChangeOperations});                
     
 
 def get_addTaxonomy_op_details(taxonomy_name):
@@ -2172,7 +2271,19 @@ def get_addNewConceptSplitFromExistingConceptForNewTaxonomyVersion_op_details(ta
     compositeOp_details.append("Add_horizontal_relationship ('" + new_concept + "', '" + split_concept + "', '" + taxonomy_name + "', " +  str(taxonomy_version) + ", " + str(old_version) + ")")
     changeOperation.append(compositeOp_details)
     return changeOperation    
-                
+
+def get_addEvolutionaryVersion_op_details(taxonomy_name, version, concept):
+    changeOperation = []
+    compositeOp = "Add_Evolutionary_Version_Of_A_Category ('" + taxonomy_name + "', Version = " + str(version) + ", '" +  concept + "')"
+    changeOperation.append(compositeOp)
+    return changeOperation  
+    
+    
+def get_addCompetingVersion_op_details(taxonomy_name, version, concept):
+    changeOperation = []
+    compositeOp = "Add_Competing_Version_Of_A_Category ('" + taxonomy_name + "', Version = " + str(version) + ", '" +  concept + "')"
+    changeOperation.append(compositeOp)
+    return changeOperation  
 
 @transaction.atomic  
 def applyChangeOperations(request):
