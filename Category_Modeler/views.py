@@ -1150,6 +1150,7 @@ def changethresholdlimits(request):
         return HttpResponse("")
 
 @login_required
+@transaction.atomic
 def signaturefile(request):
     if 'currenteditoperations' in request.session:
         del request.session['currenteditoperations']
@@ -1333,9 +1334,7 @@ def signaturefile(request):
                     single_suggestion.append(listofcategories[index2])
                     single_suggestion.append(listofcategories[index1])
                     suggestions_based_on_overlapping_pairs_with_low_accuracies.append(single_suggestion)
-                    
-            print suggestions_based_on_overlapping_pairs_with_low_accuracies
-            
+                                
             #generating suggestions based on categories with low accuracies being confused with other categories (using confusion matrix)
             confusing_categories_with_low_accuracies=[]
             for category in categories_with_low_accuracies:
@@ -1349,17 +1348,19 @@ def signaturefile(request):
                 
             confusing_categories_with_low_accuracies_sorted_by_confusion_percent = sorted(confusing_categories_with_low_accuracies, key=itemgetter(2), reverse=True)
             
-            suggestions_based_on_categories_with_low_accuracies_and_high_confusion = [confusing_categories_with_low_accuracies_sorted_by_confusion_percent[0]]
-            for i in range(1, len(confusing_categories_with_low_accuracies_sorted_by_confusion_percent)):
-                current_suggestion = confusing_categories_with_low_accuracies_sorted_by_confusion_percent[i]
-                is_unique= True
-                for suggestion in suggestions_based_on_categories_with_low_accuracies_and_high_confusion:
-                    if current_suggestion[0] in suggestion or current_suggestion[1] in suggestion:
-                        is_unique = False
-                        break;
-                if is_unique == True:
-                    suggestions_based_on_categories_with_low_accuracies_and_high_confusion.append(current_suggestion)
-            print suggestions_based_on_categories_with_low_accuracies_and_high_confusion
+            suggestions_based_on_categories_with_low_accuracies_and_high_confusion = []
+            for i in range(len(confusing_categories_with_low_accuracies_sorted_by_confusion_percent)):
+                if i==0:
+                    suggestions_based_on_categories_with_low_accuracies_and_high_confusion = [confusing_categories_with_low_accuracies_sorted_by_confusion_percent[0]]
+                else:
+                    current_suggestion = confusing_categories_with_low_accuracies_sorted_by_confusion_percent[i]
+                    is_unique= True
+                    for suggestion in suggestions_based_on_categories_with_low_accuracies_and_high_confusion:
+                        if current_suggestion[0] in suggestion or current_suggestion[1] in suggestion:
+                            is_unique = False
+                            break;
+                    if is_unique == True:
+                        suggestions_based_on_categories_with_low_accuracies_and_high_confusion.append(current_suggestion)
             
             #Generating unique suggestions using JM distance among categories, producer and user accuracies, and confusion matrix
             final_suggestion_list = suggestions_based_on_overlapping_pairs_with_low_accuracies
@@ -1371,21 +1372,23 @@ def signaturefile(request):
                         break;
                 if suggestion1_not_in_suggestion2 == True:
                     final_suggestion_list.append([suggestion1[0], suggestion1[1]])
-            print final_suggestion_list
+            
+            
                                 
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
-
-                old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
-                old_trainingfile = TrainingSet(old_trainingset_name)
-                old_covariance_mat = old_trainingfile.create_covariance_matrix()
-                old_mean_vectors = old_trainingfile.create_mean_vectors()
+                
+                old_categories, old_mean_vectors, old_covariance_mat = find_all_active_categories_and_their_comp_int_for_a_legend_version(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
+                
+                #old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
+                #old_trainingfile = TrainingSet(old_trainingset_name)
+                #old_covariance_mat = old_trainingfile.create_covariance_matrix()
+                #old_mean_vectors = old_trainingfile.create_mean_vectors()
                 new_categories = list(numpy.unique(trainingfile.target))
-                old_categories = list(numpy.unique(old_trainingfile.target))
-                common_categories = numpy.intersect1d(new_categories, old_categories)
+                #old_categories = list(numpy.unique(old_trainingfile.target))
+                common_categories = request.session['existing_categories']
                 common_categories_comparison = []
-                                
-                if len(old_mean_vectors[0][1]) != len(mean_vectors[0][1]):
+                if len(old_mean_vectors[0]) != len(mean_vectors[0][1]):
                     for common_category in common_categories:
                         single_category_comparison = []
                         index_of_common_category_in_accuracy_list = new_categories.index(common_category)
@@ -1397,10 +1400,23 @@ def signaturefile(request):
                         single_category_comparison.append(producerAccuracy)
                         single_category_comparison.append(userAccuracy)
                         old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category)
-                        single_category_comparison.append(old_category_details[0][2])
-                        single_category_comparison.append(old_category_details[0][3])
-                        single_category_comparison.append(old_category_details[0][0])
-                        single_category_comparison.append(old_category_details[0][1])
+                        if len(old_category_details) == 1:
+                            single_category_comparison.append(old_category_details[0][2])
+                            single_category_comparison.append(old_category_details[0][3])
+                            single_category_comparison.append(old_category_details[0][0])
+                            single_category_comparison.append(old_category_details[0][1])
+                        else:
+                            w1, x1, y1, z1 = str(old_category_details[0][2]), str(old_category_details[0][3]), str(old_category_details[0][0]), str(old_category_details[0][1])
+                            for i in range(1, len(old_category_details)):
+                                w1 = w1 + ", " + str(old_category_details[i][2])
+                                x1 = x1 + ", " + str(old_category_details[i][3])
+                                y1 = y1 + ", " + str(old_category_details[i][0])
+                                z1 = z1 + ", " + str(old_category_details[i][1])
+                            single_category_comparison.append(w1)
+                            single_category_comparison.append(x1)
+                            single_category_comparison.append(y1)
+                            single_category_comparison.append(z1)
+                            
                         common_categories_comparison.append(single_category_comparison)
                     return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': final_suggestion_list, 'common_categories_comparison': common_categories_comparison})
                 else:
@@ -1417,21 +1433,55 @@ def signaturefile(request):
                         single_category_comparison.append(producerAccuracy)
                         single_category_comparison.append(userAccuracy)
                         old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category)
-                        single_category_comparison.append(old_category_details[0][2])
-                        single_category_comparison.append(old_category_details[0][3])
-                        single_category_comparison.append(old_category_details[0][0])
-                        single_category_comparison.append(old_category_details[0][1])
+                        if len(old_category_details) == 1:
+                            single_category_comparison.append(old_category_details[0][2])
+                            single_category_comparison.append(old_category_details[0][3])
+                            single_category_comparison.append(old_category_details[0][0])
+                            single_category_comparison.append(old_category_details[0][1])
+                        else:
+                            w1, x1, y1, z1 = str(old_category_details[0][2]), str(old_category_details[0][3]), str(old_category_details[0][0]), str(old_category_details[0][1])
+                            for i in range(1, len(old_category_details)):
+                                w1 = w1 + ", " + str(old_category_details[i][2])
+                                x1 = x1 + ", " + str(old_category_details[i][3])
+                                y1 = y1 + ", " + str(old_category_details[i][0])
+                                z1 = z1 + ", " + str(old_category_details[i][1])
+                            single_category_comparison.append(w1)
+                            single_category_comparison.append(x1)
+                            single_category_comparison.append(y1)
+                            single_category_comparison.append(z1)
+                        
                         new_index = [i for i, each_vector in enumerate(mean_vectors) if  each_vector[0] == common_category][0]
-                        old_index = [j for j, each_vector in enumerate(old_mean_vectors) if each_vector[0] == common_category][0]
-                        #new_index = numpy.where(mean_vectors == common_category)[0][0]
-                        #old_index = numpy.where(old_mean_vectors == common_category)[0][0]
                         model1 = NormalDistributionIntensionalModel(mean_vectors[new_index][1], covariance_mat[new_index][1])
-                        model2 = NormalDistributionIntensionalModel(old_mean_vectors[old_index][1], old_covariance_mat[old_index][1])
-                        jm = model1.jm_distance(model2)
-                        single_category_comparison.append(jm)
-                        a = [common_category, jm]
+                        print mean_vectors[new_index][1]
+                        num_of_comp_ver = 1
+                        print common_category
+                        for each_old_category in old_categories:
+                            if common_category in each_old_category:
+                                num_of_comp_ver = len(each_old_category) -3
+                                old_index = old_categories.index(each_old_category)
+                                break
+                            
+                        if num_of_comp_ver==1:
+                            model2 = NormalDistributionIntensionalModel(old_mean_vectors[old_index], old_covariance_mat[old_index])
+                            print old_mean_vectors[old_index]
+                            jm = model1.jm_distance(model2)
+                            single_category_comparison.append(jm)
+                            a = [common_category, jm]
+                            print a
+                        else:
+                            jm_for_multiple_comp_vers = ""
+                            jm_list = []
+                            for i in range(num_of_comp_ver):
+                                model = NormalDistributionIntensionalModel(old_mean_vectors[old_index][i], old_covariance_mat[old_index][i])
+                                jm = model1.jm_distance(model)
+                                jm_for_multiple_comp_vers = jm_for_multiple_comp_vers + jm + ", "
+                                jm_list.append(jm)
+                            single_category_comparison.append(jm_for_multiple_comp_vers)
+                            a = [common_category, jm_list]
+                        
                         existing_categories_comparison_to_store.append(a)
                         common_categories_comparison.append(single_category_comparison)
+                    print common_categories_comparison
                     if len(existing_categories_comparison_to_store) != 0:
                         request.session['existing_categories_computational_intension_comparison'] = existing_categories_comparison_to_store
                     
@@ -1507,16 +1557,18 @@ def signaturefile(request):
                 
             confusing_categories_with_low_accuracies_sorted_by_confusion_percent1 = sorted(confusing_categories_with_low_accuracies1, key=itemgetter(2), reverse=True)
             
-            final_suggestion_list1 = [confusing_categories_with_low_accuracies_sorted_by_confusion_percent1[0]]
-            for i in range(1, len(confusing_categories_with_low_accuracies_sorted_by_confusion_percent1)):
-                current_suggestion = confusing_categories_with_low_accuracies_sorted_by_confusion_percent1[i]
-                is_unique= True
-                for suggestion in final_suggestion_list1:
-                    if current_suggestion[0] in suggestion or current_suggestion[1] in suggestion:
-                        is_unique = False
-                        break;
-                if is_unique == True:
-                    final_suggestion_list1.append(current_suggestion)
+            final_suggestion_list1 = []
+            if (len(confusing_categories_with_low_accuracies_sorted_by_confusion_percent1)>0):
+                final_suggestion_list1 = [confusing_categories_with_low_accuracies_sorted_by_confusion_percent1[0]]
+                for i in range(1, len(confusing_categories_with_low_accuracies_sorted_by_confusion_percent1)):
+                    current_suggestion = confusing_categories_with_low_accuracies_sorted_by_confusion_percent1[i]
+                    is_unique= True
+                    for suggestion in final_suggestion_list1:
+                        if current_suggestion[0] in suggestion or current_suggestion[1] in suggestion:
+                            is_unique = False
+                            break;
+                    if is_unique == True:
+                        final_suggestion_list1.append(current_suggestion)
  
             if 'existing_taxonomy_name' in request.session:
                 customQuery = CustomQueries()
@@ -1548,10 +1600,100 @@ def signaturefile(request):
         else:
             return ""   
     else:
-        if 'existing_taxonomy_name' in request.session:        
-            return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit']})
+        if 'existing_taxonomy_name' in request.session:
+            if 'current_exploration_chain_viz' in request.session:
+                return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit']})
+            else:
+                return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name, 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit']})
         else:
             return render (request, 'signaturefile.html', {'attributes': features, 'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit']})
+
+
+def find_all_active_categories_and_their_comp_int_for_a_legend_version(legend_id, legend_ver):
+    customQuery = CustomQueries()
+    categories_details = customQuery.getAllActiveCategoriesWithConceptNameForALegend(legend_id, legend_ver)
+    
+    active_categories_including_comp_versions=[]
+    for i, category in enumerate(categories_details):
+        if i==0:
+            active_categories_including_comp_versions.append([category[0], category[1], category[2], category[3]])
+        else:
+            comp_ver = False
+            for each_category in active_categories_including_comp_versions:
+                if category[0] in each_category:
+                    comp_ver = True
+                    index = active_categories_including_comp_versions.index(each_category)
+                    active_categories_including_comp_versions[index].append(category[3])
+                    break
+            if comp_ver == False:  
+                active_categories_including_comp_versions.append([category[0], category[1], category[2], category[3]])
+    
+    mean_vectors = []
+    cov_matrices = []
+    
+    for each_category in active_categories_including_comp_versions:
+        if len(each_category) == 4:
+            mean_vector = customQuery.getMeanVectorForACategory(each_category[1], each_category[2], each_category[3])
+            cov_matrix = customQuery.getCovMatForACategory(each_category[1], each_category[2], each_category[3])
+            mean_vector_list=[]
+            for i, value in enumerate(mean_vector[0]):
+                mean_vector_list.append(value)
+            mean_vector_list.pop(0)
+            no_of_bands = 0
+            if mean_vector_list[-1] == 'None':
+                mean_vectors.append(mean_vector_list[:3])
+                no_of_bands =3
+            else:
+                mean_vectors.append(mean_vector_list)
+                no_of_bands = len(mean_vector_list)
+                
+            cov_mat_2d_list = []
+            a= 0
+            each_row= []
+            for cell_value in cov_matrix:
+                each_row.append(cell_value[0])
+                a = a + 1
+                if a == no_of_bands:
+                    cov_mat_2d_list.append(each_row)
+                    each_row= []
+                    a = 0
+            cov_matrices.append(numpy.matrix(cov_mat_2d_list))
+
+        else:
+            no_of_comp_versions = len(each_category) - 3
+            comp_versions_mean_vec_list = []
+            comp_versions_cov_mat_list = []
+            for i in range(no_of_comp_versions):
+                mean_vector_list = []
+                mean_vector = customQuery.getMeanVectorForACategory(each_category[1], each_category[2], each_category[3+i])
+                cov_matrix = customQuery.getCovMatForACategory(each_category[1], each_category[2], each_category[3+i])
+                for i, value in enumerate(mean_vector[0]):
+                    mean_vector_list.append(value)
+                mean_vector_list.pop(0)
+                no_of_bands = 0
+                if mean_vector_list[-1] == 'None':
+                    comp_versions_mean_vec_list.append(mean_vector_list[:3])
+                    no_of_bands =3
+                else:
+                    comp_versions_mean_vec_list.append(mean_vector_list)
+                    no_of_bands = len(mean_vector_list)
+                
+                cov_mat_2d_list = []
+                a= 0
+                each_row= []
+                for cell_value in cov_matrix:
+                    each_row.append(cell_value[0])
+                    a = a + 1
+                    if a == no_of_bands:
+                        cov_mat_2d_list.append(each_row)
+                        each_row= []
+                        a = 0
+                comp_versions_cov_mat_list.append(numpy.matrix(cov_mat_2d_list))
+                
+            mean_vectors.append(comp_versions_mean_vec_list)
+            cov_matrices.append(comp_versions_cov_mat_list)
+    return active_categories_including_comp_versions, mean_vectors, cov_matrices
+
 
 def find_index_of_highest_number_except_a_given_index(lst, index):
     if index !=0:
@@ -1644,6 +1786,24 @@ def supervised(request):
             data_content = "Test file: " + testfile.name + "<br/> Classified map: " + outputmapinJPG
             current_step = ['Classification', 'Classification', data_content]
             
+            if (len(concepts_in_modelled_taxonomy)==4):
+                diverging_colors = ['#d7191c', '#fdae61', '#abd9e9', '#2c7bb6']
+            elif (len(concepts_in_modelled_taxonomy)==5):
+                diverging_colors = ['#d7191c', '#fdae61', '#ffffbf', '#abd9e9', '#2c7bb6']
+            elif (len(concepts_in_modelled_taxonomy)==6):
+                diverging_colors = ['#d73027', '#fc8d59', '#fee090', '#e0f3f8', '#91bfdb', '#4575b4']
+            elif (len(concepts_in_modelled_taxonomy)==7):
+                diverging_colors = ['#d73027', '#fc8d59', '#fee090', '#ffffbf', '#e0f3f8', '#91bfdb', '#4575b4']
+            elif (len(concepts_in_modelled_taxonomy)==8):
+                diverging_colors = ['#d73027', '#f46d43', '#fdae61', '#fee090', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4']
+            elif (len(concepts_in_modelled_taxonomy)==9):
+                diverging_colors = ['#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4']
+            elif (len(concepts_in_modelled_taxonomy)==10):
+                diverging_colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
+            else:
+                diverging_colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
+                
+            
             if 'current_exploration_chain_viz' in request.session:
                 current_exploration_chain_viz = request.session['current_exploration_chain_viz']
                 if current_exploration_chain_viz[-1][0] == 'End':
@@ -1663,9 +1823,9 @@ def supervised(request):
                 request.session['extensional_containment_for_categories_split_from_existing'] = extensional_containment_for_categories_split_from_existing
                 request.session['extensional_containment_for_category_merged_from_existing'] = extensional_containment_for_category_merged_from_existing
                     
-                return  JsonResponse({'map': outputmapinJPG, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'categories': listofcategories, 'change_matrix':change_matrix, 'old_categories': oldCategories});
+                return  JsonResponse({'map': outputmapinJPG, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'categories': listofcategories, 'change_matrix':change_matrix, 'old_categories': oldCategories, 'diverging_colors': diverging_colors});
             
-            return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz']});
+            return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'diverging_colors': diverging_colors});
     
     
     elif 'current_model_id' not in request.session:
@@ -1682,13 +1842,31 @@ def supervised(request):
     else:
         trainingfile = TrainingSet(request.session['current_training_file_name'])
         concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
+        diverging_colors = []
+        if (len(concepts_in_current_taxonomy)==4):
+            diverging_colors = ['#d7191c', '#fdae61', '#abd9e9', '#2c7bb6']
+        elif (len(concepts_in_current_taxonomy)==5):
+            diverging_colors = ['#d7191c', '#fdae61', '#ffffbf', '#abd9e9', '#2c7bb6']
+        elif (len(concepts_in_current_taxonomy)==6):
+            diverging_colors = ['#d73027', '#fc8d59', '#fee090', '#e0f3f8', '#91bfdb', '#4575b4']
+        elif (len(concepts_in_current_taxonomy)==7):
+            diverging_colors = ['#d73027', '#fc8d59', '#fee090', '#ffffbf', '#e0f3f8', '#91bfdb', '#4575b4']
+        elif (len(concepts_in_current_taxonomy)==8):
+            diverging_colors = ['#d73027', '#f46d43', '#fdae61', '#fee090', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4']
+        elif (len(concepts_in_current_taxonomy)==9):
+            diverging_colors = ['#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4']
+        elif (len(concepts_in_current_taxonomy)==10):
+            diverging_colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
+        else:
+            diverging_colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
+            
         if 'current_exploration_chain_viz' in request.session:
             if 'existing_taxonomy_name' in request.session:
-                return render(request, 'supervised.html', {'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'concepts': concepts_in_current_taxonomy})
+                return render(request, 'supervised.html', {'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'concepts': concepts_in_current_taxonomy, 'diverging_colors': diverging_colors})
             else:
-                return render(request, 'supervised.html', {'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'concepts': concepts_in_current_taxonomy})
+                return render(request, 'supervised.html', {'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'concepts': concepts_in_current_taxonomy, 'diverging_colors': diverging_colors})
         else:
-            return render (request, 'supervised.html', {'user_name':user_name, 'concepts': concepts_in_current_taxonomy})
+            return render (request, 'supervised.html', {'user_name':user_name, 'concepts': concepts_in_current_taxonomy, 'diverging_colors': diverging_colors})
 
 
 def updateConfigFiles(conceptsandcolors):
@@ -2060,8 +2238,8 @@ def createChangeEventForExistingTaxonomy(request):
         del request.session['add_competing_version']
     if 'merge_categories' in request.session:
         del request.session['merge_categories']
-    if 'merge_categories' in request.session:
-        del request.session['merge_categories']
+    if 'group_categories' in request.session:
+        del request.session['group_categories']
     request.session.modified = True
     
     if request.method == 'POST' and request.is_ajax():
@@ -2069,14 +2247,11 @@ def createChangeEventForExistingTaxonomy(request):
         for i in range(1, len(data)+1):
             category = data[str(i)]
             catgeory_details = category.rsplit(' ', 1)
-            print catgeory_details[0] + ", " + catgeory_details[1]
             if catgeory_details[1] == "evol":
                 if 'add_evolutionary_version' in request.session:
                     add_evolutionary_version = request.session['add_evolutionary_version']
                     add_evolutionary_version.append(catgeory_details[0])
-                    print add_evolutionary_version
                     request.session['add_evolutionary_version'] = add_evolutionary_version
-                    print request.session['add_evolutionary_version']
                 else:
                     add_evolutionary_version = [catgeory_details[0]]
                     request.session['add_evolutionary_version'] = add_evolutionary_version
@@ -2116,13 +2291,8 @@ def createChangeEventForExistingTaxonomy(request):
                     request.session['group_categories'] = group_categories
                 else:
                     request.session['group_categories'] = [existing_categories_that_are_merged_along_with_merged_category]
-    
-        print request.session['add_competing_version']
-        print request.session['add_evolutionary_version']
-        print request.session['merge_categories']
-        print request.session['group_categories']
-    
-        request.session['create_new_taxonomy_version'] = False
+
+        
         compositeChangeOperations = []
         version = request.session['existing_taxonomy_ver']
         root_concept = "root_" + request.session['existing_taxonomy_name'] + str(version)
@@ -2147,17 +2317,21 @@ def createChangeEventForExistingTaxonomy(request):
         
                 
         if 'merge_categories' in request.session:
+            customqueries = CustomQueries()
             merge_categories = request.session['merge_categories']
             for category in merge_categories:
                 new_concept = category[-1]
-                changeOperation = get_addMergedConceptFromExistingConceptsForNewTaxonomyVersion_op_details(request.session['existing_taxonomy_name'], version, request.session['existing_taxonomy_ver'], root_concept, new_concept, category[:-1])
+                parent_name = customqueries.getParentNameOfAConcept(request.session['existing_taxonomy_id'], version, category[0])
+                changeOperation = get_MergeConcepts_op_details(request.session['existing_taxonomy_name'], version, new_concept, parent_name, category[:-1])
                 compositeChangeOperations.append(changeOperation)
         
         if 'group_categories' in request.session:
+            customqueries = CustomQueries()
             group_categories = request.session['group_categories']
             for category in group_categories:
                 new_concept = category[-1]
-                changeOperation = get_addMergedConceptFromExistingConceptsForNewTaxonomyVersion_op_details(request.session['existing_taxonomy_name'], version, request.session['existing_taxonomy_ver'], root_concept, new_concept, category[:-1])
+                parent_name = customqueries.getParentNameOfAConcept(request.session['existing_taxonomy_id'], version, category[0])
+                changeOperation = get_MergeConcepts_op_details(request.session['existing_taxonomy_name'], version, new_concept, parent_name, category[:-1])
                 compositeChangeOperations.append(changeOperation)
         
         if 'categories_split_from_existing' in request.session:
@@ -2274,16 +2448,35 @@ def get_addNewConceptSplitFromExistingConceptForNewTaxonomyVersion_op_details(ta
 
 def get_addEvolutionaryVersion_op_details(taxonomy_name, version, concept):
     changeOperation = []
-    compositeOp = "Add_Evolutionary_Version_Of_A_Category ('" + taxonomy_name + "', Version = " + str(version) + ", '" +  concept + "')"
+    compositeOp = "Add_Evolutionary_Version ('" + taxonomy_name + " - ver" + str(version) + "', '" +  concept + "')"
     changeOperation.append(compositeOp)
+    
+    compositeOp_details = []
+    changeOperation.append(compositeOp_details)
     return changeOperation  
     
     
 def get_addCompetingVersion_op_details(taxonomy_name, version, concept):
     changeOperation = []
-    compositeOp = "Add_Competing_Version_Of_A_Category ('" + taxonomy_name + "', Version = " + str(version) + ", '" +  concept + "')"
+    compositeOp = "Add_Competing_Version ('" + taxonomy_name + " - ver" + str(version) + "', '" +  concept + "')"
     changeOperation.append(compositeOp)
+    
+    compositeOp_details = []
+    changeOperation.append(compositeOp_details)
     return changeOperation  
+
+def get_MergeConcepts_op_details(taxonomy_name, version, merged_concept, parent_concept, list_of_concepts_merged):
+    changeOperation = []
+    compositeOp = "Merge_Concepts ('" + taxonomy_name + " - ver" + str(version) + "', '" +  merged_concept + "', '" + parent_concept + "', [" + list_of_concepts_merged[0] 
+    for i in range(1, len(list_of_concepts_merged)):
+        compositeOp = compositeOp + ", " + list_of_concepts_merged[i]
+    compositeOp = compositeOp + "])"
+    changeOperation.append(compositeOp)
+    
+    compositeOp_details = []
+    changeOperation.append(compositeOp_details)
+    return changeOperation  
+    
 
 @transaction.atomic  
 def applyChangeOperations(request):
@@ -2426,15 +2619,86 @@ def applyChangeOperations(request):
                 
                 change_event_queries.add_concept_resulted_from_merging_existing_concept_to_new_version_of_legend(new_category, merged_categories, mean_vectors[index][1], covariance_mat[index][1], extension[index], producer_accuracies[index], user_accuracies[index], intensional_similarity, extensional_containment, int_relation, ext_relation)
         
-                
-                    
-                    
-        
         del request.session['existing_taxonomy_name']
         del request.session['existing_taxonomy_id']
         del request.session['existing_taxonomy_ver']
         del request.session['create_new_taxonomy_version']
         request.session.modified = True
+        
+    else:
+        change_event_queries = UpdateDatabase(request)
+        trainingfile = TrainingSet(request.session['current_training_file_name'])
+        concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
+        covariance_mat = trainingfile.create_covariance_matrix()
+        mean_vectors = trainingfile.create_mean_vectors()
+        predicted_file = ClassifiedFile(request.session['current_predicted_file_name'])
+        user_accuracies = request.session['user_accuracies']
+        producer_accuracies = request.session['producer_accuracies']
+        extension = predicted_file.create_extension(request.session['current_test_file_columns'], request.session['current_test_file_rows'], request.session['current_training_file_name'])       
+        customqueries = CustomQueries()
+        
+        
+        if 'new_categories' in request.session:
+            new_categories = request.session['new_categories']
+            parent_name = customqueries.getRootConceptOfATaxonomyVersion(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
+            for new_category in new_categories:
+                i = concepts_in_current_taxonomy.index(new_category)
+                change_event_queries.create_concept(concepts_in_current_taxonomy[i], mean_vectors[i][1], covariance_mat[i][1],  extension[i], producer_accuracies[i], user_accuracies[i], parent_name)
+
+        if 'add_evolutionary_version' in request.session:
+            add_evolutionary_version = request.session['add_evolutionary_version']
+            J_Index_for_common_categories = request.session['J_Index_for_common_categories']
+            
+            for category in add_evolutionary_version:
+                i = concepts_in_current_taxonomy.index(category)
+                
+                extensional_similarity =0.00
+                for category_andJ_index in J_Index_for_common_categories:
+                    if category in category_andJ_index:
+                        extensional_similarity = float(category_andJ_index[1])
+                        break
+                intensional_similarity = 0.00
+                if 'existing_categories_computational_intension_comparison' in request.session:
+                    existing_categories_computational_intension_comparison = request.session['existing_categories_computational_intension_comparison']
+                    for each_category_compint_comparison in existing_categories_computational_intension_comparison:
+                        if each_category_compint_comparison[0] == category:
+                            intensional_similarity = float(each_category_compint_comparison[1])
+                            break
+                
+                if intensional_similarity ==0.0:
+                    int_relation = "unknown"
+                elif intensional_similarity <0.3:
+                    int_relation = "same as"
+                elif intensional_similarity >=1.4:
+                    int_relation = "excludes"
+                else:
+                    int_relation = "overlaps with"
+                
+                if extensional_similarity == 0.0:
+                    ext_relation = "excludes"
+                elif extensional_similarity >0.95:
+                    ext_relation = "same as"
+                else:
+                    ext_relation = "overlaps with"
+                
+                change_event_queries.create_evolutionary_version(category, mean_vectors[i][1], covariance_mat[i][1],  extension[i], producer_accuracies[i], user_accuracies[i], intensional_similarity, extensional_containment, int_relation, ext_relation)   
+                
+            
+        if 'add_competing_version' in request.session:
+            add_competing_version = request.session['add_competing_version']
+            
+        if 'merge_categories' in request.session:
+            merge_categories = request.session['merge_categories']
+            
+        if 'group_categories' in request.session:
+            group_categories = request.session['group_categories']                    
+
+        if 'categories_split_from_existing' in request.session:
+            categories_split_from_existing = request.session['categories_split_from_existing']
+        
+        
+        
+        
         
     del request.session['exploration_chain_id']
     del request.session['exploration_chain_step']

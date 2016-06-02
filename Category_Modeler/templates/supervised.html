@@ -19,11 +19,13 @@
 				<div class="form-group" style="overflow: hidden" id = "categoriesandcolors">
 					<legend style="font-size: 14px; background-color: gainsboro; width:400px" align="center">Categories and colors
 					</legend>
-					<label style="margin-left: 15px">Pick a color for each category:</label><br /><br />
-					{% for concept  in concepts %}					
-					<label style="margin-left: 15px; margin-bottom:15px; font-weight: normal" >{{concept}}:</label> 
-					<input id= {{concept}} type="text" class="jscolor {position:'right', valueElement:null}" style="display: inline; margin-right: 900px; float: right; width:70px" required/>
+					<label style="margin-left: 15px">Use the default colors (diveging colors from colorbrewer) or click on the box to choose a color:</label><br /><br />
+					{% for concept  in concepts %}
+					{% with forloop.counter|cut:" " as index %}			
+					<label style="margin-left: 15px; margin-bottom:15px; font-weight: normal" >{{concept}}:</label>
+					<input id= {{concept}} type="text" class="jscolor {position:'right', valueElement:null, value:'{{diverging_colors|slice:index|last}}'}" style="display: inline; margin-right: 900px; float: right; width:70px" required/>
 					<br />
+					{% endwith %}
 					{% endfor %}
 				</div>
 				{% endif %}
