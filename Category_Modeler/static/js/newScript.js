@@ -806,7 +806,7 @@ $(function() {
 							$('#trainingsetcomparison').show();
 							var a = "<label style=\"font-size: 14px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
 									"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
-							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common concepts</div>";
 							a = a + " <div class=\"panel-body\"> <p><em> Note:" + response['common_categories_message'] + "</em></p></div>";
 							a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 						
@@ -814,7 +814,7 @@ $(function() {
 								a = a + "<li class=\"list-group-item\">" + response['common_categories'][i] + "</li>";
 							}
 							a = a + "</ul></div>";
-							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New concepts</div>";
 							a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 						
 							for (var i = 0; i < response['new_categories'].length; i++){
@@ -823,7 +823,7 @@ $(function() {
 							a = a + "</ul></div>";
 							
 							if (response['deprecated_categories'].length!=0){
-								a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+								a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Concepts deprecated</div>";
 								a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 							
 								for (var i = 0; i < response['deprecated_categories'].length; i++){
@@ -838,15 +838,15 @@ $(function() {
 							$('#trainingsetcomparison').show();
 							var a = "<label style=\"font-size: 14px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
 									"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
-							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
-							a = a + "<table class=\"table\"><tr><th> Category</th><th> J-Index </th></tr>";
+							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common concepts</div>";
+							a = a + "<table class=\"table\"><tr><th> Concept</th><th> J-Index (similarity between trainingsamples) </th></tr>";
 	
 							for (var i = 0; i < response['common_categories'].length; i++){
 								a = a + "<tr><td>" + response['common_categories'][i][0] + "</td><td>" + response['common_categories'][i][1] + "</td></tr>";
 							}
 							a = a + "</table></div>";
 							
-							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+							a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New concepts</div>";
 							a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 						
 							for (var i = 0; i < response['new_categories'].length; i++){
@@ -855,7 +855,7 @@ $(function() {
 							a = a + "</ul></div>";
 							
 							if (response['deprecated_categories'].length!=0){
-								a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+								a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Concepts deprecated</div>";
 								a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 							
 								for (var i = 0; i < response['deprecated_categories'].length; i++){
@@ -945,7 +945,7 @@ $(function() {
 					$('#trainingsetcomparison').show();
 					var a = "<label style=\"font-size: 14px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
 							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common concepts</div>";
 					a = a + " <div class=\"panel-body\"> <p><em> Note:" + response['common_categories_message'] + "</em></p></div>";
 					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 				
@@ -953,7 +953,7 @@ $(function() {
 						a = a + "<li class=\"list-group-item\">" + response['common_categories'][i] + "</li>";
 					}
 					a = a + "</ul></div>";
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New concepts</div>";
 					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 				
 					for (var i = 0; i < response['new_categories'].length; i++){
@@ -962,7 +962,7 @@ $(function() {
 					a = a + "</ul></div>";
 					
 					if (response['deprecated_categories'].length!=0){
-						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Concepts deprecated</div>";
 						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 					
 						for (var i = 0; i < response['deprecated_categories'].length; i++){
@@ -977,8 +977,8 @@ $(function() {
 					$('#trainingsetcomparison').show();
 					var a = "<label style=\"font-size: 14px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
 							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
-					a = a + "<table class=\"table\"><tr><th> Category</th><th> J-Index </th></tr>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common concepts</div>";
+					a = a + "<table class=\"table\"><tr><th> Concept</th><th> J-Index (simialrity between training samples) </th></tr>";
 
 					for (var i = 0; i < response['common_categories'].length; i++){
 						a = a + "<tr><td>" + response['common_categories'][i][0] + "</td><td>" + response['common_categories'][i][1] + "</td></tr>";
@@ -986,7 +986,7 @@ $(function() {
 					a = a + "</table></div>";
 					
 					if (response['new_categories'].length!=0){
-						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New concepts</div>";
 						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 					
 						for (var i = 0; i < response['new_categories'].length; i++){
@@ -997,7 +997,7 @@ $(function() {
 					
 					
 					if (response['deprecated_categories'].length!=0){
-						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Concepts deprecated</div>";
 						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 					
 						for (var i = 0; i < response['deprecated_categories'].length; i++){
@@ -1228,7 +1228,7 @@ $(function() {
 					$('#trainingsetcomparison').show();
 					var a = "<label style=\"font-size: 14px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
 							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common concepts</div>";
 					a = a + " <div class=\"panel-body\"> <p><em> Note:" + response['common_categories_message'] + "</em></p></div>";
 					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 				
@@ -1236,7 +1236,7 @@ $(function() {
 						a = a + "<li class=\"list-group-item\">" + response['common_categories'][i] + "</li>";
 					}
 					a = a + "</ul></div>";
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New concepts</div>";
 					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 				
 					for (var i = 0; i < response['new_categories'].length; i++){
@@ -1245,7 +1245,7 @@ $(function() {
 					a = a + "</ul></div>";
 					
 					if (response['deprecated_categories'].length!=0){
-						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Concepts deprecated</div>";
 						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 					
 						for (var i = 0; i < response['deprecated_categories'].length; i++){
@@ -1260,15 +1260,15 @@ $(function() {
 					$('#trainingsetcomparison').show();
 					var a = "<label style=\"font-size: 14px; margin-left: 5px; margin-right: 5px; font-weight:normal\"><em>Comparison between new " +
 							"training samples and the samples used to create the taxonomy previously:</em></label></br></br>";
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common Categories</div>";
-					a = a + "<table class=\"table\"><tr><th> Category</th><th> J-Index </th></tr>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Common concepts</div>";
+					a = a + "<table class=\"table\"><tr><th> Concept</th><th> J-Index (similarity between training samples)</th></tr>";
 
 					for (var i = 0; i < response['common_categories'].length; i++){
 						a = a + "<tr><td>" + response['common_categories'][i][0] + "</td><td>" + response['common_categories'][i][1] + "</td></tr>";
 					}
 					a = a + "</table></div>";
 					
-					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New Categories</div>";
+					a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">New concepts</div>";
 					a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 				
 					for (var i = 0; i < response['new_categories'].length; i++){
@@ -1277,7 +1277,7 @@ $(function() {
 					a = a + "</ul></div>";
 					
 					if (response['deprecated_categories'].length!=0){
-						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Categories deprecated</div>";
+						a = a +	"<div class=\"panel panel-default\"><div class=\"panel-heading\" style =\" font-weight:bold\">Concepts deprecated</div>";
 						a = a + "<ul class=\" list-group\" style =\" margin-left:7px\">";
 					
 						for (var i = 0; i < response['deprecated_categories'].length; i++){

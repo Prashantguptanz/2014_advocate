@@ -4,6 +4,7 @@ from operator import itemgetter
 import gdal, osr, ogr, os
 from gdalconst import *
 from io import FileIO, BufferedWriter
+from decimal import *
 
 
 class TrainingSet:
@@ -133,7 +134,10 @@ class TrainingSet:
             upperlimit = each_category_with_sample_range[2]
             current_samples = self.samples[int(lowerlimit):int(upperlimit)+1]
             mean = np.mean(current_samples, axis=0)
-            each_category_with_mean_vector.append(np.around(np.asarray(mean, dtype=np.float32), decimals=2))
+            mean_list = list(mean)
+            rounded_mean_list = [float(Decimal('%.2f' % elem)) for elem in mean_list]
+            x = np.array(rounded_mean_list)
+            each_category_with_mean_vector.append(x)
             list_of_mean_vectors.append(each_category_with_mean_vector)
         return list_of_mean_vectors
 
