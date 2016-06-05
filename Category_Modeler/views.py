@@ -684,39 +684,108 @@ def trainingsampleprocessing(request):
         else:
             trainingfilepkey = data['1']
             trid, ver = trainingfilepkey.split('+')
-            print trid, ver
-            if 'current_training_file_id' in request.session:
-                print "I am here"
-                if int(request.session['current_training_file_id']) == int(trid) and int(request.session['current_training_file_ver']) == int(ver):
+            trainingfilename = data['2']
+            if 'new_taxonomy_name' in request.session or 'current_training_file_id' not in request.session:
+                request.session['current_training_file_id'] = trid
+                request.session['current_training_file_ver'] = ver
+                request.session['current_training_file_name'] = trainingfilename                
+            else:
+                if int(request.session['current_training_file_id']) != int(trid) or int(request.session['current_training_file_ver']) != int(ver):
+                    old_trid = request.session['current_training_file_id']
+                    old_ver = request.session['current_training_file_ver']
+                    
+                    if 'trainingset_version_and_categories_relationship' in request.session:
+                        not_existing = True
+                        for each_set in request.session['trainingset_version_and_categories_relationship']:
+                            if each_set[0] == old_trid and each_set[1] == old_ver:
+                                not_existing = False
+                                break;
+                        if not_existing == True:
+                            new_categories_while_exploring_changes = []
+                            existing_categories = []
+                            categories_merged_from_existing = []
+                            categories_split_from_existing = []
+                            categories_merged_from_new_and_existing = []
+                            if 'new_categories' in request.session:
+                                new_categories_while_exploring_changes = request.session['new_categories']
+                            if 'existing_categories' in request.session:
+                                existing_categories = request.session['existing_categories']
+                            if 'categories_merged_from_existing' in request.session:
+                                categories_merged_from_existing = request.session['categories_merged_from_existing']
+                            if 'categories_split_from_existing' in request.session:
+                                categories_split_from_existing = request.session['categories_split_from_existing']
+                            if 'categories_merged_from_new_and_existing' in request.session:
+                                categories_merged_from_new_and_existing = request.session['categories_merged_from_new_and_existing']
+                            old_version_and_categories_relationships = [old_trid, old_ver, new_categories_while_exploring_changes, existing_categories, categories_merged_from_existing, categories_split_from_existing, categories_merged_from_new_and_existing]
+                            trainingset_version_and_categories_relationship = request.session['trainingset_version_and_categories_relationship']
+                            trainingset_version_and_categories_relationship.append(old_version_and_categories_relationships)
+                            request.session['trainingset_version_and_categories_relationship'] = trainingset_version_and_categories_relationship
+                    else:
+                        new_categories_while_exploring_changes = []
+                        existing_categories = []
+                        categories_merged_from_existing = []
+                        categories_split_from_existing = []
+                        categories_merged_from_new_and_existing = []
+                        if 'new_categories' in request.session:
+                            new_categories_while_exploring_changes = request.session['new_categories']
+                        if 'existing_categories' in request.session:
+                            existing_categories = request.session['existing_categories']
+                        if 'categories_merged_from_existing' in request.session:
+                            categories_merged_from_existing = request.session['categories_merged_from_existing']
+                        if 'categories_split_from_existing' in request.session:
+                            categories_split_from_existing = request.session['categories_split_from_existing']
+                        if 'categories_merged_from_new_and_existing' in request.session:
+                            categories_merged_from_new_and_existing = request.session['categories_merged_from_new_and_existing']
+                        old_version_and_categories_relationships = [old_trid, old_ver, new_categories_while_exploring_changes, existing_categories, categories_merged_from_existing, categories_split_from_existing, categories_merged_from_new_and_existing]
+                        request.session['trainingset_version_and_categories_relationship'] = [old_version_and_categories_relationships]
+
+                    
+                    
                     request.session['current_training_file_id'] = trid
                     request.session['current_training_file_ver'] = ver
-                else:
-                    request.session['current_training_file_id'] = trid
-                    request.session['current_training_file_ver'] = ver
+                    request.session['current_training_file_name'] = trainingfilename
                     if 'existing_categories' in request.session:
                         del request.session['existing_categories']
                     if 'new_categories' in request.session:
                         del request.session['new_categories']
                     if 'categories_split_from_existing' in request.session:
-                            del request.session['categories_split_from_existing']
+                        del request.session['categories_split_from_existing']
                     if 'categories_merged_from_existing' in request.session:
                         del request.session['categories_merged_from_existing']
+                    if 'categories_merged_from_new_and_existing' in request.session:
+                        del request.session['categories_merged_from_new_and_existing']                        
                     request.session.modified = True
-            else:
-                request.session['current_training_file_id'] = trid
-                request.session['current_training_file_ver'] = ver
-                
-            
-            trainingfilename = data['2']
-            request.session['current_training_file_name'] = trainingfilename
+                    
+                    if_in_existing = False
+                    for each_set in request.session['trainingset_version_and_categories_relationship']:
+                        if each_set[0] == trid and each_set[1] == ver:
+                            request.session['new_categories'] = each_set[2]
+                            request.session['existing_categories'] = each_set[3]
+                            request.session['categories_merged_from_existing'] = each_set[4]
+                            request.session['categories_split_from_existing'] = each_set[5]
+                            request.session['categories_merged_from_new_and_existing']= each_set[6]
+                            if_in_existing = True
+                            break
+                    
+                    if if_in_existing == False:
+                        old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
+                        old_training_sample = TrainingSet(old_trainingset[2])
+                        new_training_sample = TrainingSet(request.session['current_training_file_name'])
+                        common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
+                        list_of_common_categories = []
+                        for each_category in common_categories:
+                            if type(each_category) is list:
+                                list_of_common_categories.append(each_category[0])
+                            else:
+                                list_of_common_categories.append(each_category)
+                        request.session['existing_categories'] = list_of_common_categories
+                        request.session['new_categories'] = new_categories
+                        
+ 
             trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
             trainingsetasArray = []
             trs = TrainingSet(request.session['current_training_file_name'])
             classes = list(numpy.unique(trs.target))
-            
-            if 'existing_categories' not in request.session and 'new_categories' not in request.session and 'categories_split_from_existing' not in request.session:
-                request.session['existing_categories'] = classes
-                print request.session['existing_categories']
                 
             with open('%s%s' % (trainingfilelocation, trainingfilename), 'rU') as trainingset:
                 datareader = csv.reader(trainingset, delimiter=',')
@@ -886,8 +955,6 @@ def applyeditoperations(request):
         elif editoperation[0] == '3':
             mergedconceptname = editoperation[2]
             concepts_to_merge = editoperation[1]
-            print mergedconceptname
-            print concepts_to_merge
             merged_sample_details = manageCsvData.mergeConcepts(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", concepts_to_merge, mergedconceptname)
             
             trainingset_trainingsamples_instance = TrainingsetTrainingsamples(trainingset_id = tr.trainingset_id, trainingset_ver = tr.trainingset_ver, trainingsample_id = merged_sample_details[0], trainingsample_ver = merged_sample_details[1])
@@ -916,26 +983,32 @@ def applyeditoperations(request):
             tr_activity_details.save(force_insert=True)
         
         if 'existing_taxonomy_name' in request.session:
+            new_categories_while_exploring_changes = []
+            existing_categories = []
+            categories_merged_from_existing = []
+            categories_split_from_existing = []
+            categories_merged_from_new_and_existing = []
             if 'new_categories' in request.session:
                 new_categories_while_exploring_changes = request.session['new_categories']
-            else:
-                new_categories_while_exploring_changes = []
             if 'existing_categories' in request.session:
                 existing_categories = request.session['existing_categories']
-            else:
-                existing_categories = []
             if 'categories_merged_from_existing' in request.session:
                 categories_merged_from_existing = request.session['categories_merged_from_existing']
-            else:
-                categories_merged_from_existing = []
             if 'categories_split_from_existing' in request.session:
                 categories_split_from_existing = request.session['categories_split_from_existing']
-            else:
-                categories_split_from_existing = []
             if 'categories_merged_from_new_and_existing' in request.session:
                 categories_merged_from_new_and_existing = request.session['categories_merged_from_new_and_existing']
+            
+            #save the relationships of categories from trainingset, which is just versioned, with the categories from trainingset of existing taxonomy that we are trying to change
+            old_version_and_categories_relationships = [trid, ver, new_categories_while_exploring_changes, existing_categories, categories_merged_from_existing, categories_split_from_existing, categories_merged_from_new_and_existing]
+            if 'trainingset_version_and_categories_relationship' in request.session:
+                trainingset_version_and_categories_relationship = request.session['trainingset_version_and_categories_relationship']
+                trainingset_version_and_categories_relationship.append(old_version_and_categories_relationships)
+                request.session['trainingset_version_and_categories_relationship'] = trainingset_version_and_categories_relationship
             else:
-                categories_merged_from_new_and_existing = []
+                request.session['trainingset_version_and_categories_relationship'] = [old_version_and_categories_relationships]
+            
+            #Update the relationship of concepts when remove a concept
             if editoperation[0] == '2':
                 if concept_to_remove in new_categories_while_exploring_changes:
                     new_categories_while_exploring_changes.remove(concept_to_remove)
@@ -944,12 +1017,36 @@ def applyeditoperations(request):
                     existing_categories.remove(concept_to_remove)
                     request.session['existing_categories'] = existing_categories
                 else:
+                    found_the_category = False
                     if (len(categories_merged_from_existing) !=0):
                         for merged_category in categories_merged_from_existing:
-                            if merged_category[2] == concept_to_remove:
+                            if merged_category[-1] == concept_to_remove:
                                 categories_merged_from_existing.remove(merged_category)
                                 request.session['categories_merged_from_existing'] = categories_merged_from_existing
+                                found_the_category = True
                                 break
+                            
+                    if found_the_category==False and (len(categories_merged_from_new_and_existing) !=0):
+                        for merged_category in categories_merged_from_new_and_existing:
+                            if merged_category[-1] == concept_to_remove:
+                                categories_merged_from_new_and_existing.remove(merged_category)
+                                request.session['categories_merged_from_new_and_existing'] = categories_merged_from_new_and_existing
+                                found_the_category = True
+                                break
+                    
+                    if found_the_category==False and (len(categories_split_from_existing) !=0):
+                        for each_set in categories_split_from_existing:
+                            if concept_to_remove in each_set:
+                                x = each_set
+                                x.remove(concept_to_remove)
+                                x.append("sub-classes")
+                                categories_split_from_existing.remove(each_set)
+                                categories_split_from_existing.append(x)
+                                request.session['categories_split_from_existing'] = categories_split_from_existing
+                                found_the_category = True
+                                break
+                    
+            #Update the relationship of concepts when merged concepts          
             elif editoperation[0] == '3':
                 allconceptsfromnew = True
                 allconceptsfromexisting = True
@@ -991,8 +1088,55 @@ def applyeditoperations(request):
                     request.session['new_categories'] = new_categories_while_exploring_changes
                     request.session['existing_categories'] = existing_categories
                     new_concept_from_merging_existing_and_new_concepts.append(mergedconceptname)
-                    categories_merged_from_new_and_existing.append(new_concept_from_merging_existing_concepts)
+                    categories_merged_from_new_and_existing.append(new_concept_from_merging_existing_and_new_concepts)
                     request.session['categories_merged_from_new_and_existing'] = categories_merged_from_new_and_existing
+                elif len(conceptsinbothnewandexisting) < len(editoperation[1]):
+                    concepts_not_in_both_new_and_existing = []
+                    for concept in editoperation[1]:
+                        if any(concept in sublist for sublist in conceptsinbothnewandexisting)== False:
+                            concepts_not_in_both_new_and_existing.append(concept)
+                    concepts_found_in_merged_from_existing = False
+                    for merged_concept in categories_merged_from_existing:
+                        found_concepts = True
+                        for concept in concepts_not_in_both_new_and_existing:
+                            if concept not in merged_concept:
+                                found_concepts = False
+                        if found_concepts == True:
+                            x = merged_concept
+                            categories_merged_from_existing.remove(merged_concept)
+                            request.session['categories_merged_from_existing'] = categories_merged_from_existing
+                            x.pop()
+                            add_this_operation_to_new_and_existing = False
+                            for concept in conceptsinbothnewandexisting:
+                                x.append(concept[0])
+                                if concept[1] == 'new':
+                                    add_this_operation_to_new_and_existing = True
+                            x.append(mergedconceptname)
+                            if add_this_operation_to_new_and_existing == False:
+                                categories_merged_from_existing.append(x)
+                                request.session['categories_merged_from_existing'] = categories_merged_from_existing
+                            else:
+                                categories_merged_from_new_and_existing.append(x)
+                                request.session['categories_merged_from_new_and_existing'] = categories_merged_from_new_and_existing
+                            concepts_found_in_merged_from_existing = True
+                            break
+                    if concepts_found_in_merged_from_existing == False:
+                        for merged_concept in categories_merged_from_new_and_existing:
+                            found_concepts = True
+                            for concept in concepts_not_in_both_new_and_existing:
+                                if concept not in merged_concept:
+                                    found_concepts = False
+                            if found_concepts == True:
+                                x = merged_concept
+                                categories_merged_from_new_and_existing.remove(merged_concept)
+                                request.session['categories_merged_from_new_and_existing'] = categories_merged_from_new_and_existing
+                                x.pop()
+                                for concept in conceptsinbothnewandexisting:
+                                    x.append(concept[0])
+                                x.append(mergedconceptname)
+                                categories_merged_from_new_and_existing.append(x)
+                                request.session['categories_merged_from_new_and_existing'] = categories_merged_from_new_and_existing
+                                break
                 else:
                     if (len(categories_split_from_existing) !=0):
                         for split_category in categories_split_from_existing:
@@ -1008,8 +1152,6 @@ def applyeditoperations(request):
                                     request.session['categories_split_from_existing'] = categories_split_from_existing
                                     existing_categories.append(mergedconceptname)
                                     request.session['existing_categories'] = existing_categories
-                                    print request.session['existing_categories']
-                                    print request.session['categories_split_from_existing']
                                     break
                                 else:
                                     new_split_categories = split_category
@@ -1019,9 +1161,8 @@ def applyeditoperations(request):
                                     new_split_categories.append(mergedconceptname)
                                     categories_split_from_existing.append(new_split_categories)
                                     request.session['categories_split_from_existing'] = categories_split_from_existing
-                                    print request.session['existing_categories']
-                                    print request.session['categories_split_from_existing']
-                    
+                                    
+            #Update the relationship of concepts when splitting concepts - assuming a concept is split in two concepts only         
             elif editoperation[0] == '4':
                 if concepttosplit in new_categories_while_exploring_changes:
                     new_categories_while_exploring_changes.remove(concepttosplit)
@@ -1034,16 +1175,51 @@ def applyeditoperations(request):
                     categories_split_from_existing.append([concepttosplit, firstconcept, secondconcept])
                     request.session['categories_split_from_existing'] = categories_split_from_existing
                 else:
+                    FoundTheConcept = False
                     if (len(categories_merged_from_existing) !=0):
                         for merged_category in categories_merged_from_existing:
-                            if merged_category[2] == concepttosplit:
-                                if (merged_category[0] == firstconcept and merged_category[1] == secondconcept) or (merged_category[0] == secondconcept and merged_category[1] == firstconcept):
-                                    categories_merged_from_existing.remove(merged_category)
-                                    request.session['categories_merged_from_existing'] = categories_merged_from_existing
+                            if merged_category[-1] == concepttosplit and firstconcept in merged_category and secondconcept in merged_category:
+                                categories_merged_from_existing.remove(merged_category)
+                                request.session['categories_merged_from_existing'] = categories_merged_from_existing
+                                existing_categories.append(firstconcept)
+                                existing_categories.append(secondconcept)
+                                request.session['existing_categories'] = existing_categories
+                                FoundTheConcept = True
+                                break
+                    if FoundTheConcept == False and (len(categories_merged_from_new_and_existing) !=0):
+                        for merged_category in categories_merged_from_new_and_existing:
+                            if merged_category[-1] == concepttosplit and firstconcept in merged_category and secondconcept in merged_category:
+                                categories_merged_from_new_and_existing.remove(merged_category)
+                                request.session['categories_merged_from_new_and_existing'] = categories_merged_from_new_and_existing
+                                old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
+                                trs = TrainingSet(old_trainingset[2])
+                                classes = list(numpy.unique(trs.target))
+                                if firstconcept in classes:
                                     existing_categories.append(firstconcept)
+                                    request.session['existing_categories'] = existing_categories
+                                else:
+                                    new_categories_while_exploring_changes.append(firstconcept)
+                                    request.session['new_categories'] = new_categories_while_exploring_changes
+                                if secondconcept in classes:
                                     existing_categories.append(secondconcept)
                                     request.session['existing_categories'] = existing_categories
-                                    break
+                                else:
+                                    new_categories_while_exploring_changes.append(secondconcept)
+                                    request.session['new_categories'] = new_categories_while_exploring_changes
+                                FoundTheConcept = True
+                                break
+                    if FoundTheConcept == False:
+                        for each_set in categories_split_from_existing:
+                            if concepttosplit in each_set:
+                                x = each_set
+                                categories_split_from_existing.remove(each_set)
+                                x.remove(concepttosplit)
+                                x.append(firstconcept)
+                                x.append(secondconcept)
+                                categories_split_from_existing.append(x)
+                                request.session['categories_split_from_existing'] = categories_split_from_existing
+                                break
+                                
     
     if 'new_categories' in request.session:
         print "1"                           
@@ -1252,7 +1428,7 @@ def signaturefile(request):
         data_content = "Model type: " + classifiername + "<br/> Validation type: " + validationtype + "<br/> Validation score: " + score + "<br/>Kappa: " + kp + "<br/><br/>" + "<b>Producer/user accuracies:</b><br/>"
         categories = list(numpy.unique(trainingfile.target))
         for i, category in enumerate(categories):
-            data_content = data_content + category + " (" + prodacc[i] + ", " + useracc[i] + ")<br/>" 
+            data_content = data_content + category + " (" + str(prodacc[i]) + ", " + str(useracc[i]) + ")<br/>" 
         
         current_step = ['Training activity', 'Training activity', data_content]
         
@@ -1390,6 +1566,7 @@ def signaturefile(request):
                 common_categories_comparison = []
                 if len(old_mean_vectors[0]) != len(mean_vectors[0][1]):
                     for common_category in common_categories:
+                        print common_category
                         single_category_comparison = []
                         index_of_common_category_in_accuracy_list = new_categories.index(common_category)
                         producerAccuracy = prodacc[index_of_common_category_in_accuracy_list]
@@ -1400,6 +1577,7 @@ def signaturefile(request):
                         single_category_comparison.append(producerAccuracy)
                         single_category_comparison.append(userAccuracy)
                         old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category)
+                        print old_category_details
                         if len(old_category_details) == 1:
                             single_category_comparison.append(old_category_details[0][2])
                             single_category_comparison.append(old_category_details[0][3])
@@ -1786,24 +1964,6 @@ def supervised(request):
             data_content = "Test file: " + testfile.name + "<br/> Classified map: " + outputmapinJPG
             current_step = ['Classification', 'Classification', data_content]
             
-            if (len(concepts_in_modelled_taxonomy)==4):
-                diverging_colors = ['#d7191c', '#fdae61', '#abd9e9', '#2c7bb6']
-            elif (len(concepts_in_modelled_taxonomy)==5):
-                diverging_colors = ['#d7191c', '#fdae61', '#ffffbf', '#abd9e9', '#2c7bb6']
-            elif (len(concepts_in_modelled_taxonomy)==6):
-                diverging_colors = ['#d73027', '#fc8d59', '#fee090', '#e0f3f8', '#91bfdb', '#4575b4']
-            elif (len(concepts_in_modelled_taxonomy)==7):
-                diverging_colors = ['#d73027', '#fc8d59', '#fee090', '#ffffbf', '#e0f3f8', '#91bfdb', '#4575b4']
-            elif (len(concepts_in_modelled_taxonomy)==8):
-                diverging_colors = ['#d73027', '#f46d43', '#fdae61', '#fee090', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4']
-            elif (len(concepts_in_modelled_taxonomy)==9):
-                diverging_colors = ['#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4']
-            elif (len(concepts_in_modelled_taxonomy)==10):
-                diverging_colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
-            else:
-                diverging_colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
-                
-            
             if 'current_exploration_chain_viz' in request.session:
                 current_exploration_chain_viz = request.session['current_exploration_chain_viz']
                 if current_exploration_chain_viz[-1][0] == 'End':
@@ -1823,9 +1983,9 @@ def supervised(request):
                 request.session['extensional_containment_for_categories_split_from_existing'] = extensional_containment_for_categories_split_from_existing
                 request.session['extensional_containment_for_category_merged_from_existing'] = extensional_containment_for_category_merged_from_existing
                     
-                return  JsonResponse({'map': outputmapinJPG, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'categories': listofcategories, 'change_matrix':change_matrix, 'old_categories': oldCategories, 'diverging_colors': diverging_colors});
+                return  JsonResponse({'map': outputmapinJPG, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'categories': listofcategories, 'change_matrix':change_matrix, 'old_categories': oldCategories});
             
-            return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'diverging_colors': diverging_colors});
+            return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz']});
     
     
     elif 'current_model_id' not in request.session:
@@ -1972,23 +2132,6 @@ def create_change_matrix(request, oldCategories, newPredictedValues, rows, colum
     #categories_merged_from_new_and_existing - still need to do it        
             
     return change_in_individual_matrix, J_Index_for_common_categories, extensional_containment_for_categories_split_from_existing, extensional_containment_for_category_merged_from_existing
-        
-def calculate_J_index_for_catgeory_extension(category, ext1, ext2, predicted_file, rows, columns):
-    common_elements = 0.0
-    for coordinates in ext1:
-        ind = coordinates[0]*columns + coordinates[1]
-        new_category = predicted_file[ind]
-        
-        if new_category[0] == category:
-            common_elements += 1.0
-
-
-    extra_in_first_extension = len(ext1) - common_elements  
-    extra_in_second_extension = len(ext2) - common_elements
-    union_of_two_extensions = common_elements + extra_in_first_extension + extra_in_second_extension
-    jaccard_index = float(common_elements/union_of_two_extensions)
-    return jaccard_index
-
     
 
 @login_required
@@ -2487,6 +2630,8 @@ def applyChangeOperations(request):
         concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
         covariance_mat = trainingfile.create_covariance_matrix()
         mean_vectors = trainingfile.create_mean_vectors()
+        print mean_vectors
+        print covariance_mat
         predicted_file = ClassifiedFile(request.session['current_predicted_file_name'])
         producer_accuracies = request.session['producer_accuracies']
         user_accuracies = request.session['user_accuracies']

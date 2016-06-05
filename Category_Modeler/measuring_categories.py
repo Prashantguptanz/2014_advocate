@@ -116,7 +116,7 @@ class TrainingSet:
             deviation_matrix_transpose = deviation_matrix.transpose()
             deviation_score_sums_of_square_matrix = deviation_matrix_transpose*deviation_matrix
             #print deviation_score_sums_of_square_matrix
-            covariance_matrix = deviation_score_sums_of_square_matrix/no_of_rows
+            covariance_matrix = np.matrix(np.around(deviation_score_sums_of_square_matrix/no_of_rows, decimals=2))
             #print covariance_matrix
             each_category_with_matrix.append(covariance_matrix)
             list_of_covariance_matrices.append(each_category_with_matrix)
@@ -133,7 +133,7 @@ class TrainingSet:
             upperlimit = each_category_with_sample_range[2]
             current_samples = self.samples[int(lowerlimit):int(upperlimit)+1]
             mean = np.mean(current_samples, axis=0)
-            each_category_with_mean_vector.append(np.asarray(mean, dtype=np.float32))
+            each_category_with_mean_vector.append(np.around(np.asarray(mean, dtype=np.float32), decimals=2))
             list_of_mean_vectors.append(each_category_with_mean_vector)
         return list_of_mean_vectors
 

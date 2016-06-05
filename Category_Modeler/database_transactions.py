@@ -13,7 +13,12 @@ class UpdateDatabase:
         self.authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         self.request = request
         if 'new_taxonomy_name' not in self.request.session:
-            self.current_taxonomy = self.request.session['existing_taxonomy_name']
+            if 'create_new_taxonomy_version' in request.session:
+                self.current_taxonomy = self.request.session['existing_taxonomy_name']
+            else:
+                self.current_taxonomy = self.request.session['existing_taxonomy_name']
+                self.request.session['legend_id'] = self.request.session['existing_taxonomy_id']
+                self.request.session['legend_ver'] = self.request.session['existing_taxonomy_ver']
         else:
             self.current_taxonomy = self.request.session['new_taxonomy_name']
         self.change_event = self.__create_change_event()
@@ -69,7 +74,7 @@ class UpdateDatabase:
     def create_concept(self, conceptName, mean_vector, covariance_matrix, extension, producer_accuracy, user_accuracy, parentName="", details=""):
         current_concept = Concept(concept_name = conceptName, description = details, date_expired = datetime(9999, 9, 12), created_by = self.authuser_instance, change_event_id = self.change_event)
         current_concept.save(force_insert=True)
-        
+            
         connectToLegend = LegendConceptCombination(legend_id = self.request.session['legend_id'], legend_ver = self.request.session['legend_ver'], concept = current_concept, change_event_id = self.change_event)
         connectToLegend.save(force_insert=True)
         
@@ -90,7 +95,28 @@ class UpdateDatabase:
         createConcept_op.save(force_insert=True)
         newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createConcept_op.id, change_operation='Add_Concept')
         newOperationForChangeEvent.save(force_insert=True)
+    
+    def create_evolutionary_version(self, conceptName, mean_vector, covariance_matrix, extension, producer_accuracy, user_accuracy, int_similarity, ext_containment, int_relation, ext_relation):
+        extension_id = self.create_extension(extension)
+        cov_mat_id = self.create_covariance_matrix(covariance_matrix)
+        vector_id = self.create_mean_vector(mean_vector)
+        comp_int = self.create_computational_intension(vector_id, cov_mat_id, producer_accuracy, user_accuracy)
         
+        customquery = CustomQueries()
+        categories_to_be_expired = customquery.getAllOperationalCategoriesForAConceptInALegend(self.request.session['legend_id'], self.request.session['legend_ver'], conceptName)
+        
+        for each_category in categories_to_be_expired:
+            category = Category.objects.get(category_id = each_category[0], category_evol_ver = each_category[1], category_comp_ver = each_category[2])
+            category.date_expired = datetime.now()
+            category.save(force_update = True)
+        
+        CatInstop_instance = self.create_categories(connectToLegend, comp_int, extension_id)
+        
+        createConcept_op = AddConceptOperation(concept_id = current_concept, legend_concept_comb_id = connectToLegend, hierarchical_relationship_id= addRelationship, category_instantiation_op_id= CatInstop_instance)
+        createConcept_op.save(force_insert=True)
+        newOperationForChangeEvent = ChangeEventOperations(change_event_id = self.change_event, change_operation_id = createConcept_op.id, change_operation='Add_Concept')
+        newOperationForChangeEvent.save(force_insert=True)
+    
     def add_existing_concept_to_new_version_of_legend_with_updated_categories(self, conceptName, mean_vector, covariance_matrix, extension, producer_accuracy, user_accuracy, int_similarity, ext_similarity, int_relation, ext_relation, parentName=""):
         concept_instance = Concept.objects.get(concept_name = conceptName)
         
@@ -252,6 +278,7 @@ class UpdateDatabase:
                 cm.append(CovarianceMatrix(covariance_matrix_id = CM_id, matrix_row = row, matrix_column = column, cell_value = eachCell))
                 column = column+1
             row = row +1
+            column = 0
         CovarianceMatrix.objects.bulk_create(cm)
         return CM_id
     
@@ -425,6 +452,77 @@ class CustomQueries:
         
         return row         
         
+    def getParentNameOfAConcept(self, legend_id, legend_ver, concept):
+        
+        cursor = connection.cursor()
+        
+        cursor.execute("select concept_name from concept, legend_concept_combination lcc1  where concept.id= lcc1.concept_id and  lcc1.id = (select hr.concept1_id \
+                        from concept c, legend_concept_combination lcc, hierarchical_relationship hr where lcc.legend_id = %s and lcc.legend_ver = %s and lcc.concept_id = c.id and \
+                        c.concept_name = %s and hr.concept2_id = lcc.id and hr.relationship_name = 'parent-of')", [legend_id, legend_ver, concept])
+        
+        row = cursor.fetchone()
+        
+        return row[0]
+        
+    def getRootConceptOfATaxonomyVersion(self, legend_id, legend_ver):
+        
+        cursor = connection.cursor()
+        
+        cursor.execute("select concept_name from concept c, legend_concept_combination lcc where lcc.legend_id =0 and lcc.legend_ver = 2 and lcc.concept_id = c.id and \
+                        c.concept_name LIKE 'root%'')", [legend_id, legend_ver])
+        
+        row = cursor.fetchone()
+        
+        return row[0]
+        
+    def getAllOperationalCategoriesForAConceptInALegend(self, legend_id, legend_ver, concept):
+        
+        cursor = connection.cursor()
+        
+        cursor.execute("select ca.category_id, ca.category_evol_ver, ca.category_evol_ver from legend_concept_combination lcc, concept c, category ca where lcc.legend_id = %s \
+                        and lcc.legend_ver = %s and lcc.concept_id = c.id and c.concept_name = %s and lcc.id = ca.legend_concept_combination_id and \
+                        ca.date_expired ='9999-09-12 00:00:00')", [legend_id, legend_ver, concept])
+        
+        row = cursor.fetchall()
+        
+        return row        
         
         
         
+    def getAllActiveCategoriesWithConceptNameForALegend(self, legend_id, legend_ver):
+        
+        cursor = connection.cursor()
+        
+        cursor.execute("select c.concept_name, ca.category_id, ca.category_evol_ver, ca.category_comp_ver from category ca, legend_concept_combination lcc, concept c where \
+                        ca.legend_concept_combination_id = lcc.id and lcc.legend_id = %s and lcc.legend_ver = %s and lcc.concept_id = c.id", [legend_id, legend_ver])
+        
+        row = cursor.fetchall()
+        
+        return row
+    
+    def getMeanVectorForACategory(self, c_id, evol_ver, comp_ver):
+    
+        cursor = connection.cursor()
+        
+        cursor.execute("select mv.* from category ca, computational_intension ci, mean_vector mv where ca.category_id = %s and ca.category_evol_ver = %s and ca.category_comp_ver = %s \
+                        and ca.computational_intension_id = ci.id and ci.mean_vector_id = mv.id", [c_id, evol_ver, comp_ver])
+        
+        row = cursor.fetchall()
+        
+        return row
+        
+    def getCovMatForACategory(self, c_id, evol_ver, comp_ver):
+    
+        cursor = connection.cursor()
+        
+        cursor.execute("select cm.cell_value from category ca, computational_intension ci, covariance_matrix cm where ca.category_id = %s and ca.category_evol_ver = %s \
+                        and ca.category_comp_ver = %s and ca.computational_intension_id = ci.id and ci.covariance_matrix_id = cm.covariance_matrix_id", [c_id, evol_ver, comp_ver])
+        
+        row = cursor.fetchall()
+        
+        return row
+        
+
+
+
+

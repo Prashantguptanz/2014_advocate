@@ -1520,7 +1520,7 @@ $(function() {
 										}
 										f = f + "</table>";
 										f = f + "<input type=\"submit\" id=\"submitsuggestions\" value=\"Submit\" class=\"btn btn-default\" style=\"margin:20px; display:none\"/>";
-										f = f + "<label id=\"successmessageforappliedsuggestions\" style=\"margin-top: 15px; margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal\"></label>";
+										f = f + "<label id=\"successmessageforappliedsuggestions\" style=\"margin-top: 15px; margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal; font-size:14px; color:green\"></label>";
 										
 								//		var f= "<label style=\"font-size: 15px; margin-left: 15px; margin-bottom:15px\">List of suggestions to increase the accuracy of classification model:</label>" + 
 								//			"<ul class=\" list-group\" style=\" margin-left: 15px; margin-right: 5px; margin-bottom: 5px; width:50%\">";
@@ -2053,7 +2053,7 @@ $(function() {
 					a = a + "<label style=\"font-size: 15px\"> User input for merged catgeories:</label>";
 					a = a +	"<table class=\"table\" style=\" margin: 20px; width: 50%\" id=\"merged_categories_change_table\">";
 					for (var i = 0; i < response['categories_merged_from_existing'].length; i++){
-						var x = response['categories_merged_from_existing'][i][response['categories_merged_from_existing'].length-1];
+						var x = response['categories_merged_from_existing'][i][response['categories_merged_from_existing'][i].length-1];
 						a = a + "<tr><td>" + x + "</td><td> " +
 							"<div class=\"radiox\" style=\"margin:0; display:inline\">" + "<input type=\"radio\" name=\"" + x + "\" value=\"1\" class=\"mergeorgroup\"/>&nbsp;" +
 							"<a href=\"javascript://\" data-toggle=\"popover\" data-placement=\"top\" data-html=\"true\" data-container=\"body\"  title=\"Group operation\" data-content=\"The " +
@@ -2125,8 +2125,25 @@ $(function() {
 				
 			}
 			console.log(data);
-			$.post("http://127.0.0.1:8000/AdvoCate/createChangeEventForExistingTaxonomy/", data, function(response) {
-				
+			$.post("http://127.0.0.1:8000/AdvoCate/createChangeEventForExistingTaxonomy/", data, function(data) {
+				$('#listofchangeoperations').show();
+				x = "";
+				for (var i = 0; i < data['listOfOperations'].length; i++) {
+					a = i + 1;
+					id = "operation_" + i;
+					x = x + "<dt style=\"cursor:pointer; font-weight:normal; line-height: 2.5em; background:#e4e4e4; border-bottom: 1px solid #c4c4c4; border-top: 1px solid white\"> &nbsp;&nbsp;" + a + ". &nbsp;&nbsp;&nbsp;" + data['listOfOperations'][i][0] + "</dt>";
+					for (var j = 0; j < data['listOfOperations'][i][1].length; j++){
+						b = j+1;
+						x = x + "<dd style=\" margin-left:10px; padding: 0.5em 0; border-bottom: 1px solid #c4c4c4; display: none\"> &nbsp;&nbsp;" + b + ". &nbsp; &nbsp; &nbsp;" + data['listOfOperations'][i][1][j] + "</dd>";
+					}
+					
+				}
+				x = x + "</dl>";
+				$('#changeevent').show();
+				$('#compositechangeoperations').html(x);
+				$('#commit').show();
+				$('#collapse15').removeClass("collapse in").addClass("collapse");
+				$('#userinput #submituserinput').attr('disabled', 'disabled');
 			});
 			
 		});
@@ -2169,6 +2186,7 @@ $(function() {
 			$('#noforcommitfornewtaxonomyversion').attr('disabled', 'disabled');
 			$.get("http://127.0.0.1:8000/AdvoCate/applyChangeOperations/", function(data){
 				$('#changeevent').hide();
+				$('#userinputforchangeevent').hide();
 				$('#implement').hide();
 				$('#commitsuccessmessage').show();
 				$('#successmessage').html(data);
