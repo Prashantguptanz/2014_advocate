@@ -1,5 +1,6 @@
 import csv, json, numpy, pydot, os, re
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 from io import FileIO, BufferedWriter
 from datetime import datetime
 from shutil import copyfile
@@ -685,10 +686,27 @@ def trainingsampleprocessing(request):
             trainingfilepkey = data['1']
             trid, ver = trainingfilepkey.split('+')
             trainingfilename = data['2']
-            if 'new_taxonomy_name' in request.session or 'current_training_file_id' not in request.session:
+            if 'new_taxonomy_name' in request.session:
                 request.session['current_training_file_id'] = trid
                 request.session['current_training_file_ver'] = ver
-                request.session['current_training_file_name'] = trainingfilename                
+                request.session['current_training_file_name'] = trainingfilename
+            elif 'current_training_file_id' not in request.session:
+                request.session['current_training_file_id'] = trid
+                request.session['current_training_file_ver'] = ver
+                request.session['current_training_file_name'] = trainingfilename
+                old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
+                old_training_sample = TrainingSet(old_trainingset[2])
+                new_training_sample = TrainingSet(request.session['current_training_file_name'])
+                common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
+                list_of_common_categories = []
+                for each_category in common_categories:
+                    if type(each_category) is list:
+                        list_of_common_categories.append(each_category[0])
+                    else:
+                        list_of_common_categories.append(each_category)
+                request.session['existing_categories'] = list_of_common_categories
+                request.session['new_categories'] = new_categories
+                               
             else:
                 if int(request.session['current_training_file_id']) != int(trid) or int(request.session['current_training_file_ver']) != int(ver):
                     old_trid = request.session['current_training_file_id']
@@ -780,8 +798,9 @@ def trainingsampleprocessing(request):
                                 list_of_common_categories.append(each_category)
                         request.session['existing_categories'] = list_of_common_categories
                         request.session['new_categories'] = new_categories
-                        
- 
+
+                
+            
             trainingfilelocation = (Trainingset.objects.get(trainingset_id=trid, trainingset_ver=ver)).filelocation # @UndefinedVariable
             trainingsetasArray = []
             trs = TrainingSet(request.session['current_training_file_name'])
@@ -990,6 +1009,7 @@ def applyeditoperations(request):
             categories_merged_from_new_and_existing = []
             if 'new_categories' in request.session:
                 new_categories_while_exploring_changes = request.session['new_categories']
+                print new_categories_while_exploring_changes
             if 'existing_categories' in request.session:
                 existing_categories = request.session['existing_categories']
             if 'categories_merged_from_existing' in request.session:
@@ -1001,6 +1021,7 @@ def applyeditoperations(request):
             
             #save the relationships of categories from trainingset, which is just versioned, with the categories from trainingset of existing taxonomy that we are trying to change
             old_version_and_categories_relationships = [trid, ver, new_categories_while_exploring_changes, existing_categories, categories_merged_from_existing, categories_split_from_existing, categories_merged_from_new_and_existing]
+            print old_version_and_categories_relationships
             if 'trainingset_version_and_categories_relationship' in request.session:
                 trainingset_version_and_categories_relationship = request.session['trainingset_version_and_categories_relationship']
                 trainingset_version_and_categories_relationship.append(old_version_and_categories_relationships)
@@ -1065,7 +1086,14 @@ def applyeditoperations(request):
                 if allconceptsfromnew == True:
                     for concept in editoperation[1]:
                         new_categories_while_exploring_changes.remove(concept)
-                    new_categories_while_exploring_changes.append(mergedconceptname)
+                    old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
+                    trs = TrainingSet(old_trainingset[2])
+                    classes = list(numpy.unique(trs.target))
+                    if mergedconceptname in classes:
+                        existing_categories.append(mergedconceptname)
+                        request.session['existing_categories'] = existing_categories
+                    else:
+                        new_categories_while_exploring_changes.append(mergedconceptname)
                     request.session['new_categories'] = new_categories_while_exploring_changes
                 elif allconceptsfromexisting == True:
                     new_concept_from_merging_existing_concepts = []
@@ -1328,6 +1356,7 @@ def changethresholdlimits(request):
 @login_required
 @transaction.atomic
 def signaturefile(request):
+    request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
     if 'currenteditoperations' in request.session:
         del request.session['currenteditoperations']
         request.session.modified = True
@@ -1351,6 +1380,8 @@ def signaturefile(request):
         modelname = "model_" + str(datetime.now())
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         statistical_methods = StatisticalMethods()
+        print classifiername
+        print classifier
         
         if (validationoption=='1'):
             validationtype="training data" 
@@ -1385,7 +1416,7 @@ def signaturefile(request):
             scores=cross_validation.cross_val_score(clf, trainingfile.samples, trainingfile.target, cv=int(folds))
             score = "{0:.2f}".format(scores.mean())
             kp = "{0:.2f}".format(statistical_methods.calculateKappa(cm))
-            
+
         
         prodacc, useracc = statistical_methods.calculateAccuracies(cm)
         request.session['model_score'] = score
@@ -1400,6 +1431,8 @@ def signaturefile(request):
         plot_confusion_matrix(cm, trainingfile.target)
         cmname = modelname+"_cm.png"
         plt.savefig("%s/%s" % (IMAGE_LOCATION, cmname),  bbox_inches='tight')
+        
+        
         
         sf = Classificationmodel(model_name = modelname, model_location=CLASSIFICATION_MODEL_LOCATION, accuracy=score, model_type=classifiername)
         sf.save()
@@ -1565,6 +1598,9 @@ def signaturefile(request):
                 common_categories = request.session['existing_categories']
                 common_categories_comparison = []
                 if len(old_mean_vectors[0]) != len(mean_vectors[0][1]):
+                    print old_mean_vectors[0]
+                    print mean_vectors[0][1]
+                    print "I am here"
                     for common_category in common_categories:
                         print common_category
                         single_category_comparison = []
@@ -1775,8 +1811,69 @@ def signaturefile(request):
                 return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'suggestion_list': final_suggestion_list1, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc, 'common_categories_comparison':common_categories_comparison})
                 
             return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'suggestion_list': final_suggestion_list1, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'tree':tree_name, 'prodacc': prodacc, 'useracc': useracc})
+        
         else:
-            return ""   
+            listofcategories = clf.classes_.tolist()
+            categories_with_low_accuracies1 = []
+            acc_limit = float(request.session['accuracy_limit'])
+            
+            for index in range(len(listofcategories)):
+                if (float(prodacc[index]) < acc_limit and float(useracc[index]) < acc_limit) or ((float(prodacc[index]) + float(useracc[index]))<(2.0*acc_limit)):
+                    categories_with_low_accuracies1.append(listofcategories[index])
+            
+            confusing_categories_with_low_accuracies1=[]
+            for category in categories_with_low_accuracies1:
+                index = listofcategories.index(category)
+                confusion1_of_category_with_others = cm[index]
+                confusion2_of_category_with_others = [row[index] for row in cm]
+                total_confusion_of_category_with_others = [x+y for x, y in zip(confusion1_of_category_with_others, confusion2_of_category_with_others)]
+                highest_confusion_with_index = find_index_of_highest_number_except_a_given_index(total_confusion_of_category_with_others, index)
+                confusion = float(float(total_confusion_of_category_with_others[highest_confusion_with_index])/float(sum(total_confusion_of_category_with_others)))
+                confusing_categories_with_low_accuracies1.append([category, listofcategories[highest_confusion_with_index], confusion])
+                
+            confusing_categories_with_low_accuracies_sorted_by_confusion_percent1 = sorted(confusing_categories_with_low_accuracies1, key=itemgetter(2), reverse=True)
+            
+            final_suggestion_list1 = []
+            if (len(confusing_categories_with_low_accuracies_sorted_by_confusion_percent1)>0):
+                final_suggestion_list1 = [confusing_categories_with_low_accuracies_sorted_by_confusion_percent1[0]]
+                for i in range(1, len(confusing_categories_with_low_accuracies_sorted_by_confusion_percent1)):
+                    current_suggestion = confusing_categories_with_low_accuracies_sorted_by_confusion_percent1[i]
+                    is_unique= True
+                    for suggestion in final_suggestion_list1:
+                        if current_suggestion[0] in suggestion or current_suggestion[1] in suggestion:
+                            is_unique = False
+                            break;
+                    if is_unique == True:
+                        final_suggestion_list1.append(current_suggestion)
+            if 'existing_taxonomy_name' in request.session:
+                customQuery = CustomQueries()
+                old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
+                old_trainingfile = TrainingSet(old_trainingset_name)
+                new_categories = list(numpy.unique(trainingfile.target))
+                old_categories = list(numpy.unique(old_trainingfile.target))
+                common_categories = numpy.intersect1d(new_categories, old_categories)
+                common_categories_comparison = []
+                for common_category in common_categories:
+                    single_category_comparison = []
+                    index_of_common_category_in_accuracy_list = new_categories.index(common_category)
+                    producerAccuracy = prodacc[index_of_common_category_in_accuracy_list]
+                    userAccuracy = useracc[index_of_common_category_in_accuracy_list]
+                    single_category_comparison.append(common_category)
+                    single_category_comparison.append("Support Vector Machine")
+                    single_category_comparison.append(validationtype)
+                    single_category_comparison.append(producerAccuracy)
+                    single_category_comparison.append(userAccuracy)
+                    old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category)
+                    single_category_comparison.append(old_category_details[0][2])
+                    single_category_comparison.append(old_category_details[0][3])
+                    single_category_comparison.append(old_category_details[0][0])
+                    single_category_comparison.append(old_category_details[0][1])
+                    common_categories_comparison.append(single_category_comparison)
+                return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'suggestion_list': final_suggestion_list1, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'common_categories_comparison':common_categories_comparison})
+                
+            
+            return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'suggestion_list': final_suggestion_list1, 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc})
+                  
     else:
         if 'existing_taxonomy_name' in request.session:
             if 'current_exploration_chain_viz' in request.session:
@@ -2158,6 +2255,8 @@ def changeRecognizer(request):
             producer_accuracies = request.session['producer_accuracies']
             model_type = request.session['model_type']
             
+            exploration_chain_details = []
+            '''
             exploration_chain = ExplorationChain.objects.filter(id = request.session['exploration_chain_id'])
             exploration_chain_details = []
             for exp in exploration_chain:
@@ -2195,7 +2294,7 @@ def changeRecognizer(request):
                     data_term = "Learning activity (Model type: " + details_of_learning_activity[0] + ", Validation type: " + details_of_learning_activity[2] + ", Validation score: " + str(details_of_learning_activity[1]) + ")"
                     exploration_chain_details.append([data_term])
                 else:
-                    exploration_chain_details.append(["Classification activity"])
+                    exploration_chain_details.append(["Classification activity"])'''
             
             current_exploration_chain_viz = request.session['current_exploration_chain_viz']
             last_data_content = current_exploration_chain_viz[-1]
@@ -2630,8 +2729,7 @@ def applyChangeOperations(request):
         concepts_in_current_taxonomy = list(numpy.unique(trainingfile.target))
         covariance_mat = trainingfile.create_covariance_matrix()
         mean_vectors = trainingfile.create_mean_vectors()
-        print mean_vectors
-        print covariance_mat
+        
         predicted_file = ClassifiedFile(request.session['current_predicted_file_name'])
         producer_accuracies = request.session['producer_accuracies']
         user_accuracies = request.session['user_accuracies']
@@ -2840,9 +2938,6 @@ def applyChangeOperations(request):
 
         if 'categories_split_from_existing' in request.session:
             categories_split_from_existing = request.session['categories_split_from_existing']
-        
-        
-        
         
         
     del request.session['exploration_chain_id']

@@ -1386,6 +1386,7 @@ $(function() {
 								if (response['meanvectors']) {
 									$('#DecisionTreemodeldetails').hide();
 									$('#NaiveBayesmodeldetails').show();
+									$('#SVMmodeldetails').hide();
 									var a = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Mean Vector </th><th> Variance </th></tr>";
 									for (var i = 0; i < response['listofclasses'].length; i++) {
 										a = a + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
@@ -1479,9 +1480,10 @@ $(function() {
 									$('#ErrorAccuracy').hide();
 									$('#JMDistance').hide();
 									$('#collapse1').removeClass("collapse in").addClass("collapse");
-								} else {
+								} else if (response['tree']){
 									$('#NaiveBayesmodeldetails').hide();
 									$('#DecisionTreemodeldetails').show();
+									$('#SVMmodeldetails').hide();
 									var a = "<img style=\"width:100%; height:100%\" src=\"/static/images/" + response['tree'] + "\" />";
 									$('#decisiontree').html(a);
 									var b = "<img style=\"width:50%; height:50%; margin-left:auto; margin-right:auto; display:block\" src=\"/static/images/" + response['cm'] + "\" />";
@@ -1521,14 +1523,7 @@ $(function() {
 										f = f + "</table>";
 										f = f + "<input type=\"submit\" id=\"submitsuggestions\" value=\"Submit\" class=\"btn btn-default\" style=\"margin:20px; display:none\"/>";
 										f = f + "<label id=\"successmessageforappliedsuggestions\" style=\"margin-top: 15px; margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal; font-size:14px; color:green\"></label>";
-										
-								//		var f= "<label style=\"font-size: 15px; margin-left: 15px; margin-bottom:15px\">List of suggestions to increase the accuracy of classification model:</label>" + 
-								//			"<ul class=\" list-group\" style=\" margin-left: 15px; margin-right: 5px; margin-bottom: 5px; width:50%\">";
-								//		for (var i = 0; i < response['suggestion_list'].length; i++){
-								//			f = f + "<li class=\"list-group-item\"> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1] +
-								//				"</em> </br> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></li>";
-								//		}
-								//		f = f + "</ul>";
+					
 										$('#collapse3').html(f);
 										$('#suggestions_section').show();
 									}
@@ -1539,6 +1534,59 @@ $(function() {
 									$('#collapse1').removeClass("collapse in").addClass("collapse");
 	
 								}
+								else{
+									$('#NaiveBayesmodeldetails').hide();
+									$('#DecisionTreemodeldetails').hide();
+									$('#SVMmodeldetails').show();
+									
+									var b = "<img style=\"width:50%; height:50%; margin-left:auto; margin-right:auto; display:block\" src=\"/static/images/" + response['cm'] + "\" />";
+									$('#confusionmatrix3').html(b);
+									var d = "<table style=\"width:100%\" class=\" table table-bordered\"><tr><th> Category </th><th> Producer's accuracy </th><th> User's accuracy </th><th> Omission error </th><th> Commission error </th></tr>";
+									for (var i = 0; i < response['listofclasses'].length; i++) {
+										var producerAccuracy = parseFloat(response['prodacc'][i]);
+										var userAccuracy = parseFloat(response['useracc'][i]);
+										if (producerAccuracy < response['acc_limit'] && userAccuracy < response['acc_limit'] || (producerAccuracy + userAccuracy)< 2.0* response['acc_limit'] ){
+											d = d + "<tr bgcolor=\"#ff7f7f\"><td>" + response['listofclasses'][i] + "</td><td>";
+										}
+										else {
+											d = d + "<tr><td>" + response['listofclasses'][i] + "</td><td>";
+										}
+										d = d + producerAccuracy + "</td><td>" + userAccuracy + "</td><td>" + parseFloat(1 - producerAccuracy).toFixed(2)
+											+ "</td><td>" + parseFloat(1 - userAccuracy).toFixed(2)+ "</td></tr>";
+	
+									}
+									d = d + "</table>";
+									$('#accuracies2').html(d);
+									
+									if (response['suggestion_list'].length!=0){
+										var f= "<label style=\"font-size: 15px; margin-left: 15px; margin-bottom:15px\">List of suggestions to increase the accuracy of classification model:</label>";
+										f = f + "<label style=\"margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal\"> <em>Note: To apply one or more suggestions below," 
+											+ "click the checkboxes next to them. After you have selected all the suggestions you wish to apply, click on the 'Submit' button.</em>" 
+											+ "You may also go back to the 'Training Samples' page and edit the trainingset, if required.</label>";
+										f = f +	"<table class=\"table\" style=\" margin: 20px; width:95%\" id=\"suggestion_table\">";
+										for (var i = 0; i < response['suggestion_list'].length; i++){											
+											f = f + "<tr><td><input type=\"checkbox\" style = \" width:18px; height:18px\" name=\"suggestion\" class=\"suggestion\" value=\"" + response['suggestion_list'][i][0] + "_" + response['suggestion_list'][i][1]
+												+ "\" /></td><td> Merge categories - <em>" + response['suggestion_list'][i][0] + "</em> and <em>" + response['suggestion_list'][i][1]
+												+ "</em> OR remove category <em>" + response['suggestion_list'][i][0] + "</em></td>"
+												+ "<td><div class=\"radiox\" style=\"display:none; margin:0\"> <input type=\"radio\" name=\"mergeorremove" + i + "\" value=\"1\" class=\"mergeorremove\"/>&nbsp;Merge" 
+												+ "<input type=\"radio\" name=\"mergeorremove" + i + "\" value=\"2\" class=\"mergeorremove\" style=\"margin-left:20px\"/>&nbsp;Remove</div></td>"
+												+ "<td><input  type=\"text\" size=\"25\" placeholder=\"Enter merged category name\" style=\"display:none\" required /></td></tr>";
+
+										}
+										f = f + "</table>";
+										f = f + "<input type=\"submit\" id=\"submitsuggestions\" value=\"Submit\" class=\"btn btn-default\" style=\"margin:20px; display:none\"/>";
+										f = f + "<label id=\"successmessageforappliedsuggestions\" style=\"margin-top: 15px; margin-left:20px; margin-bottom:15px; margin-right: 25px; font-weight: normal; font-size:14px; color:green\"></label>";
+					
+										$('#collapse3').html(f);
+										$('#suggestions_section').show();
+									}
+									
+									$('#accuracies2').hide();
+									$('#confusionmatrix3').show();
+									$('#collapse1').removeClass("collapse in").addClass("collapse");
+									
+								}
+								
 								if (response['common_categories_comparison'] || response['split_categories_comparison'] || response['merged_categories_comparison']) {
 									a= "";
 									if (response['common_categories_comparison'] && response['common_categories_comparison'][0].length==9){
@@ -1686,6 +1734,17 @@ $(function() {
 				$('#confusionmatrix2').hide();
 				$('#accuracies').show();
 			}
+		});
+		
+		$('input[name="SVMmodeldetails"]').on('click',function(e) {
+			var detailsoption = $('input[name="SVMmodeldetails"]:checked').val();
+			if (detailsoption == '1') {
+				$('#confusionmatrix3').show();
+				$('#accuracies2').hide();
+			} else if (detailsoption == '2') {
+				$('#confusionmatrix3').hide();
+				$('#accuracies2').show();
+			} 
 		});
 		
 		$('#collapse3').on('click','.suggestion', function(e) {
