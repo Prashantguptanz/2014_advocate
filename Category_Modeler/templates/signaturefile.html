@@ -5,7 +5,7 @@
 <div class="container">
 	<form class="form-group" id="trainingoptions" name="trainingoptions" style="width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px; border-bottom: 0">
 		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >
-			<a role="button" data-toggle="collapse" href="#collapse1" aria-expanded="false" aria-controls="collapse1" style="color: #333; vertical-align:middle">Choose options to create signature file </a>
+			<a role="button" data-toggle="collapse" href="#collapse1" aria-expanded="false" aria-controls="collapse1" style="color: #333; vertical-align:middle">Choose options to build a classification model </a>
 		</legend>
 		<div id="collapse1" class="collapse in">
 			<div style="float: left; margin-left: 10px; margin-top: 10px">
@@ -55,9 +55,9 @@
 			</legend>
 			
 			<p style="margin-left: 10px; margin-right: 10px; margin-bottom: 15px">
-				To model a better classification model, AdvoCate provides 
+				To improve the accuracy of classification model, AdvoCate provides 
 				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Suggestions"data-content="AdvoCate analyses which categories are overlapping and confused and may give high classification error. Based on it, AdvoCate then provides suggestions to acheive better accuracy, such as merge two categories that are highly confused.">suggestions</a> 
-				about what can be changed in modelled categories based on the threshold limits of 
+				about what can be changed in the concepts to be modelled based on the threshold limits of 
 				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="J-M distance"data-content="It is a separability measure which suggests how separable the two probability distributions are. The value decreases exponentially from 1.41 to 0 with decreasing separation between two categories.">J-M distance</a>
 				and 
 				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Producer/User accuracy"data-content="Producer accuracy is the number of occurences correctly classified for a category divided by the total number of occurrences belonging to the category in the reference data. User accuracy is the number of occurrences correctly classified for a category divided by the total number of occurrences belonging to the category in the classified data.">producer/user accuracies </a>
@@ -82,7 +82,7 @@
 	</form>
 	<div class="form-group" id="signaturefiledetails" style="width: 100%; display:none; border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px">
 		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">
-			<a role="button" data-toggle="collapse" href="#collapse2" aria-expanded="true" aria-controls="collapse2" style="color: #333; vertical-align:middle">Signature file details</a>
+			<a role="button" data-toggle="collapse" href="#collapse2" aria-expanded="true" aria-controls="collapse2" style="color: #333; vertical-align:middle">Classification model details</a>
 		</legend>
 		
 		<div id="collapse2" class="collapse in">
@@ -146,7 +146,7 @@
 	<div id = "signaturefilecomparison" class="form-group" style="display:none; border-style: solid; border-width: 1px; overflow: auto; border-color: #E5E5E5 ">
 		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">
 			<a role="button" data-toggle="collapse" href="#collapse4" aria-expanded="true" aria-controls="collapse4" style="color: #333; vertical-align:middle">
-			Comparison between existing categories and the new modelled categories</a>
+			Comparison between the existing categories and the newly modelled categories</a>
 		</legend>
 		<div id="collapse4" class="collapse in">
 		</div>

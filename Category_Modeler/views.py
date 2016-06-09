@@ -251,6 +251,7 @@ def trainingsampleprocessing(request):
                 filename = data['TrainingsetName']
                 current_samples_filenames = [sample_id_and_ver[2] for sample_id_and_ver in request.session['current_samples_id_and_version']]
                 manageCsvData.combine_multiple_csv_files(current_samples_filenames, EXISTING_TRAINING_SAMPLES_LOCATION, EXISTING_TRAINING_DATA_LOCATION, filename)
+                manageCsvData.remove_no_data_value(filename, EXISTING_TRAINING_DATA_LOCATION, filename, '0')
                 request.session['current_training_file_name'] = filename
     
                 if Trainingset.objects.all().exists():
@@ -571,6 +572,7 @@ def trainingsampleprocessing(request):
                 current_samples_filenames = [sample_id_and_ver[2] for sample_id_and_ver in request.session['current_samples_id_and_version']]
                 
                 manageCsvData.combine_multiple_csv_files(current_samples_filenames, EXISTING_TRAINING_SAMPLES_LOCATION, EXISTING_TRAINING_DATA_LOCATION, filename)
+                manageCsvData.remove_no_data_value(filename, EXISTING_TRAINING_DATA_LOCATION, filename, '0')
                 request.session['current_training_file_name'] = filename
     
                 latesttsid = int (Trainingset.objects.latest("trainingset_id").trainingset_id) + 1
@@ -673,6 +675,10 @@ def trainingsampleprocessing(request):
                 else:
                     request.session['current_exploration_chain_viz'] = [current_step]
                
+                #print request.session['trainingset_version_and_categories_relationship']
+                print request.session['categories_split_from_existing']
+                print request.session['new_categories']
+                print request.session['existing_categories']
                 
                 if len(common_categories) != 0 and isinstance(common_categories[0], list)==False:
                     common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
@@ -683,6 +689,7 @@ def trainingsampleprocessing(request):
                 
             return HttpResponse("")
         else:
+            print request.session['trainingset_version_and_categories_relationship']
             trainingfilepkey = data['1']
             trid, ver = trainingfilepkey.split('+')
             trainingfilename = data['2']
@@ -691,6 +698,7 @@ def trainingsampleprocessing(request):
                 request.session['current_training_file_ver'] = ver
                 request.session['current_training_file_name'] = trainingfilename
             elif 'current_training_file_id' not in request.session:
+                print "I am here"
                 request.session['current_training_file_id'] = trid
                 request.session['current_training_file_ver'] = ver
                 request.session['current_training_file_name'] = trainingfilename
@@ -711,7 +719,6 @@ def trainingsampleprocessing(request):
                 if int(request.session['current_training_file_id']) != int(trid) or int(request.session['current_training_file_ver']) != int(ver):
                     old_trid = request.session['current_training_file_id']
                     old_ver = request.session['current_training_file_ver']
-                    
                     if 'trainingset_version_and_categories_relationship' in request.session:
                         not_existing = True
                         for each_set in request.session['trainingset_version_and_categories_relationship']:
@@ -783,6 +790,9 @@ def trainingsampleprocessing(request):
                             request.session['categories_split_from_existing'] = each_set[5]
                             request.session['categories_merged_from_new_and_existing']= each_set[6]
                             if_in_existing = True
+                            print request.session['new_categories']
+                            print request.session['existing_categories']
+                            print request.session['categories_split_from_existing']
                             break
                     
                     if if_in_existing == False:
@@ -961,6 +971,7 @@ def applyeditoperations(request):
             trainingfilename = fname
         if editoperation[0] == '1':
             nodata_value = editoperation[1]
+            print type(nodata_value)
             manageCsvData.remove_no_data_value(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", nodata_value)          
             tr_activity_details = ChangeTrainingsetActivityDetails(activity_id = tr_activity, operation = 'remove no data')
             tr_activity_details.save(force_insert=True)
@@ -1009,7 +1020,6 @@ def applyeditoperations(request):
             categories_merged_from_new_and_existing = []
             if 'new_categories' in request.session:
                 new_categories_while_exploring_changes = request.session['new_categories']
-                print new_categories_while_exploring_changes
             if 'existing_categories' in request.session:
                 existing_categories = request.session['existing_categories']
             if 'categories_merged_from_existing' in request.session:
@@ -1020,15 +1030,15 @@ def applyeditoperations(request):
                 categories_merged_from_new_and_existing = request.session['categories_merged_from_new_and_existing']
             
             #save the relationships of categories from trainingset, which is just versioned, with the categories from trainingset of existing taxonomy that we are trying to change
-            old_version_and_categories_relationships = [trid, ver, new_categories_while_exploring_changes, existing_categories, categories_merged_from_existing, categories_split_from_existing, categories_merged_from_new_and_existing]
-            print old_version_and_categories_relationships
+            old_version_and_categories_relationships = [trid, ver, [elem for elem in new_categories_while_exploring_changes], [elem for elem in existing_categories], [elem for elem in categories_merged_from_existing], [elem for elem in categories_split_from_existing], [elem for elem in categories_merged_from_new_and_existing]]
+            
             if 'trainingset_version_and_categories_relationship' in request.session:
                 trainingset_version_and_categories_relationship = request.session['trainingset_version_and_categories_relationship']
                 trainingset_version_and_categories_relationship.append(old_version_and_categories_relationships)
                 request.session['trainingset_version_and_categories_relationship'] = trainingset_version_and_categories_relationship
             else:
                 request.session['trainingset_version_and_categories_relationship'] = [old_version_and_categories_relationships]
-            
+                
             #Update the relationship of concepts when remove a concept
             if editoperation[0] == '2':
                 if concept_to_remove in new_categories_while_exploring_changes:
@@ -1082,7 +1092,6 @@ def applyeditoperations(request):
                     else:
                         allconceptsfromexisting = False
                         allconceptsfromnew = False
-                
                 if allconceptsfromnew == True:
                     for concept in editoperation[1]:
                         new_categories_while_exploring_changes.remove(concept)
@@ -1118,7 +1127,8 @@ def applyeditoperations(request):
                     new_concept_from_merging_existing_and_new_concepts.append(mergedconceptname)
                     categories_merged_from_new_and_existing.append(new_concept_from_merging_existing_and_new_concepts)
                     request.session['categories_merged_from_new_and_existing'] = categories_merged_from_new_and_existing
-                elif len(conceptsinbothnewandexisting) < len(editoperation[1]):
+                    
+                elif len(conceptsinbothnewandexisting) < len(editoperation[1]) and len(conceptsinbothnewandexisting)>0:
                     concepts_not_in_both_new_and_existing = []
                     for concept in editoperation[1]:
                         if any(concept in sublist for sublist in conceptsinbothnewandexisting)== False:
@@ -1174,6 +1184,8 @@ def applyeditoperations(request):
                                     continue
                                 else:
                                     merging_split_concepts = False
+                            print merging_split_concepts
+                            print editoperation[1]
                             if merging_split_concepts == True:
                                 if len(editoperation[1]) == (len(split_category)-1):
                                     categories_split_from_existing.remove(split_category)
@@ -1248,7 +1260,7 @@ def applyeditoperations(request):
                                 request.session['categories_split_from_existing'] = categories_split_from_existing
                                 break
                                 
-    
+    request.session.modified = True
     if 'new_categories' in request.session:
         print "1"                           
         print request.session['new_categories']
@@ -1264,7 +1276,6 @@ def applyeditoperations(request):
     if 'categories_split_from_existing' in request.session:
         print "5" 
         print request.session['categories_split_from_existing']
-
     
     #adding details for current exploration details for visualization
     old_trainingset_name = request.session['current_training_file_name']
@@ -1353,10 +1364,12 @@ def changethresholdlimits(request):
         request.session['accuracy_limit'] = acc_limit
         return HttpResponse("")
 
+
+
 @login_required
 @transaction.atomic
 def signaturefile(request):
-    request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
+    #print request.session['trainingset_version_and_categories_relationship']
     if 'currenteditoperations' in request.session:
         del request.session['currenteditoperations']
         request.session.modified = True
@@ -1380,8 +1393,6 @@ def signaturefile(request):
         modelname = "model_" + str(datetime.now())
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         statistical_methods = StatisticalMethods()
-        print classifiername
-        print classifier
         
         if (validationoption=='1'):
             validationtype="training data" 
@@ -1588,21 +1599,15 @@ def signaturefile(request):
                 customQuery = CustomQueries()
                 
                 old_categories, old_mean_vectors, old_covariance_mat = find_all_active_categories_and_their_comp_int_for_a_legend_version(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
-                
-                #old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
-                #old_trainingfile = TrainingSet(old_trainingset_name)
-                #old_covariance_mat = old_trainingfile.create_covariance_matrix()
-                #old_mean_vectors = old_trainingfile.create_mean_vectors()
                 new_categories = list(numpy.unique(trainingfile.target))
-                #old_categories = list(numpy.unique(old_trainingfile.target))
                 common_categories = request.session['existing_categories']
+                print common_categories
+               # print request.session['trainingset_version_and_categories_relationship']
+                print request.session['categories_split_from_existing']
+                print request.session['new_categories']
                 common_categories_comparison = []
                 if len(old_mean_vectors[0]) != len(mean_vectors[0][1]):
-                    print old_mean_vectors[0]
-                    print mean_vectors[0][1]
-                    print "I am here"
                     for common_category in common_categories:
-                        print common_category
                         single_category_comparison = []
                         index_of_common_category_in_accuracy_list = new_categories.index(common_category)
                         producerAccuracy = prodacc[index_of_common_category_in_accuracy_list]
@@ -1613,7 +1618,6 @@ def signaturefile(request):
                         single_category_comparison.append(producerAccuracy)
                         single_category_comparison.append(userAccuracy)
                         old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category)
-                        print old_category_details
                         if len(old_category_details) == 1:
                             single_category_comparison.append(old_category_details[0][2])
                             single_category_comparison.append(old_category_details[0][3])
@@ -1666,9 +1670,7 @@ def signaturefile(request):
                         
                         new_index = [i for i, each_vector in enumerate(mean_vectors) if  each_vector[0] == common_category][0]
                         model1 = NormalDistributionIntensionalModel(mean_vectors[new_index][1], covariance_mat[new_index][1])
-                        print mean_vectors[new_index][1]
                         num_of_comp_ver = 1
-                        print common_category
                         for each_old_category in old_categories:
                             if common_category in each_old_category:
                                 num_of_comp_ver = len(each_old_category) -3
@@ -1677,11 +1679,9 @@ def signaturefile(request):
                             
                         if num_of_comp_ver==1:
                             model2 = NormalDistributionIntensionalModel(old_mean_vectors[old_index], old_covariance_mat[old_index])
-                            print old_mean_vectors[old_index]
                             jm = model1.jm_distance(model2)
                             single_category_comparison.append(jm)
                             a = [common_category, jm]
-                            print a
                         else:
                             jm_for_multiple_comp_vers = ""
                             jm_list = []
@@ -1709,8 +1709,6 @@ def signaturefile(request):
                         for i in range(1, len(split_categories)-1):
                             index_of_existing_category_that_is_split = [j for j, each_vector in enumerate(old_mean_vectors) if  each_vector[0] == existing_category_that_is_split][0]
                             index_of_new_category = [j for j, each_vector in enumerate(mean_vectors) if  each_vector[0] == split_categories[i]][0]
-                            #index_of_existing_category_that_is_split = numpy.where(old_mean_vectors = existing_category_that_is_split)[0][0]
-                            #index_of_new_category = numpy.where(mean_vectors = split_categories[i])[0][0]
                             model1 = NormalDistributionIntensionalModel(mean_vectors[index_of_new_category][1], covariance_mat[index_of_new_category][1])
                             model2 = NormalDistributionIntensionalModel(old_mean_vectors[index_of_existing_category_that_is_split][1], old_covariance_mat[index_of_existing_category_that_is_split][1])
                             jm = model1.jm_distance(model2)
@@ -1728,11 +1726,7 @@ def signaturefile(request):
                         resulting_merged_category = merged_categories[-1]
                         for i in range(0, len(merged_categories)-1):
                             index_of_resulting_merged_category = [j for j, each_vector in enumerate(mean_vectors) if  each_vector[0] == resulting_merged_category][0]
-                            print merged_categories
-                            print old_mean_vectors
                             index_of_merged_category = [j for j, each_vector in enumerate(old_mean_vectors) if  each_vector[0] == merged_categories[i]][0]
-                            #index_of_resulting_merged_category = numpy.where(mean_vectors = resulting_merged_category)[0][0]
-                            #index_of_merged_category = numpy.where(old_mean_vectors = merged_categories[i])[0][0]
                             model1 = NormalDistributionIntensionalModel(mean_vectors[index_of_resulting_merged_category][1], covariance_mat[index_of_resulting_merged_category][1])
                             model2 = NormalDistributionIntensionalModel(old_mean_vectors[index_of_merged_category][1], old_covariance_mat[index_of_merged_category][1])
                             jm = model1.jm_distance(model2)
@@ -1915,7 +1909,9 @@ def find_all_active_categories_and_their_comp_int_for_a_legend_version(legend_id
                 mean_vector_list.append(value)
             mean_vector_list.pop(0)
             no_of_bands = 0
-            if mean_vector_list[-1] == 'None':
+            print mean_vector_list[-1]
+            print type(mean_vector_list[-1])
+            if mean_vector_list[-1] is None:
                 mean_vectors.append(mean_vector_list[:3])
                 no_of_bands =3
             else:

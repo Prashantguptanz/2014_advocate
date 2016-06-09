@@ -275,12 +275,12 @@ class StatisticalMethods:
         producersAccuracy=[]
         usersAccuracy = []
         for i, row in enumerate(confusionMatrix):
-            if (float(sumColumns[i])) !=0:
-                producersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumColumns[i]))))
+            if (float(sumRows[i])) !=0:
+                producersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumRows[i]))))
             else:
                 producersAccuracy.insert(i, 0)
-            if (float(sumRows[i])) != 0:
-                usersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumRows[i]))))
+            if (float(sumColumns[i])) != 0:
+                usersAccuracy.insert(i, "{0:.2f}".format(float(row[i])/(float(sumColumns[i]))))
             else:
                 usersAccuracy.insert(i, 0)
             
