@@ -18,54 +18,7 @@
 		</legend>
 		<div id="collapse11" class="collapse in">
 			<p style="font-size: 14px; margin-left: 15px; margin-right: 15px">
-				To model data-driven categories for a set of concepts (Taxonomy), AdvoCate provides the following four activities: 
-				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Create trainingset activity" data-content="This activity allows a user to create a new trainingset. User have to provide the training samples and other relevant details for individual concepts, and AdvoCate combine them to create a new trainingset. In case of exploring changes in an existing taxonomy, user may also use the existing trainingset in AdvoCate as a reference set.">
-					Create trainingset
-				</a>
-				, 
-				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Change trainingset activity" data-content="This activity allows a user to remove, merge or split existing concepts in a trainingset to create a new version. create a new trainingset.">
-					Change trainingset
-				</a>
-				, 
-				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Learning activity" data-content="This activity allows a user to create a new classification model, which consists of signature files of a set of concepts to be modelled. A user may use different classification methods (classifiers) to create different classification models.">
-					Learning activity
-				</a>
-				and 
-				<a href="#" data-toggle="popover" data-placement="top" data-container="body"  title="Classification activity" data-content="This activity allows a user to classify a satellite image into a set of concepts using a classification model built in the previous Learning activity.">
-					Classification activity
-				</a>
-				. The exploration path shows how a user traverses through these activities to model a new taxonomy or changes in an existing taxonomy. The details of the exploration path
-				for the current session is shown below:
-			</p>
-			<br />
-			<p style="font-size: 14px;  margin-left: 30px; margin-right: 10px">
-			 	<em>Note: click on an activity to see more details about it.</em>
-			 </p>
-			
-			<div id="explorationchaindiv" >
-			 	<dl id = "explorationchain" style=" margin-left: 30px; width: 700px">
-			 		{% for activity in exploration_chain %}
-			 		{% with forloop.counter|cut:" " as index %}
-			 		<dt style="cursor:pointer; font-weight:normal; line-height: 2.5em; background:#e4e4e4; border-bottom: 1px solid #c4c4c4; border-top: 1px solid white"> 
-			 			&nbsp;&nbsp;  {{forloop.counter}}. &nbsp;&nbsp;&nbsp;
-			 			{% for details in activity%}
-			 				{% if forloop.first %}
-			 					{{details}} </dt>			 				
-			 				{% else %}
-			 					{% for each_detail in details %}
-			 					<dd style=" margin-left:10px; padding: 0.5em 0; border-bottom: 1px solid #c4c4c4; display:none"> &nbsp;&nbsp; {{forloop.counter}}. &nbsp; &nbsp; &nbsp; {{each_detail}} </dd>
-			 					{% endfor %}
-			 				{% endif %}
-			 			
-			 			{% endfor %}
-			 		
-			 		{% endwith %}
-			 		{% endfor %}
-			 	</dl>
-			 </div>
-			
-			<p style="font-size: 14px; margin-left: 15px; margin-right: 15px">
-				The above exploration process leads to the conceptualization of a taxonomy <strong><em>{{new_taxonomyName}}</em></strong> with the following concepts:
+				The exploration process, as shown on the right, leads to the conceptualization of the taxonomy <strong><em>{{new_taxonomyName}}</em></strong> with the following concepts:
 				{% for concept in conceptsList %}
 				<strong>{{concept}}</strong>, 	
 				{% endfor %}		
@@ -159,11 +112,33 @@
 				Below is given the different lists of categories and the changes that occurred:
 			</p> 
 			
+						
+			{% if new_categories_details|length|get_digit:"-1" > 0 %}
+				
+			<br />	 
+			<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
+				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to the new concepts modelled: </strong></caption>
+				<tr>
+					<th>Concept</th>
+					<th>User accuracy</th>
+					<th>Producer accuracy</th>	 		
+				</tr>
+				{% for concept in new_categories_details %}
+				<tr>
+					{% for data in concept %}
+					<td>{{data}}</td>
+					{% endfor %}
+				</tr>
+			 	{% endfor %}
+			 </table>
+			 <br /><br />
+			
+			{% endif %}
 	 		
 	 		{% if common_categories_comparison_details|length|get_digit:"-1" > 0 %}
 	 		
 			<table class=" table table-bordered" style=" width:80%; margin: 0 auto">
-				<caption style="margin-bottom: 7px"><strong>Comparison between the categories corresponding to the common concepts in the existing taxonomy and the new modeled taxonomy: </strong></caption>
+				<caption style="margin-bottom: 7px"><strong>Comparison between categories corresponding to the common concepts: </strong></caption>
 				<br />
 				<tr>
 					<th>Concept</th>
@@ -198,33 +173,11 @@
 			 
 			 {% endif %}
 			
-			{% if new_categories_details|length|get_digit:"-1" > 0 %}
-				
-			<br />	 
-			<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
-				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to new concepts in the new modeled taxonomy: </strong></caption>
-				<tr>
-					<th>Concept</th>
-					<th>User accuracy</th>
-					<th>Producer accuracy</th>	 		
-				</tr>
-				{% for concept in new_categories_details %}
-				<tr>
-					{% for data in concept %}
-					<td>{{data}}</td>
-					{% endfor %}
-				</tr>
-			 	{% endfor %}
-			 </table>
-			 <br /><br />
-			
-			{% endif %}
-			
 			{% if categories_merged_from_existing_details|length|get_digit:"-1" > 0 %}
 				
 			<br />	 
 			<table class=" table table-bordered" style=" width:80%; margin: 0 auto">
-				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to the concepts resulted from merging existing concepts in the taxonomy: </strong></caption>
+				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to the concepts resulted from merging the existing concepts: </strong></caption>
 				<tr>
 					<th>New merged concept</th>
 					<th>User accuracy</th>
@@ -251,12 +204,39 @@
 			
 			{% endif %}
 			
+			{% if categories_merged_from_new_and_existing_details|length|get_digit:"-1" > 0 %}
+				
+			<br />	 
+			<table class=" table table-bordered" style=" width:80%; margin: 0 auto">
+				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to the concepts that are generalization of existing concepts: </strong></caption>
+				<tr>
+					<th>New generalized concept</th>
+					<th>User accuracy</th>
+					<th>Producer accuracy</th>
+					<th>Existing concept</th>
+					<th>
+						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Extensional containment" data-content="The extensional containment tells how much extension of the new concept is contained within the extension of the concept it split from.">
+						Extensional containment</a>
+					</th>	
+				</tr>
+				{% for concept in categories_merged_from_new_and_existing_details %}
+				<tr>
+					{% for data in concept %}
+					<td>{{data}}</td>
+					{% endfor %}
+				</tr>
+			 	{% endfor %}
+			 </table>
+			 <br /><br />
+			
+			{% endif %}
+			
 			
 			{% if categories_split_from_existing_details|length|get_digit:"-1" > 0 %}
 				
 			<br />	 
 			<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
-				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to the concepts resulted from splitting an existing concept in the taxonomy: </strong></caption>
+				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to the concepts resulted from splitting an existing concept: </strong></caption>
 				<tr>
 					<th>New concept</th>
 					<th>Split from</th>

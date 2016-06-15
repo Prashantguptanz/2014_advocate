@@ -1,0 +1,44 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="container" style="margin-bottom: 50px">
+	
+	{% csrf_token %}
+	<div class="form-group" style="width: 100%; border-style: solid; border-width: 1px; border-color: #E5E5E5;margin-bottom:0px">
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >
+			<a role="button" data-toggle="collapse" href="#collapse31" aria-expanded="false" aria-controls="collapse31" style="color: #333; vertical-align:middle">
+				K-means Clustering</a>
+		</legend>
+		<div id="collapse31" class="collapse in">
+			<form id="clusteringdetails" class="form-group" style="margin-top: 15px">
+				<label for ="clusteringfile" style="font-weight: normal; margin-left: 20px">Upload data for clustering: </label>
+				<span>
+				<input type="file" id="clusteringfile" accept=".tif" style = "display: inline; margin-left: 50px" multiple required>
+				</span>
+				<br /><br />
+				
+				<label for ="numberofclusters" style="font-weight: normal; margin-left: 20px">Number of clusters: </label>
+				<span>
+				<input type="text" id="numberofclusters" size = "11" style = "display: inline; margin-left: 93px" required>
+				</span>
+				<br /><br />
+
+				<input type="submit" id="doclustering" value="Submit" class="btn btn-default" style="margin-left:20px"/>
+			</form>
+		</div>
+	</div>
+	
+	<div id = "scatterplot_display" style= "border-style: solid; border-width: 1px; border-color: #E5E5E5; display:none; margin-bottom: 0px">
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center" >
+			<a role="button" data-toggle="collapse" href="#collapse32" aria-expanded="false" aria-controls="collapse32" style="color: #333; vertical-align:middle">
+			Scatterplot with cluster centres</a>
+		</legend>
+		<div id="collapse32" class="collapse" style="margin-left: 10px; margin-right: 10px; overflow: scroll; height: 650px ">
+			
+		</div>
+	</div>
+	
+	
+	
+</div>
+
+{% endblock %}

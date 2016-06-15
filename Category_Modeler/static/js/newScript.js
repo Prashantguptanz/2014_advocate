@@ -263,6 +263,7 @@ $(function() {
 		setTrainingSamplesTableHeight();
 	});
 
+	
 	// Script for 'Training Samples' page
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/trainingsample/')) {
@@ -457,22 +458,25 @@ $(function() {
 					if (response['new_taxonomy'] == 'True'){
 						x = "<div style = \"width:220px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Creating new taxonomy</span></div>";
 						for (var i = 0; i < response['current_exploration_chain'].length; i++){
-							x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin: auto\"></div>";
+							x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
 							if (response['current_exploration_chain'][i][0]=='Create trainingset'){
-								bgcolor = "#A1BE95";
+								bgcolor = "#fbb4ae";
 							}
 							else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
-								bgcolor = "#E2DFA2";
+								bgcolor = "#b3cde3";
 							}
 							else if (response['current_exploration_chain'][i][0]=='Training activity'){
-								bgcolor = "#92AAC7";
+								bgcolor = "#ccebc5";
+							}
+							else if (response['current_exploration_chain'][i][0]=='Classification'){
+								bgcolor = "#decbe4";
 							}
 							else{
-								bgcolor = "#ED5752";
+								bgcolor = "#fed9a6";
 							}
 							x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-							bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
-							"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></div>";
+								bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+								"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></span></div>";
 						}
 						$('#collapse0').html(x);
 						$('pop_con').popover(popOverSettings);
@@ -869,22 +873,25 @@ $(function() {
 						if (response['new_taxonomy'] == 'False'){
 							x = "<div style = \"width:310px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Exploring changes in existing taxonomy</span></div>";
 							for (var i = 0; i < response['current_exploration_chain'].length; i++){
-								x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin: auto\"></div>";
+								x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
 								if (response['current_exploration_chain'][i][0]=='Create trainingset'){
-									bgcolor = "#A1BE95";
+									bgcolor = "#fbb4ae";
 								}
 								else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
-									bgcolor = "#E2DFA2";
+									bgcolor = "#b3cde3";
 								}
 								else if (response['current_exploration_chain'][i][0]=='Training activity'){
-									bgcolor = "#92AAC7";
+									bgcolor = "#ccebc5";
+								}
+								else if (response['current_exploration_chain'][i][0]=='Classification'){
+									bgcolor = "#decbe4";
 								}
 								else{
-									bgcolor = "#ED5752";
+									bgcolor = "#fed9a6";
 								}
 								x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-								bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
-								"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></div>";
+									bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+									"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></span></div>";
 							}
 							$('#collapse0').html(x);
 							$('pop_con').popover(popOverSettings);
@@ -1298,20 +1305,23 @@ $(function() {
 					for (var i = 0; i < response['current_exploration_chain'].length; i++){
 						x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
 						if (response['current_exploration_chain'][i][0]=='Create trainingset'){
-							bgcolor = "#A1BE95";
+							bgcolor = "#fbb4ae";
 						}
 						else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
-							bgcolor = "#E2DFA2";
+							bgcolor = "#b3cde3";
 						}
 						else if (response['current_exploration_chain'][i][0]=='Training activity'){
-							bgcolor = "#92AAC7";
+							bgcolor = "#ccebc5";
+						}
+						else if (response['current_exploration_chain'][i][0]=='Classification'){
+							bgcolor = "#decbe4";
 						}
 						else{
-							bgcolor = "#ED5752";
+							bgcolor = "#fed9a6";
 						}
 						x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-							bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
-							"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></div>";
+							bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+							"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></span></div>";
 					}
 					$('#collapse0').html(x);
 					$('.pop_con').popover(popOverSettings);
@@ -1660,16 +1670,19 @@ $(function() {
 									for (var i = 0; i < response['current_exploration_chain'].length; i++){
 										x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
 										if (response['current_exploration_chain'][i][0]=='Create trainingset'){
-											bgcolor = "#A1BE95";
+											bgcolor = "#fbb4ae";
 										}
 										else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
-											bgcolor = "#E2DFA2";
+											bgcolor = "#b3cde3";
 										}
 										else if (response['current_exploration_chain'][i][0]=='Training activity'){
-											bgcolor = "#92AAC7";
+											bgcolor = "#ccebc5";
+										}
+										else if (response['current_exploration_chain'][i][0]=='Classification'){
+											bgcolor = "#decbe4";
 										}
 										else{
-											bgcolor = "#ED5752";
+											bgcolor = "#fed9a6";
 										}
 										x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
 											bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
@@ -1818,16 +1831,19 @@ $(function() {
 									for (var i = 0; i < response['current_exploration_chain'].length; i++){
 										x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
 										if (response['current_exploration_chain'][i][0]=='Create trainingset'){
-											bgcolor = "#A1BE95";
+											bgcolor = "#fbb4ae";
 										}
 										else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
-											bgcolor = "#E2DFA2";
+											bgcolor = "#b3cde3";
 										}
 										else if (response['current_exploration_chain'][i][0]=='Training activity'){
-											bgcolor = "#92AAC7";
+											bgcolor = "#ccebc5";
+										}
+										else if (response['current_exploration_chain'][i][0]=='Classification'){
+											bgcolor = "#decbe4";
 										}
 										else{
-											bgcolor = "#ED5752";
+											bgcolor = "#fed9a6";
 										}
 										x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
 											bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
@@ -1862,20 +1878,23 @@ $(function() {
 									for (var i = 0; i < response['current_exploration_chain'].length; i++){
 										x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
 										if (response['current_exploration_chain'][i][0]=='Create trainingset'){
-											bgcolor = "#A1BE95";
+											bgcolor = "#fbb4ae";
 										}
 										else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
-											bgcolor = "#E2DFA2";
+											bgcolor = "#b3cde3";
 										}
 										else if (response['current_exploration_chain'][i][0]=='Training activity'){
-											bgcolor = "#92AAC7";
+											bgcolor = "#ccebc5";
+										}
+										else if (response['current_exploration_chain'][i][0]=='Classification'){
+											bgcolor = "#decbe4";
 										}
 										else{
-											bgcolor = "#ED5752";
+											bgcolor = "#fed9a6";
 										}
 										x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
-											bgcolor + "; margin: auto; float:right; margin-right:125px\"><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
-											"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></div>";
+											bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+											"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></span></div>";
 									}
 									$('#collapse0').html(x);
 									$('.pop_con').popover(popOverSettings);
@@ -1894,8 +1913,79 @@ $(function() {
 		});
 		
 	}
+	
+	//Script for 'unsupervised classification' page
+	
+	if (loc.match('http://127.0.0.1:8000/AdvoCate/unsupervised/')) {
+		
+		$('#doclustering').on('click', function(e) {
+			$this = $('#clusteringdetails');
+			if ($this[0][0].files.length != 0 && $this[0][1].value != ""){
+				e.preventDefault();				
+				clusteringfiles = $this[0][0].files;								
+				var formdata = new FormData();
+				$.each(clusteringfiles, function(i, file){
+					formdata.append('file', file);
+				});
+				
+				formdata.append('numberofclusters', $this[0][1].value);
+				$.ajax({
+					type : "POST",
+					url : "http://127.0.0.1:8000/AdvoCate/unsupervised/",
+					async : true,
+					processData : false,
+					contentType : false,
+					data : formdata,
+					success : function(response) {
+						$('#scatterplot_display').show();
+						var a = "<img style=\"width:95%; align:center\" src=\"/static/images/" + response['scatterplot'] + "\" />";
+						$('#collapse32').html(a);
+						$('#collapse32').show();
+						$('#collapse31').removeClass("collapse in").addClass("collapse");
+						
+						if (response['new_taxonomy']){
+							if (response['new_taxonomy'] == 'True'){
+								x = "<div style = \"width:220px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Creating new taxonomy</span></div>";
+							}
+							else{
+								x = "<div style = \"width:310px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin: auto\"><span>Start: Exploring changes in existing taxonomy</span></div>";
+							}
+							for (var i = 0; i < response['current_exploration_chain'].length; i++){
+								x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
+								if (response['current_exploration_chain'][i][0]=='Create trainingset'){
+									bgcolor = "#fbb4ae";
+								}
+								else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
+									bgcolor = "#b3cde3";
+								}
+								else if (response['current_exploration_chain'][i][0]=='Training activity'){
+									bgcolor = "#ccebc5";
+								}
+								else if (response['current_exploration_chain'][i][0]=='Classification'){
+									bgcolor = "#decbe4";
+								}
+								else{
+									bgcolor = "#fed9a6";
+								}
+								x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
+									bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
+									"\" data-html=\"true\" data-toggle=\"popover\" data-content=\"" + response['current_exploration_chain'][i][2] + "\">" + response['current_exploration_chain'][i][0] + "</a></span></div>";
+							}
+							$('#collapse0').html(x);
+							$('.pop_con').popover(popOverSettings);
+							
+						}
+					}
+				});
+				
+			}
+		});
+		
+		
+	}
+	
 
-	// Script for 'Classification' page
+	// Script for 'Supervised Classification' page
 
 	if (loc.match('http://127.0.0.1:8000/AdvoCate/supervised/')) {
 		// Script to deal with when the test file is uploaded
@@ -1969,16 +2059,19 @@ $(function() {
 							for (var i = 0; i < response['current_exploration_chain'].length; i++){
 								x = x + "<div style=\"width:1px; height:80px; border: 1px solid rgba(0, 0, 0, 0.5);  margin-right:190px; float:right\"></div>";
 								if (response['current_exploration_chain'][i][0]=='Create trainingset'){
-									bgcolor = "#A1BE95";
+									bgcolor = "#fbb4ae";
 								}
 								else if (response['current_exploration_chain'][i][0]=='Change trainingset'){
-									bgcolor = "#E2DFA2";
+									bgcolor = "#b3cde3";
 								}
 								else if (response['current_exploration_chain'][i][0]=='Training activity'){
-									bgcolor = "#92AAC7";
+									bgcolor = "#ccebc5";
+								}
+								else if (response['current_exploration_chain'][i][0]=='Classification'){
+									bgcolor = "#decbe4";
 								}
 								else{
-									bgcolor = "#ED5752";
+									bgcolor = "#fed9a6";
 								}
 								x = x + "<div style=\"width:135px; height:35px; line-height:35px; text-align: center; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background:" +
 									bgcolor + "; margin: auto; float:right; margin-right:125px\"><span><a style= \"color: #000\"href=\"javascript://\" rel=\"popover\" title=\"" + response['current_exploration_chain'][i][1] + 
@@ -2236,6 +2329,7 @@ $(function() {
 				$('#implement').hide();
 				$('#commitsuccessmessage').show();
 				$('#successmessage').html(data);
+				$('#collapse11').removeClass("collapse").addClass("collapse in");
 			});
 		});
 		
@@ -2249,6 +2343,7 @@ $(function() {
 				$('#implement').hide();
 				$('#commitsuccessmessage').show();
 				$('#successmessage').html(data);
+				$('#collapse11').removeClass("collapse").addClass("collapse in");
 			});
 			
 		});

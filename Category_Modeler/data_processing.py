@@ -72,25 +72,29 @@ class ManageRasterData:
 
 # The method combines multiple training raster files to create a csv file. Here we assume that each file has same number of bands. 
 # Each pixel is stored as a row in the csv file along with its class attribute. The class name is taken from the raster file name.         
-    def combine_multiple_raster_files_to_csv_file(self, raster_files, targetFileName, targetFileLocation, className=""):
+    def combine_multiple_raster_files_to_csv_file(self, raster_files, targetFileName, targetFileLocation, className="", AddClassName=True):
         
         columns, rows, noOfBands, driver, originX, originY, pixelWidth, pixelHeight, prj = self.extract_raster_info(raster_files[0])
         
         with BufferedWriter( FileIO( '%s/%s' % (targetFileLocation, targetFileName), "wb" ) ) as csvfile:
             spamwriter = csv.writer(csvfile, delimiter=',')
             
-            if noOfBands == 3:
-                spamwriter.writerow(['band1', 'band2', 'band3', 'class'])
-            else:
-                spamwriter.writerow(['band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7', 'band8', 'class'])
-            csvfile.close();
+            if AddClassName == True:
+                if noOfBands == 3:
+                    spamwriter.writerow(['band1', 'band2', 'band3', 'class'])
+                else:
+                    spamwriter.writerow(['band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7', 'band8', 'class'])
+                csvfile.close();
         
     
             for eachFile in raster_files:
-                if className =="":
-                    tempclassName = eachFile.split('.', 1)[0]
-                    className = ''.join([i for i in tempclassName if not i.isdigit()])
-                rasterArray = self.convert_raster_to_array(eachFile, className)
+                if AddClassName == True:
+                    if className =="":
+                        tempclassName = eachFile.split('.', 1)[0]
+                        className = ''.join([i for i in tempclassName if not i.isdigit()])
+                    rasterArray = self.convert_raster_to_array(eachFile, className)
+                else:
+                    rasterArray = self.convert_raster_to_array(eachFile)
                   
                 with BufferedWriter( FileIO( '%s%s' % (targetFileLocation, targetFileName), "a" ) ) as csvfile:
                     spamwriter = csv.writer(csvfile, delimiter=',')
@@ -214,7 +218,8 @@ class ManageCSVData:
         f = csv.writer(open('%s%s' %(file_location, targetfile), "wb"))
         
         features = next(reader)
-        f.writerow(features)
+        if features[0] == 'band1':
+            f.writerow(features)
         
         if len(features) == 4:
             for line in reader:

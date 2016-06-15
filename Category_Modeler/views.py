@@ -1,5 +1,7 @@
 import csv, json, numpy, pydot, os, re
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib
 from matplotlib.colors import ListedColormap
 from io import FileIO, BufferedWriter
 from datetime import datetime
@@ -14,12 +16,13 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db import transaction
 from sklearn import tree, svm, cross_validation, metrics
+from sklearn.cluster import KMeans
 from sklearn.externals import joblib
 from sklearn.naive_bayes import GaussianNB
 from sklearn.externals.six import StringIO
 from Category_Modeler.models import Trainingset, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity, TrainingsampleForCategory, ChangeTrainingsetActivityDetails
 from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Legend, TrainingsetTrainingsamples, TrainingsampleCollection, CreateTrainingsetActivity
-from Category_Modeler.models import  CreateTrainingsetActivityOperations, SatelliteImage, ClassifiedSatelliteImage
+from Category_Modeler.models import  CreateTrainingsetActivityOperations, SatelliteImage, ClassifiedSatelliteImage, ClusteringActivity
 from Category_Modeler.measuring_categories import TrainingSet, NormalDistributionIntensionalModel, DecisionTreeIntensionalModel, StatisticalMethods, ClassifiedFile
 from Category_Modeler.data_processing import ManageRasterData, ManageCSVData
 from Category_Modeler.database_transactions import UpdateDatabase, CustomQueries
@@ -29,6 +32,7 @@ from Category_Modeler.database_transactions import UpdateDatabase, CustomQueries
 TRAINING_SAMPLES_IMAGES_LOCATION = 'Category_Modeler/static/data/'
 EXISTING_TRAINING_SAMPLES_LOCATION = 'Category_Modeler/static/trainingsamples/'
 EXISTING_TRAINING_DATA_LOCATION = 'Category_Modeler/static/trainingfiles/'
+CLUSTERING_DATA_LOCATION = 'Category_Modeler/static/clusteringfiles/'
 CLASSIFICATION_MODEL_LOCATION = 'Category_Modeler/static/classificationmodel/'
 VALIDATION_DATA_LOCATION = 'Category_Modeler/static/validationfiles/'
 IMAGE_LOCATION = 'Category_Modeler/static/images/'
@@ -248,6 +252,7 @@ def trainingsampleprocessing(request):
     
           
             if isitfinalsample=='True':
+                print "iam"
                 filename = data['TrainingsetName']
                 current_samples_filenames = [sample_id_and_ver[2] for sample_id_and_ver in request.session['current_samples_id_and_version']]
                 manageCsvData.combine_multiple_csv_files(current_samples_filenames, EXISTING_TRAINING_SAMPLES_LOCATION, EXISTING_TRAINING_DATA_LOCATION, filename)
@@ -689,7 +694,6 @@ def trainingsampleprocessing(request):
                 
             return HttpResponse("")
         else:
-            print request.session['trainingset_version_and_categories_relationship']
             trainingfilepkey = data['1']
             trid, ver = trainingfilepkey.split('+')
             trainingfilename = data['2']
@@ -2005,6 +2009,106 @@ def plot_confusion_matrix(cm, targetValueArray, title='Confusion matrix', cmap=p
 
 @login_required
 @transaction.atomic 
+def unsupervised(request):
+    user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
+    if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
+        messages.error(request, "Choose an activity before you proceed further")
+        return HttpResponseRedirect("/AdvoCate/home/", {'user_name': user_name})
+    
+    if request.method == 'POST' and request.is_ajax():
+        data = request.POST
+        clusteringFilesList = request.FILES.getlist('file')
+        number_of_clusters = data['numberofclusters']
+        #Combine multiple samples and save it as a csv file
+        managedata = ManageRasterData()
+        manageCsvData = ManageCSVData()
+        clusteringfilename = "cluster_" + str(datetime.now()) + ".csv"
+        clusteringFilenameList = [clusteringfile.name for clusteringfile in clusteringFilesList]            
+        managedata.combine_multiple_raster_files_to_csv_file(clusteringFilenameList, clusteringfilename, CLUSTERING_DATA_LOCATION, "", False)
+        manageCsvData.remove_no_data_value(clusteringfilename, CLUSTERING_DATA_LOCATION, clusteringfilename, '0')
+        
+        with open('%s%s' % (CLUSTERING_DATA_LOCATION, clusteringfilename), 'rU') as clustering_file:
+            datareader = csv.reader(clustering_file, delimiter=',')
+            samples = list(datareader)
+            num_of_bands = len(samples[0])
+            clustering_file.close();
+            samples_as_nparray = numpy.asarray(samples, dtype=numpy.float32)
+            
+        
+        
+        clustering_method = KMeans(n_clusters = int(number_of_clusters))
+        cluster_labels = clustering_method.fit_predict(samples_as_nparray)
+        if num_of_bands == 8:
+            fig, axes = plt.subplots(10, 3, squeeze=False)
+            fig.set_size_inches(35, 70)
+        else: 
+            fig, axes = plt.subplots(1, 3, squeeze=False)
+            fig.set_size_inches(7, 20)
+        colors = cm.spectral(cluster_labels.astype(float) / int(number_of_clusters))
+        matplotlib.rcParams.update({'font.size':20})
+        xband = 0
+        yband = 1
+        for row in axes:
+            for cell in row:
+                cell.scatter(samples_as_nparray[:, xband], samples_as_nparray[:, yband], marker = '.', s=30, lw=0, alpha = 0.7, c = colors)
+                xtitle = "Band" + str(xband+1)
+                ytitle = "Band" + str(yband+1)
+                cell.set_xlabel(xtitle)
+                cell.set_ylabel(ytitle)
+                centers = clustering_method.cluster_centers_
+                cell.scatter(centers[:, xband], centers[:, yband], marker='o', c="white", alpha = 1, s= 200)
+                for i, c in enumerate(centers):
+                    cell.scatter(c[xband], c[yband], marker='$%d$' % i, alpha=1, s=50)
+                if yband == num_of_bands-1 and xband<num_of_bands-2:
+                    xband = xband + 1
+                    yband = xband + 1
+                elif yband < num_of_bands-1 and xband<num_of_bands-1:
+                    yband = yband + 1
+                else:
+                    break
+            if xband>=num_of_bands-1:
+                break
+        image_name = "cluster_scatter_plot_" + str(datetime.now()) + ".png"
+        plt.savefig("%s/%s" % (IMAGE_LOCATION, image_name),  bbox_inches='tight')
+        
+        authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
+        ca = ClusteringActivity(clustered_file_name=clusteringfilename, clustered_file_location = CLUSTERING_DATA_LOCATION, scatterplot_image_name = image_name, scatterplot_image_location= IMAGE_LOCATION, completed_by=authuser_instance)
+        ca.save()
+        exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'clustering', activity_instance = ca.id)
+        exp_chain.save(force_insert=True)
+        request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
+
+        data_content = "Clustered file: " + clusteringfilename + "<br/> Scatterplot image: " + image_name + "<br/> Number of clusters: " + number_of_clusters
+        current_step = ['Clustering', 'Clustering', data_content]
+        
+        if 'current_exploration_chain_viz' in request.session:
+            current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+            if current_exploration_chain_viz[-1][0] == 'End':
+                current_exploration_chain_viz.pop()
+            current_exploration_chain_viz.append(current_step)
+            request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
+        else:
+            request.session['current_exploration_chain_viz'] = [current_step]
+            
+        if 'existing_taxonomy_name' in request.session:
+            return JsonResponse({'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'scatterplot': image_name})
+        else:
+            return JsonResponse({'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'scatterplot': image_name})
+    else:
+        if 'current_exploration_chain_viz' in request.session:
+            current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+            if current_exploration_chain_viz[-1][0] == 'End':
+                current_exploration_chain_viz.pop()
+            if 'existing_taxonomy_name' in request.session:
+                return render(request, 'unsupervised.html', {'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz']})
+            else:
+                return render(request, 'unsupervised.html', {'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz']})
+        
+        return render (request, 'unsupervised.html', {'user_name':user_name})
+    
+
+@login_required
+@transaction.atomic 
 def supervised(request):
     user_name = (AuthUser.objects.get(id=request.session['_auth_user_id'])).username
     if 'new_taxonomy_name' not in request.session and 'existing_taxonomy_name' not in request.session :
@@ -2071,10 +2175,11 @@ def supervised(request):
                 old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
                 trs = TrainingSet(old_trainingset)
                 oldCategories = list(numpy.unique(trs.target))
-                change_matrix, J_Index_for_common_categories, extensional_containment_for_categories_split_from_existing, extensional_containment_for_category_merged_from_existing = create_change_matrix(request, oldCategories, predictedValue, rows, columns)
+                change_matrix, J_Index_for_common_categories, extensional_containment_for_categories_split_from_existing, extensional_containment_for_category_merged_from_existing, extensional_containment_for_category_merged_from_new_and_existing = create_change_matrix(request, oldCategories, predictedValue, rows, columns)
                 request.session['J_Index_for_common_categories'] = J_Index_for_common_categories
                 request.session['extensional_containment_for_categories_split_from_existing'] = extensional_containment_for_categories_split_from_existing
                 request.session['extensional_containment_for_category_merged_from_existing'] = extensional_containment_for_category_merged_from_existing
+                request.session['extensional_containment_for_category_merged_from_new_and_existing'] = extensional_containment_for_category_merged_from_new_and_existing
                     
                 return  JsonResponse({'map': outputmapinJPG, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'categories': listofcategories, 'change_matrix':change_matrix, 'old_categories': oldCategories});
             
@@ -2222,9 +2327,29 @@ def create_change_matrix(request, oldCategories, newPredictedValues, rows, colum
             if len(containment_details) != 0:
                 extensional_containment_for_category_merged_from_existing.append(containment_details)
                     
-    #categories_merged_from_new_and_existing - still need to do it        
+
+    extensional_containment_for_category_merged_from_new_and_existing = []
+    if 'categories_merged_from_new_and_existing' in request.session:
+        for index, category in enumerate(list_of_new_categories):
+            containment_details = []
+            for merge_categories in request.session['categories_merged_from_new_and_existing']:
+                if category in merge_categories:
+                    containment_details.append(category)
+                    for i in range(len(merge_categories)-1):
+                        if merge_categories[i] in oldCategories:
+                            containment_details.append(merge_categories[i])
+                            index1 = oldCategories.index(merge_categories[i])
+                            total_extension_of_existing_category_that_is_merged = float(change_in_individual_matrix[index1][-1])
+                            common_extension = float(change_in_individual_matrix[index1][index])
+                            containment = "{0:.2f}".format(float(common_extension/total_extension_of_existing_category_that_is_merged))
+                            containment_details.append(containment)
+                    break
+            if len(containment_details) != 0:
+                extensional_containment_for_category_merged_from_new_and_existing.append(containment_details)
+    print extensional_containment_for_category_merged_from_new_and_existing                            
+        
             
-    return change_in_individual_matrix, J_Index_for_common_categories, extensional_containment_for_categories_split_from_existing, extensional_containment_for_category_merged_from_existing
+    return change_in_individual_matrix, J_Index_for_common_categories, extensional_containment_for_categories_split_from_existing, extensional_containment_for_category_merged_from_existing, extensional_containment_for_category_merged_from_new_and_existing
     
 
 @login_required
@@ -2324,15 +2449,8 @@ def changeRecognizer(request):
         if 'existing_categories' in request.session:
             existing_categories = request.session['existing_categories']
             for each_category in existing_categories:
-                print existing_categories
-                print each_category
-                print concepts_in_current_taxonomy
                 index = concepts_in_current_taxonomy.index(each_category)
-                print index
                 old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], each_category)
-                print old_category_details
-                print user_accuracies
-                print producer_accuracies
                 common_category_comparison_details = [each_category, user_accuracies[index], producer_accuracies[index], old_category_details[0][1], old_category_details[0][0]]
                 for category_andJ_index in J_Index_for_common_categories:
                     if each_category in category_andJ_index:
@@ -2387,9 +2505,26 @@ def changeRecognizer(request):
                     categories_split_from_existing_details.append([each_split_category[i+1], each_split_category[0], user_accuracies[index], producer_accuracies[index], extensional_containment_for_categories_split_from_existing[index1][1]])
                     
 
+
+        #categories resulted from merging of existing and new categories
+        extensional_containment_for_category_merged_from_new_and_existing = request.session['extensional_containment_for_category_merged_from_new_and_existing']
         categories_merged_from_new_and_existing_details = []
         if 'categories_merged_from_new_and_existing' in request.session: 
             categories_merged_from_new_and_existing = request.session['categories_merged_from_new_and_existing']
+            for each_merged_category in categories_merged_from_new_and_existing:
+                index = concepts_in_current_taxonomy.index(each_merged_category[-1])
+                details = [each_merged_category[-1]]
+                details.append(user_accuracies[index])
+                details.append(producer_accuracies[index])
+                for each_set in extensional_containment_for_category_merged_from_new_and_existing:
+                    if each_merged_category[-1] in each_set[0]:
+                        for i in range(1, len(each_set)):
+                            details.append(each_set[i])
+                    break
+                categories_merged_from_new_and_existing_details.append(details)
+                        
+                
+                
         
         
         
@@ -2419,6 +2554,11 @@ def createChangeEventForNewTaxonomy(request):
 
 def createChangeEventForNewTaxonomyVersion(request):
     request.session['create_new_taxonomy_version'] = True
+    customQuery = CustomQueries()
+    old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
+    old_training_sample = TrainingSet(old_trainingset[2])
+    concepts_in_existing_taxonomy = list(numpy.unique(old_training_sample.target))
+    print concepts_in_existing_taxonomy
     compositeChangeOperations = []
     new_version = int(request.session['existing_taxonomy_ver'])+1
     firstOp, root_concept = get_addNewTaxonomyVersion_op_details(request.session['existing_taxonomy_name'], new_version)
@@ -2450,6 +2590,16 @@ def createChangeEventForNewTaxonomyVersion(request):
             for i in range(1, len(category)):
                 changeOperation = get_addNewConceptSplitFromExistingConceptForNewTaxonomyVersion_op_details(request.session['existing_taxonomy_name'], new_version, request.session['existing_taxonomy_ver'], root_concept, category[i], split_concept)
                 compositeChangeOperations.append(changeOperation)
+    
+    if 'categories_merged_from_new_and_existing' in request.session:
+        categories_merged_from_new_and_existing = request.session['categories_merged_from_new_and_existing']
+        for category in categories_merged_from_new_and_existing:
+            new_concept = category[-1]
+            existing_categories = [x for x in category[:-1] if x in concepts_in_existing_taxonomy]
+            changeOperation = get_addMergedConceptFromNewAndExistingConceptsForNewTaxonomyVersion_op_details(request.session['existing_taxonomy_name'], new_version, request.session['existing_taxonomy_ver'], root_concept, new_concept, existing_categories)
+            compositeChangeOperations.append(changeOperation)
+            
+        
     
     return JsonResponse({'listOfOperations': compositeChangeOperations});
 
@@ -2668,7 +2818,26 @@ def get_addMergedConceptFromExistingConceptsForNewTaxonomyVersion_op_details(tax
     for mergedConcept in merged_concepts:
         compositeOp_details.append("Add_horizontal_relationship ('" + concept_name + "', '" + mergedConcept + "', '" + taxonomy_name + "', " + str(taxonomy_version) + ", " + str(old_version) + ")")
     changeOperation.append(compositeOp_details)
-    return changeOperation    
+    return changeOperation
+
+def get_addMergedConceptFromNewAndExistingConceptsForNewTaxonomyVersion_op_details(taxonomy_name, taxonomy_version, old_version, parent_concept_name, concept_name, merged_concepts):
+    changeOperation = []
+    compositeOp = "Add_Generalized_Concept_For_New_Legend_Version ('" + taxonomy_name + "', '" + str(taxonomy_version) + "', '" + concept_name + "', '" + parent_concept_name + "', [" 
+    for concept in merged_concepts:
+        compositeOp = compositeOp + concept + ", "
+        
+    compositeOp = compositeOp + "])"
+    changeOperation.append(compositeOp)
+    
+    compositeOp_details = []
+    compositeOp_details.append("Create concept '" + concept_name + "' (if it does not exists)")
+    compositeOp_details.append("Add '" + concept_name + "' to '" + taxonomy_name + "' Ver_" + str(taxonomy_version))
+    compositeOp_details.append("Add hierarchical relationship - '" + parent_concept_name + "' parent of '" + concept_name + "'")
+    compositeOp_details.append("Category Instantiation ('" + concept_name + "')")
+    for mergedConcept in merged_concepts:
+        compositeOp_details.append("Add_horizontal_relationship ('" + concept_name + "', '" + mergedConcept + "', '" + taxonomy_name + "', " + str(taxonomy_version) + ", " + str(old_version) + ")")
+    changeOperation.append(compositeOp_details)
+    return changeOperation   
     
 def get_addNewConceptSplitFromExistingConceptForNewTaxonomyVersion_op_details(taxonomy_name, taxonomy_version, old_version, parent_concept_name, new_concept, split_concept):
     changeOperation = []

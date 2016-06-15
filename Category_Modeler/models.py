@@ -215,6 +215,18 @@ class ClassificationActivity(models.Model):
     class Meta:
         managed = False
         db_table = 'classification_activity'
+        
+class ClusteringActivity(models.Model):
+    clustered_file_name = models.CharField(max_length=256)
+    clustered_file_location = models.CharField(max_length=256)
+    scatterplot_image_name = models.CharField(max_length=256)
+    scatterplot_image_location = models.CharField(max_length=256)
+    completed = models.DateTimeField(default=datetime.now)
+    completed_by = models.ForeignKey(AuthUser, db_column='completed_by')
+
+    class Meta:
+        managed = False
+        db_table = 'clustering_activity'
 
 class SetOfOccurences(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -342,7 +354,8 @@ class ExplorationChain(models.Model):
         ('create trainingset', 'create trainingset'),
         ('change trainingset', 'change trainingset'),
         ('learning', 'learning'),
-        ('classification', 'classification')
+        ('classification', 'classification'),
+        ('clustering', 'clustering')
     )
     id = models.IntegerField(primary_key=True)
     step = models.IntegerField(primary_key=True)
