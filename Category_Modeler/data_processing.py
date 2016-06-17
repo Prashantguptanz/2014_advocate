@@ -221,7 +221,7 @@ class ManageCSVData:
         if features[0] == 'band1':
             f.writerow(features)
         
-        if len(features) == 4:
+        if len(features) == 4 or len(features)==3:
             for line in reader:
                 if line[0] != nodata_value or line[1] != nodata_value or line[2] != nodata_value:
                     f.writerow(line)

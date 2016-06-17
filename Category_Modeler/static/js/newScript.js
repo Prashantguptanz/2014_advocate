@@ -291,7 +291,6 @@ $(function() {
 				$('#viewandedittrainingset').hide();
 				var no_of_concepts_while_modeling_changes =1;
 			} else {
-				$('#newtrainingdatasetdetails').hide();
 				$('#newconceptsanddetails').hide();
 			}
 

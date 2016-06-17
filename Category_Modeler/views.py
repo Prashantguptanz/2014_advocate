@@ -1605,10 +1605,6 @@ def signaturefile(request):
                 old_categories, old_mean_vectors, old_covariance_mat = find_all_active_categories_and_their_comp_int_for_a_legend_version(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
                 new_categories = list(numpy.unique(trainingfile.target))
                 common_categories = request.session['existing_categories']
-                print common_categories
-               # print request.session['trainingset_version_and_categories_relationship']
-                print request.session['categories_split_from_existing']
-                print request.session['new_categories']
                 common_categories_comparison = []
                 if len(old_mean_vectors[0]) != len(mean_vectors[0][1]):
                     for common_category in common_categories:
@@ -2031,6 +2027,7 @@ def unsupervised(request):
             datareader = csv.reader(clustering_file, delimiter=',')
             samples = list(datareader)
             num_of_bands = len(samples[0])
+            print num_of_bands
             clustering_file.close();
             samples_as_nparray = numpy.asarray(samples, dtype=numpy.float32)
             
@@ -2041,11 +2038,13 @@ def unsupervised(request):
         if num_of_bands == 8:
             fig, axes = plt.subplots(10, 3, squeeze=False)
             fig.set_size_inches(35, 70)
+            matplotlib.rcParams.update({'font.size':20})
         else: 
             fig, axes = plt.subplots(1, 3, squeeze=False)
-            fig.set_size_inches(7, 20)
+            fig.set_size_inches(15, 5)
+            matplotlib.rcParams.update({'font.size':10})
         colors = cm.spectral(cluster_labels.astype(float) / int(number_of_clusters))
-        matplotlib.rcParams.update({'font.size':20})
+        
         xband = 0
         yband = 1
         for row in axes:
@@ -2070,7 +2069,7 @@ def unsupervised(request):
                 break
         image_name = "cluster_scatter_plot_" + str(datetime.now()) + ".png"
         plt.savefig("%s/%s" % (IMAGE_LOCATION, image_name),  bbox_inches='tight')
-        
+        matplotlib.rcParams.update(matplotlib.rcParamsDefault)
         authuser_instance = AuthUser.objects.get(id = int(request.session['_auth_user_id']))
         ca = ClusteringActivity(clustered_file_name=clusteringfilename, clustered_file_location = CLUSTERING_DATA_LOCATION, scatterplot_image_name = image_name, scatterplot_image_location= IMAGE_LOCATION, completed_by=authuser_instance)
         ca.save()
@@ -2364,6 +2363,7 @@ def changeRecognizer(request):
             messsage = "Choose visualization tab to view and compare existing taxonomies"
             return render (request, 'changerecognition.html', {'user_name':user_name, 'error_message': messsage})
     elif 'existing_taxonomy_name' not in request.session:
+        print request.session['new_taxonomy_name']
         if 'current_predicted_file_name' not in request.session:
             exp_incomplete = "The exploration process is not yet completed. No changes can be detected."
             return render (request, 'changerecognition.html', {'user_name':user_name, 'error_message': exp_incomplete})
@@ -2462,6 +2462,7 @@ def changeRecognizer(request):
                         if each_category_compint_comparison[0] == each_category:
                             common_category_comparison_details.append(each_category_compint_comparison[1])
                 common_categories_comparison_details.append(common_category_comparison_details)
+                print common_categories_comparison_details
         
         
         #new categories in the newly modeled set of categories
@@ -2503,7 +2504,7 @@ def changeRecognizer(request):
                             index1= j
                             break
                     categories_split_from_existing_details.append([each_split_category[i+1], each_split_category[0], user_accuracies[index], producer_accuracies[index], extensional_containment_for_categories_split_from_existing[index1][1]])
-                    
+                    print categories_split_from_existing_details
 
 
         #categories resulted from merging of existing and new categories
@@ -2522,6 +2523,7 @@ def changeRecognizer(request):
                             details.append(each_set[i])
                     break
                 categories_merged_from_new_and_existing_details.append(details)
+                print categories_merged_from_new_and_existing_details
                         
                 
                 
