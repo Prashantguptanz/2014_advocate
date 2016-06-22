@@ -372,13 +372,12 @@ class CustomQueries:
         row = cursor.fetchall()
         return row
         
-    def getExtension(self, concept_name, lid, ver):
+    def getExtension(self, category_id, evol_ver, comp_ver):
         cursor = connection.cursor()
         
-        cursor.execute("select soc.x_coordinate, soc.y_coordinate from concept c, legend l, legend_concept_combination lcc, set_of_occurences soc,\
-                        category ca, extension e where lcc.concept_id = c.id and lcc.legend_id = %s and lcc.legend_ver = %s \
-                        and c.concept_name = %s and ca.legend_concept_combination_id = lcc.id and  \
-                        ca.extension_id = e.id and soc.id = e.set_of_occurences_id", [lid, ver, concept_name])
+        cursor.execute("select soc.x_coordinate, soc.y_coordinate from set_of_occurences soc,\
+                        category ca, extension e where ca.category_id = %s and ca.category_evol_ver = %s and ca.category_comp_ver = %s and\
+                        ca.extension_id = e.id and soc.id = e.set_of_occurences_id", [category_id, evol_ver, comp_ver])
         
         row = cursor.fetchall()
         return row

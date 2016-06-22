@@ -1,11 +1,11 @@
 import gdal
 import numpy as np
+import string
 from gdalconst import *
 from io import FileIO, BufferedWriter
 import csv, os
 from shutil import copyfile
 from datetime import datetime
-from Category_Modeler.models import TrainingsampleForCategory
 
 class ManageRasterData:
 
@@ -81,18 +81,24 @@ class ManageRasterData:
             
             if AddClassName == True:
                 if noOfBands == 3:
+                    print "I am here"
                     spamwriter.writerow(['band1', 'band2', 'band3', 'class'])
                 else:
                     spamwriter.writerow(['band1', 'band2', 'band3', 'band4', 'band5', 'band6', 'band7', 'band8', 'class'])
                 csvfile.close();
         
-    
+            print raster_files
             for eachFile in raster_files:
+                print eachFile
+                print AddClassName
                 if AddClassName == True:
                     if className =="":
                         tempclassName = eachFile.split('.', 1)[0]
-                        className = ''.join([i for i in tempclassName if not i.isdigit()])
-                    rasterArray = self.convert_raster_to_array(eachFile, className)
+                        tempclassName1 = (''.join([i for i in tempclassName if not i.isdigit()])).replace("_", " ")
+                        tempclassName2 = string.capwords(tempclassName1)
+                        rasterArray = self.convert_raster_to_array(eachFile, tempclassName2)
+                    else:
+                        rasterArray = self.convert_raster_to_array(eachFile, className)
                 else:
                     rasterArray = self.convert_raster_to_array(eachFile)
                   
@@ -233,6 +239,31 @@ class ManageCSVData:
             os.remove(file_location + file_name)
             os.rename(file_location + targetfile, file_location + file_name) 
     
+    def add_new_concept(self, file_name, file_location, targetfile_name, concept_name, samplefile, sample_files_location):
+        
+        targetfile = targetfile_name
+        if file_name == targetfile_name:
+            targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
+            
+        with open('%s%s' % (file_location, targetfile), 'a') as trainingset_file:
+            with open('%s%s' % (file_location, file_name), 'rU') as sample:
+                sample.next()
+                for eachSample in sample:
+                    trainingset_file.write(eachSample)
+            sample.close()
+            with open('%s%s' % (sample_files_location, samplefile), 'rU') as sample:
+                sample.next()
+                for eachSample in sample:
+                    trainingset_file.write(eachSample)
+            sample.close()
+        trainingset_file.close()         
+       
+        if file_name == targetfile_name:
+            os.remove(file_location + file_name)
+        os.rename(file_location + targetfile, file_location + targetfile_name)
+        
+        self.remove_no_data_value(targetfile_name, file_location, targetfile_name, '0')
+        
     
     
     def removeConcept(self, file_name, file_location, targetfile_name, concept_to_remove):
@@ -249,8 +280,29 @@ class ManageCSVData:
         if file_name == targetfile_name:
             os.remove(file_location + file_name)
             os.rename(file_location + targetfile, file_location + file_name)
-    
+
+    def renameConcept(self, file_name, file_location, targetfile_name, concept_to_rename, new_name):
+        reader = csv.reader(open('%s%s' %(file_location, file_name), "rU"), delimiter = ',')
+        targetfile = targetfile_name
+        if file_name == targetfile_name:
+            targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
+        f = csv.writer(open('%s%s' %(file_location, targetfile), "wb"))
+        
+        for line in reader:
+            if line[-1] != concept_to_rename:
+                f.writerow(line)
+            else:
+                line.pop()
+                line.append(new_name)
+                f.writerow(line)
+        
+        if file_name == targetfile_name:
+            os.remove(file_location + file_name)
+            os.rename(file_location + targetfile, file_location + file_name)
+
+
     def mergeConcepts(self, file_name, file_location, targetfile_name, concepts_to_merge, mergedconceptname):
+        
         reader = csv.reader(open('%s%s' %(file_location, file_name), "rU"), delimiter = ',')
         targetfile = targetfile_name
         if file_name == targetfile_name:
@@ -259,8 +311,10 @@ class ManageCSVData:
         
         for line in reader:
             if line[-1] in concepts_to_merge:
-                line[-1] = mergedconceptname
-                f.writerow(line)
+                x = line
+                x.pop()
+                x.append(mergedconceptname)
+                f.writerow(x)
             else:
                 f.writerow(line)
         
@@ -268,22 +322,8 @@ class ManageCSVData:
             os.remove(file_location + file_name)
             os.rename(file_location + targetfile, file_location + file_name)
         
-        #Create new merged sample and save it
-        reader1 = csv.reader(open('%s%s' %(file_location, targetfile_name), "rU"), delimiter = ',')
-        merged_sample_name = mergedconceptname + str(datetime.now()) + ".csv"
-        f1 = csv.writer(open('%s%s' %(self.TRAINING_SAMPLES_LOCATION, merged_sample_name), "wb"))
-        for line in reader1:
-            if mergedconceptname in line:
-                f1.writerow(line)
-
-        latestid = int(TrainingsampleForCategory.objects.latest("trainingsample_id").trainingsample_id) + 1
-
-        ts = TrainingsampleForCategory(trainingsample_id=latestid, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=merged_sample_name, filelocation=self.TRAINING_SAMPLES_LOCATION, concept_name = mergedconceptname)
-        ts.save(force_insert=True)
-        merged_sample_details = []
-        merged_sample_details.append(ts.trainingsample_id)
-        merged_sample_details.append(ts.trainingsample_ver)
-        return merged_sample_details
+        #self.remove_no_data_value(targetfile_name, file_location, targetfile_name, '0')
+        
         
         
     
@@ -312,18 +352,8 @@ class ManageCSVData:
             os.remove(file_location + file_name)
         os.rename(file_location + targetfile, file_location + targetfile_name)
         
-        latestid = int(TrainingsampleForCategory.objects.latest("trainingsample_id").trainingsample_id) + 1
-        ts1 = TrainingsampleForCategory(trainingsample_id=latestid, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefile1, filelocation=self.TRAINING_SAMPLES_LOCATION, concept_name = concept1)
-        ts2 = TrainingsampleForCategory(trainingsample_id=latestid+1, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefile2, filelocation=self.TRAINING_SAMPLES_LOCATION, concept_name = concept2)
-        ts1.save(force_insert=True)
-        ts2.save(force_insert=True)
-        new_concepts_details = []
-        new_concepts_details.append(ts1.trainingsample_id)
-        new_concepts_details.append(ts1.trainingsample_ver)
-        new_concepts_details.append(ts2.trainingsample_id)
-        new_concepts_details.append(ts2.trainingsample_ver)
+        self.remove_no_data_value(targetfile_name, file_location, targetfile_name, '0')
         
-        return new_concepts_details
 
 #b= ManageRasterData("final3b.tif")
 #b.convert_raster_csv_file_to_array("final3b.csv", "static/predictedvaluesinnumbers/", 865, 1171, 3)

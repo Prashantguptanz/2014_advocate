@@ -2,6 +2,7 @@ import csv, json, numpy, pydot, os, re
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib
+from matplotlib import gridspec
 from matplotlib.colors import ListedColormap
 from io import FileIO, BufferedWriter
 from datetime import datetime
@@ -20,8 +21,8 @@ from sklearn.cluster import KMeans
 from sklearn.externals import joblib
 from sklearn.naive_bayes import GaussianNB
 from sklearn.externals.six import StringIO
-from Category_Modeler.models import Trainingset, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity, TrainingsampleForCategory, ChangeTrainingsetActivityDetails
-from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Legend, TrainingsetTrainingsamples, TrainingsampleCollection, CreateTrainingsetActivity
+from Category_Modeler.models import Trainingset, ChangeTrainingsetActivity, AuthUser, Classificationmodel, Classifier, LearningActivity, ChangeTrainingsetActivityDetails
+from Category_Modeler.models import Confusionmatrix, ExplorationChain, ClassificationActivity, Legend, CreateTrainingsetActivity
 from Category_Modeler.models import  CreateTrainingsetActivityOperations, SatelliteImage, ClassifiedSatelliteImage, ClusteringActivity
 from Category_Modeler.measuring_categories import TrainingSet, NormalDistributionIntensionalModel, DecisionTreeIntensionalModel, StatisticalMethods, ClassifiedFile
 from Category_Modeler.data_processing import ManageRasterData, ManageCSVData
@@ -191,8 +192,6 @@ def trainingsampleprocessing(request):
 
         
         if 'IsFirstSample' in data:
-            if 'current_samples_id_and_version' in request.session:
-                del request.session['current_samples_id_and_version']
             if 'create_trainingset_activity_id' in request.session:
                 del request.session['create_trainingset_activity_id']
             if 'new_categories' in request.session:
@@ -210,397 +209,225 @@ def trainingsampleprocessing(request):
             create_tset_activity = CreateTrainingsetActivity(creator_id = authuser_instance)
             create_tset_activity.save(force_insert=True)
             request.session['create_trainingset_activity_id'] = create_tset_activity.id
+            
         
         # New training samples for a new taxonomy
-        if 'IsFinalSample' in data and 'new_taxonomy_name' in request.session:
-            
+        if request.FILES and 'new_taxonomy_name' in request.session:
             trainingFilesList = request.FILES.getlist('file')
-            conceptName = data['conceptName']
+            concept_list = data['concept_list']
+            list_of_concepts = concept_list.split(',')
+            trainingsetfilename = data ['trainingsetfilename'];
             researcherName = data['FieldResearcherName'];
             trainingstart = data['TrainingTimePeriodStartDate'];
             trainingend = data['TrainingTimePeriodEndDate'];
-            location = data['TrainingLocation'];
-            otherDetails = data['OtherDetails'];
-            isitfinalsample = data['IsFinalSample'];
+            otherDetails = data['Description'];
             
-            #Combine multiple samples and save it as a csv file
-            samplefilename = conceptName + str(datetime.now()) + ".csv"
-            trainingSamplesFileList = [trainingSamples.name for trainingSamples in trainingFilesList]            
-            managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList, samplefilename, EXISTING_TRAINING_SAMPLES_LOCATION, conceptName)
+            request.session['current_training_file_name'] = trainingsetfilename
+            if len(trainingFilesList)==1 and trainingFilesList[0].name.split(".")[-1] == "csv":                
+                with open('%s%s' % (EXISTING_TRAINING_DATA_LOCATION, trainingsetfilename), 'wb') as trainingset_file:
+                    foo = trainingFilesList[0].read(1024)  
+                    while foo:
+                        trainingset_file.write(foo)
+                        foo = trainingFilesList[0].read(1024)
+                    trainingset_file.close()
+            elif len(trainingFilesList)>1 and trainingFilesList[0].name.split(".")[-1] == "tif":
+                rasterFileNameList = []
+                for rasterfile in trainingFilesList:
+                    rasterFileNameList.append(rasterfile.name)
+                managedata.combine_multiple_raster_files_to_csv_file(rasterFileNameList, request.session['current_training_file_name'], EXISTING_TRAINING_DATA_LOCATION)
+            manageCsvData.remove_no_data_value(trainingsetfilename, EXISTING_TRAINING_DATA_LOCATION, trainingsetfilename, '0')
             
-            #Save trainingsample, training sample collection activity and adds an entry in create trainingset activity
-            if TrainingsampleForCategory.objects.all().exists():
-                latestid = int(TrainingsampleForCategory.objects.latest("trainingsample_id").trainingsample_id) + 1
+            #save trainingset
+            if Trainingset.objects.all().exists():
+                latestid = int (Trainingset.objects.latest("trainingset_id").trainingset_id) + 1
             else:
                 latestid = 0
-            ts = TrainingsampleForCategory(trainingsample_id=latestid, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefilename, filelocation=EXISTING_TRAINING_SAMPLES_LOCATION, concept_name = conceptName)
-            ts.save(force_insert=True)
-            ts_collection = TrainingsampleCollection( trainingsample_id= ts.trainingsample_id, trainingsample_ver =ts.trainingsample_ver, trainingsample_location = location, collector=researcherName, description= otherDetails, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'))
-            ts_collection.save()
+            tr = Trainingset(trainingset_id=latestid, trainingset_ver =1, trainingset_name=request.session['current_training_file_name'], date_expired=datetime(9999, 9, 12), filelocation=EXISTING_TRAINING_DATA_LOCATION)
+            tr.save(force_insert=True)
+            request.session['current_training_file_id'] = tr.trainingset_id
+            request.session['current_training_file_ver'] = tr.trainingset_ver
             
-            if 'current_samples_id_and_version' in request.session:
-                current_samples_id_and_version = request.session['current_samples_id_and_version']
-                current_samples_id_and_version.append([ts.trainingsample_id, ts.trainingsample_ver, ts.samplefile_name])
-                request.session['current_samples_id_and_version'] = current_samples_id_and_version
+            #save create trainingset activity
+            create_tset_activity = CreateTrainingsetActivity(creator_id = authuser_instance, trainingset_id= tr.trainingset_id, trainingset_ver = tr.trainingset_ver, collector = researcherName, data_collection_start_date=trainingstart, data_collection_end_date = trainingend, other_details = otherDetails)
+            create_tset_activity.save(force_insert=True)
+            
+            #save create training set activity operations
+            for concept in list_of_concepts:
+                create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_tset_activity, operation = 'add new', concept1 = concept)
+                create_tset_activity_ops.save(force_insert=True)
+            
+            exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'create trainingset', activity_instance = create_tset_activity.id)
+            exp_chain.save(force_insert=True)
+            request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
+      
+            if 'currenteditoperations' in request.session:
+                del request.session['currenteditoperations']
+                                
+            if 'current_model_id' in request.session:
+                del request.session['model_type']    
+                del request.session['current_model_name']
+                del request.session['current_model_id']
+                del request.session['model_score']
+                del request.session['producer_accuracies']
+                del request.session['user_accuracies']
+    
+            if 'current_predicted_file_name' in request.session:
+                del request.session['current_test_file_name']
+                del request.session['current_predicted_file_name']
+                del request.session['current_test_file_columns']
+                del request.session['current_test_file_rows']
+            request.session.modified = True    
+                
+            trs = TrainingSet(request.session['current_training_file_name'])
+            classes = list(numpy.unique(trs.target))
+            no_of_spectral_bands = len(list(trs.features)) - 1
+            title = "Create trainingset: " + request.session['current_training_file_name']
+            with open('%s%s' % (EXISTING_TRAINING_DATA_LOCATION, request.session['current_training_file_name']), 'rU') as trainingset:
+                datareader = csv.reader(trainingset, delimiter=',')
+                trainingsetasArray = list(datareader)
+                trainingset.close()
+            data_content = "Spectral bands: " + str(no_of_spectral_bands) + "<br/><br/>" + "<b>New concepts added:</b> "
+            for concept in classes:
+                data_content = data_content + "<br/>" + concept
+                
+            #adding details for current exploration details for visualization
+            current_step = ['Create trainingset', title, data_content]
+
+            if 'current_exploration_chain_viz' in request.session:
+                current_exploration_chain_viz = request.session['current_exploration_chain_viz']
+                if current_exploration_chain_viz[-1][0] == 'End':
+                    current_exploration_chain_viz.pop()
+                current_exploration_chain_viz.append(current_step)
+                request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
             else:
-                current_samples_id_and_version = [[ts.trainingsample_id, ts.trainingsample_ver, ts.samplefile_name]]
-                request.session['current_samples_id_and_version'] = current_samples_id_and_version
+                request.session['current_exploration_chain_viz'] = [current_step]
+                    
+                
+            return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz']})  
             
+        #----------------------------------------------------------------------------------------------------------------
+        elif 'IsFinalSample' in data and 'existing_taxonomy_name' in request.session:
+
             create_ts_activity_instance = CreateTrainingsetActivity.objects.get(id = int(request.session['create_trainingset_activity_id']))
-            create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'add new', concept1 = conceptName)
-            create_tset_activity_ops.save(force_insert=True)
+            
+            if data['IsFinalSample'] == 'False':
+                conceptType = data['ConceptType']
+                if conceptType=='1':
+                    conceptName = data['ConceptName']
+                                    
+                    create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'add new', concept1 = conceptName)
+                    create_tset_activity_ops.save(force_insert=True)
+                    
+                    if 'new_categories' in request.session:
+                        new_categories = request.session['new_categories']
+                        new_categories.append(conceptName)
+                        request.session['new_categories'] = new_categories
+                    else:
+                        new_categories = [conceptName]
+                        request.session['new_categories'] = new_categories
+                    
+                elif conceptType=='2':
+                    conceptName = data['ConceptName']
     
-          
-            if isitfinalsample=='True':
-                print "iam"
-                filename = data['TrainingsetName']
-                current_samples_filenames = [sample_id_and_ver[2] for sample_id_and_ver in request.session['current_samples_id_and_version']]
-                manageCsvData.combine_multiple_csv_files(current_samples_filenames, EXISTING_TRAINING_SAMPLES_LOCATION, EXISTING_TRAINING_DATA_LOCATION, filename)
-                manageCsvData.remove_no_data_value(filename, EXISTING_TRAINING_DATA_LOCATION, filename, '0')
-                request.session['current_training_file_name'] = filename
+                    create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'add existing', concept1 = conceptName)
+                    create_tset_activity_ops.save(force_insert=True)
+                    
+                    if 'existing_categories' in request.session:
+                        existing_categories = request.session['existing_categories']
+                        existing_categories.append(conceptName)
+                        request.session['existing_categories'] = existing_categories
+                    else:
+                        existing_categories = [conceptName]
+                        request.session['existing_categories'] = existing_categories
+                    
+                elif conceptType=='3':
+                    firstConceptName = data['FirstConceptName']
+                    secondConceptName = data['SecondConceptName']
+                    mergedConceptName = data['MergedConceptName']
     
-                if Trainingset.objects.all().exists():
-                    latestid = int (Trainingset.objects.latest("trainingset_id").trainingset_id) + 1
+                    create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'merge', concept1 = firstConceptName, concept2 = secondConceptName, concept3 = mergedConceptName)
+                    create_tset_activity_ops.save(force_insert=True)
+                    
+                    if 'categories_merged_from_existing' in request.session:
+                        categories_merged_from_existing = request.session['categories_merged_from_existing']
+                        categories_merged_from_existing.append([firstConceptName, secondConceptName, mergedConceptName])
+                        request.session['existing_categories'] = categories_merged_from_existing
+                    else:
+                        categories_merged_from_existing = [[firstConceptName, secondConceptName, mergedConceptName]]
+                        request.session['categories_merged_from_existing'] = categories_merged_from_existing
+                    
                 else:
-                    latestid = 0
+                    conceptToSplit = data['ConceptToSplit']
+                    conceptstosplitinto = data['conceptstosplitinto']
+                    namesofsplitconcepts = conceptstosplitinto.split(',')
+                    
+                    if (len(namesofsplitconcepts)==3):
+                        create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'split', concept1 = conceptToSplit, concept2 = namesofsplitconcepts[0], concept3 = namesofsplitconcepts[1], concept4 = namesofsplitconcepts[2])
+                        create_tset_activity_ops.save(force_insert=True)
+                        category_split_details = [conceptToSplit, namesofsplitconcepts[0], namesofsplitconcepts[1], namesofsplitconcepts[2]]
+                    else:
+                        create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'split', concept1 = conceptToSplit, concept2 = namesofsplitconcepts[0], concept3 = namesofsplitconcepts[1])
+                        create_tset_activity_ops.save(force_insert=True)
+                        category_split_details = [conceptToSplit, namesofsplitconcepts[0], namesofsplitconcepts[1]]
+                        
+                    
+                    if 'categories_split_from_existing' in request.session:
+                        categories_split_from_existing = request.session['categories_split_from_existing']
+                        categories_split_from_existing.append(category_split_details)
+                        request.session['categories_split_from_existing'] = categories_split_from_existing
+                    else:
+                        categories_split_from_existing = [category_split_details]
+                        request.session['categories_split_from_existing'] = categories_split_from_existing
+                
+                return HttpResponse("")
+                    
+            else:
+                trainingFilesList = request.FILES.getlist('file')
+                trainingsetfilename = data ['trainingsetfilename'];
+                researcherName = data['FieldResearcherName'];
+                trainingstart = data['TrainingTimePeriodStartDate'];
+                trainingend = data['TrainingTimePeriodEndDate'];
+                otherDetails = data['Description'];
+                
+                request.session['current_training_file_name'] = trainingsetfilename
+                if len(trainingFilesList)==1 and trainingFilesList[0].name.split(".")[-1] == "csv":                
+                    with open('%s%s' % (EXISTING_TRAINING_DATA_LOCATION, trainingsetfilename), 'wb') as trainingset_file:
+                        foo = trainingFilesList[0].read(1024)  
+                        while foo:
+                            trainingset_file.write(foo)
+                            foo = trainingFilesList[0].read(1024)
+                        trainingset_file.close()
+                elif len(trainingFilesList)>1 and trainingFilesList[0].name.split(".")[-1] == "tif":
+                    rasterFileNameList = []
+                    for rasterfile in trainingFilesList:
+                        rasterFileNameList.append(rasterfile.name)
+                    managedata.combine_multiple_raster_files_to_csv_file(rasterFileNameList, request.session['current_training_file_name'], EXISTING_TRAINING_DATA_LOCATION)
+                manageCsvData.remove_no_data_value(trainingsetfilename, EXISTING_TRAINING_DATA_LOCATION, trainingsetfilename, '0')
+            
+                #save trainingset
+                latestid = int (Trainingset.objects.latest("trainingset_id").trainingset_id) + 1
                 tr = Trainingset(trainingset_id=latestid, trainingset_ver =1, trainingset_name=request.session['current_training_file_name'], date_expired=datetime(9999, 9, 12), filelocation=EXISTING_TRAINING_DATA_LOCATION)
                 tr.save(force_insert=True)
                 request.session['current_training_file_id'] = tr.trainingset_id
                 request.session['current_training_file_ver'] = tr.trainingset_ver
                 
+                old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
+                create_ts_activity_instance.reference_trainingset_id = old_trainingset[0]
+                create_ts_activity_instance.reference_trainingset_ver = old_trainingset[1]
                 create_ts_activity_instance.trainingset_id = request.session['current_training_file_id']
                 create_ts_activity_instance.trainingset_ver = request.session['current_training_file_ver']
-                create_ts_activity_instance.save()
-                
-                for sample_id_and_ver in current_samples_id_and_version:
-                    trainingset_trainingsamples_instance = TrainingsetTrainingsamples(trainingset_id = request.session['current_training_file_id'], trainingset_ver = request.session['current_training_file_ver'], trainingsample_id = sample_id_and_ver[0], trainingsample_ver = sample_id_and_ver[1])
-                    trainingset_trainingsamples_instance.save(force_insert=True)
-                
-                exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'create trainingset', activity_instance = create_ts_activity_instance.id)
-                exp_chain.save(force_insert=True)
-                request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
-                
-                if 'currenteditoperations' in request.session:
-                    del request.session['currenteditoperations']
-                    request.session.modified = True
-                
-                if 'current_model_id' in request.session:
-                    del request.session['model_type']    
-                    del request.session['current_model_name']
-                    del request.session['current_model_id']
-                    del request.session['model_score']
-                    del request.session['producer_accuracies']
-                    del request.session['user_accuracies']
-                    request.session.modified = True
-        
-                if 'current_predicted_file_name' in request.session:
-                    del request.session['current_test_file_name']
-                    del request.session['current_predicted_file_name']
-                    del request.session['current_test_file_columns']
-                    del request.session['current_test_file_rows']
-                    request.session.modified = True
-                
-                trs = TrainingSet(request.session['current_training_file_name'])
-                classes = list(numpy.unique(trs.target))
-                no_of_spectral_bands = len(list(trs.features)) - 1
-                title = "Create trainingset: " + request.session['current_training_file_name']
-                with open('%s%s' % (EXISTING_TRAINING_DATA_LOCATION, request.session['current_training_file_name']), 'rU') as trainingset:
-                    datareader = csv.reader(trainingset, delimiter=',')
-                    trainingsetasArray = list(datareader)
-                    trainingset.close()
-                data_content = "Spectral bands: " + str(no_of_spectral_bands) + "<br/><br/>" + "<b>New concepts added:</b> "
-                for concept in classes:
-                    data_content = data_content + "<br/>" + concept
-                
-                #adding details for current exploration details for visualization
-                current_step = ['Create trainingset', title, data_content]
-
-                if 'current_exploration_chain_viz' in request.session:
-                    current_exploration_chain_viz = request.session['current_exploration_chain_viz']
-                    if current_exploration_chain_viz[-1][0] == 'End':
-                        current_exploration_chain_viz.pop()
-                    current_exploration_chain_viz.append(current_step)
-                    request.session['current_exploration_chain_viz'] = current_exploration_chain_viz
-                else:
-                    request.session['current_exploration_chain_viz'] = [current_step]
-                    
-                
-                return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz']})  
-            return HttpResponse("")
-        #----------------------------------------------------------------------------------------------------------------
-        elif 'IsFinalSample' in data and 'existing_taxonomy_name' in request.session:
-
-            conceptType = data['ConceptType']
-            create_ts_activity_instance = CreateTrainingsetActivity.objects.get(id = int(request.session['create_trainingset_activity_id']))
-            old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
-            create_ts_activity_instance.reference_trainingset_id = old_trainingset[0]
-            create_ts_activity_instance.reference_trainingset_ver = old_trainingset[1]
-            create_ts_activity_instance.save()
-            latestid = int(TrainingsampleForCategory.objects.latest("trainingsample_id").trainingsample_id) + 1
-
-            if conceptType=='1':
-                trainingFilesList = request.FILES.getlist('file')
-                conceptName = data['ConceptName']
-                researcherName = data['FieldResearcherName'];
-                trainingstart = data['TrainingTimePeriodStartDate'];
-                trainingend = data['TrainingTimePeriodEndDate'];
-                location = data['TrainingLocation'];
-                otherDetails = data['OtherDetails'];
-                
-                #Combine multiple samples and save it as a csv file
-                samplefilename = conceptName + str(datetime.now()) + ".csv"
-                trainingSamplesFileList = [trainingSamples.name for trainingSamples in trainingFilesList]  
-                managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList, samplefilename, EXISTING_TRAINING_SAMPLES_LOCATION, conceptName)
-                
-                #Save trainingsample, training sample collection activity and adds an entry in create trainingset activity
-                ts = TrainingsampleForCategory(trainingsample_id=latestid, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefilename, filelocation=EXISTING_TRAINING_SAMPLES_LOCATION, concept_name = conceptName)
-                ts.save(force_insert=True)
-                ts_collection = TrainingsampleCollection( trainingsample_id= ts.trainingsample_id, trainingsample_ver =ts.trainingsample_ver, trainingsample_location = location, collector=researcherName, description= otherDetails, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'))
-                ts_collection.save(force_insert=True)
-                
-                if 'current_samples_id_and_version' in request.session:
-                    current_samples_id_and_version = request.session['current_samples_id_and_version']
-                    current_samples_id_and_version.append([ts.trainingsample_id, ts.trainingsample_ver, ts.samplefile_name])
-                    request.session['current_samples_id_and_version'] = current_samples_id_and_version
-                else:
-                    current_samples_id_and_version = [[ts.trainingsample_id, ts.trainingsample_ver, ts.samplefile_name]]
-                    request.session['current_samples_id_and_version'] = current_samples_id_and_version
-                
-                create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'add new', concept1 = conceptName)
-                create_tset_activity_ops.save()
-                
-                if 'new_categories' in request.session:
-                    new_categories = request.session['new_categories']
-                    new_categories.append(conceptName)
-                    request.session['new_categories'] = new_categories
-                else:
-                    new_categories = [conceptName]
-                    request.session['new_categories'] = new_categories
-                
-            elif conceptType=='2':
-                conceptName = data['ConceptName']
-                useExistingSamples = data['UseExistingSamples']
-                
-                if useExistingSamples == 'False':
-                    trainingFilesList = request.FILES.getlist('file')
-                    researcherName = data['FieldResearcherName'];
-                    trainingstart = data['TrainingTimePeriodStartDate'];
-                    trainingend = data['TrainingTimePeriodEndDate'];
-                    location = data['TrainingLocation'];
-                    otherDetails = data['OtherDetails'];
-                    
-                    #Combine multiple samples and save it as a csv file
-                    samplefilename = conceptName + str(datetime.now()) + ".csv"
-                    trainingSamplesFileList = [trainingSamples.name for trainingSamples in trainingFilesList]  
-                    managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList, samplefilename, EXISTING_TRAINING_SAMPLES_LOCATION, conceptName)
-                    
-                    #Save trainingsample, training sample collection activity and adds an entry in create trainingset activity
-                    ts = TrainingsampleForCategory(trainingsample_id=latestid, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefilename, filelocation=EXISTING_TRAINING_SAMPLES_LOCATION, concept_name = conceptName)
-                    ts.save(force_insert=True)
-                    ts_collection = TrainingsampleCollection( trainingsample_id= ts.trainingsample_id, trainingsample_ver =ts.trainingsample_ver, trainingsample_location = location, collector=researcherName, description= otherDetails, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'))
-                    ts_collection.save(force_insert=True)
-                    
-                    currentSampleIdAndVer = [ts.trainingsample_id, ts.trainingsample_ver, ts.samplefile_name]
-                    
-                    
-                else:
-                    trainingsample = customQuery.get_trainingsample_id_and_ver_for_concept_in_reference_taxonomy(create_ts_activity_instance.reference_trainingset_id, create_ts_activity_instance.reference_trainingset_ver, conceptName)
-                    currentSampleIdAndVer = [trainingsample[0], trainingsample[1], trainingsample[2]]
-                    
-                if 'current_samples_id_and_version' in request.session:
-                    current_samples_id_and_version = request.session['current_samples_id_and_version']
-                    current_samples_id_and_version.append(currentSampleIdAndVer)
-                    request.session['current_samples_id_and_version'] = current_samples_id_and_version
-                else:
-                    current_samples_id_and_version = [currentSampleIdAndVer]
-                    request.session['current_samples_id_and_version'] = current_samples_id_and_version
-                  
-                create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'add existing', concept1 = conceptName)
-                create_tset_activity_ops.save()
-                
-                if 'existing_categories' in request.session:
-                    existing_categories = request.session['existing_categories']
-                    existing_categories.append(conceptName)
-                    request.session['existing_categories'] = existing_categories
-                else:
-                    existing_categories = [conceptName]
-                    request.session['existing_categories'] = existing_categories
-                
-            elif conceptType=='3':
-                firstConceptName = data['FirstConceptName']
-                secondConceptName = data['SecondConceptName']
-                mergedConceptName = data['MergedConceptName']
-                
-                useExistingSamples = data['UseExistingSamples']
-                
-                if useExistingSamples == 'False':
-                    trainingFilesList = request.FILES.getlist('file')
-                    researcherName = data['FieldResearcherName'];
-                    trainingstart = data['TrainingTimePeriodStartDate'];
-                    trainingend = data['TrainingTimePeriodEndDate'];
-                    location = data['TrainingLocation'];
-                    otherDetails = data['OtherDetails'];
-                    
-                    #Combine multiple samples and save it as a csv file
-                    samplefilename = mergedConceptName + str(datetime.now()) + ".csv"
-                    trainingSamplesFileList = [trainingSamples.name for trainingSamples in trainingFilesList]  
-                    managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList, samplefilename, EXISTING_TRAINING_SAMPLES_LOCATION, mergedConceptName)
-                    
-                    #Save trainingsample, training sample collection activity and adds an entry in create trainingset activity
-                    ts = TrainingsampleForCategory(trainingsample_id=latestid, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefilename, filelocation=EXISTING_TRAINING_SAMPLES_LOCATION, concept_name = mergedConceptName)
-                    ts.save(force_insert=True)
-                    ts_collection = TrainingsampleCollection( trainingsample_id= ts.trainingsample_id, trainingsample_ver =ts.trainingsample_ver, trainingsample_location = location, collector=researcherName, description= otherDetails, date_started = datetime.strptime(trainingstart, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend, '%Y-%m-%d'))
-                    ts_collection.save()
-                    
-                    currentSampleIdAndVer = [ts.trainingsample_id, ts.trainingsample_ver, ts.samplefile_name]
-                else:
-                    trainingsample1 = customQuery.get_trainingsample_id_and_ver_for_concept_in_reference_taxonomy(create_ts_activity_instance.reference_trainingset_id, create_ts_activity_instance.reference_trainingset_ver, firstConceptName)
-                    trainingsample2 = customQuery.get_trainingsample_id_and_ver_for_concept_in_reference_taxonomy(create_ts_activity_instance.reference_trainingset_id, create_ts_activity_instance.reference_trainingset_ver, secondConceptName)
-                    
-                    #Combine multiple samples and save it as a csv file
-                    samplefilename = mergedConceptName + str(datetime.now()) + ".csv"
-                    manageCsvData = ManageCSVData()
-                
-                if 'current_samples_id_and_version' in request.session:
-                    current_samples_id_and_version = request.session['current_samples_id_and_version']
-                    current_samples_id_and_version.append(currentSampleIdAndVer)
-                    request.session['current_samples_id_and_version'] = current_samples_id_and_version
-                else:
-                    current_samples_id_and_version = [currentSampleIdAndVer]
-                    request.session['current_samples_id_and_version'] = current_samples_id_and_version    
-                create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'merge', concept1 = firstConceptName, concept2 = secondConceptName, concept3 = mergedConceptName)
-                create_tset_activity_ops.save(force_insert=True)
-                
-                if 'categories_merged_from_existing' in request.session:
-                    categories_merged_from_existing = request.session['categories_merged_from_existing']
-                    categories_merged_from_existing.append([firstConceptName, secondConceptName, mergedConceptName])
-                    request.session['existing_categories'] = categories_merged_from_existing
-                else:
-                    categories_merged_from_existing = [[firstConceptName, secondConceptName, mergedConceptName]]
-                    request.session['categories_merged_from_existing'] = categories_merged_from_existing
-                
-            else:
-                conceptToSplit = data['ConceptToSplit']
-                conceptstosplitinto = data['conceptstosplitinto']
-                namesofsplitconcepts = conceptstosplitinto.split(',')
-                firstConceptNameFromSplit = namesofsplitconcepts[0]
-                secondConceptNameFromSplit = namesofsplitconcepts[1]
-                
-                trainingFilesList1 = request.FILES.getlist('filesforfirstconcept')
-                researcherName1 = data['FieldResearcherName1'];
-                trainingstart1 = data['TrainingTimePeriodStartDate1'];
-                trainingend1 = data['TrainingTimePeriodEndDate1'];
-                location1 = data['TrainingLocation1'];
-                otherDetails1 = data['OtherDetails1'];
-                
-                trainingFilesList2 = request.FILES.getlist('filesforsecondconcept')
-                researcherName2 = data['FieldResearcherName2'];
-                trainingstart2 = data['TrainingTimePeriodStartDate2'];
-                trainingend2 = data['TrainingTimePeriodEndDate2'];
-                location2 = data['TrainingLocation2'];
-                otherDetails2 = data['OtherDetails2'];
-                                                
-                #Combine multiple samples and save it as a csv file
-                samplefilename1 = firstConceptNameFromSplit + str(datetime.now()) + ".csv"
-                samplefilename2 = secondConceptNameFromSplit + str(datetime.now()) + ".csv"
-                trainingSamplesFileList1 = [trainingSamples.name for trainingSamples in trainingFilesList1]  
-                trainingSamplesFileList2 = [trainingSamples.name for trainingSamples in trainingFilesList2]
-                managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList1, samplefilename1, EXISTING_TRAINING_SAMPLES_LOCATION, firstConceptNameFromSplit)
-                managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList2, samplefilename2, EXISTING_TRAINING_SAMPLES_LOCATION, secondConceptNameFromSplit)
-                
-                #Save trainingsample, training sample collection activity and adds an entry in create trainingset activity
-                ts1 = TrainingsampleForCategory(trainingsample_id=latestid, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefilename1, filelocation=EXISTING_TRAINING_SAMPLES_LOCATION, concept_name = firstConceptNameFromSplit)
-                ts2 = TrainingsampleForCategory(trainingsample_id=latestid + 1, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefilename2, filelocation=EXISTING_TRAINING_SAMPLES_LOCATION, concept_name = secondConceptNameFromSplit)
-                ts1.save(force_insert=True)
-                ts2.save(force_insert=True)
-                
-                ts_collection1 = TrainingsampleCollection( trainingsample_id= ts1.trainingsample_id, trainingsample_ver =ts1.trainingsample_ver, trainingsample_location = location1, collector=researcherName1, description= otherDetails1, date_started = datetime.strptime(trainingstart1, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend1, '%Y-%m-%d'))
-                ts_collection2 = TrainingsampleCollection( trainingsample_id= ts2.trainingsample_id, trainingsample_ver =ts2.trainingsample_ver, trainingsample_location = location2, collector=researcherName2, description= otherDetails2, date_started = datetime.strptime(trainingstart2, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend2, '%Y-%m-%d'))
-                ts_collection1.save()
-                ts_collection2.save()
-                
-                currentSampleIdAndVer1 = [ts1.trainingsample_id, ts1.trainingsample_ver, ts1.samplefile_name]
-                currentSampleIdAndVer2 = [ts2.trainingsample_id, ts2.trainingsample_ver, ts2.samplefile_name]
-    
-                if 'current_samples_id_and_version' in request.session:
-                    current_samples_id_and_version = request.session['current_samples_id_and_version']
-                    current_samples_id_and_version.append(currentSampleIdAndVer1)
-                    current_samples_id_and_version.append(currentSampleIdAndVer2)
-                    request.session['current_samples_id_and_version'] = current_samples_id_and_version
-                else:
-                    current_samples_id_and_version = [currentSampleIdAndVer1, currentSampleIdAndVer2]
-                    request.session['current_samples_id_and_version'] = current_samples_id_and_version
-                
-                if len(namesofsplitconcepts)==3:
-                    thirdConceptNameFromSplit = namesofsplitconcepts[2]
-                    trainingFilesList3 = request.FILES.getlist('filesforthirdconcept')
-                    researcherName3 = data['FieldResearcherName3'];
-                    trainingstart3 = data['TrainingTimePeriodStartDate3'];
-                    trainingend3 = data['TrainingTimePeriodEndDate3'];
-                    location3 = data['TrainingLocation3'];
-                    otherDetails3 = data['OtherDetails3'];
-                    
-                    samplefilename3 = thirdConceptNameFromSplit + str(datetime.now()) + ".csv"
-                    trainingSamplesFileList3 = [trainingSamples.name for trainingSamples in trainingFilesList3]  
-                    managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList3, samplefilename3, EXISTING_TRAINING_SAMPLES_LOCATION, thirdConceptNameFromSplit)
-                    
-                    ts3 = TrainingsampleForCategory(trainingsample_id=latestid + 2, trainingsample_ver =1, date_expired=datetime(9999, 9, 12), samplefile_name=samplefilename3, filelocation=EXISTING_TRAINING_SAMPLES_LOCATION, concept_name = thirdConceptNameFromSplit)
-                    ts3.save(force_insert=True)
-                    
-                    ts_collection3 = TrainingsampleCollection( trainingsample_id= ts3.trainingsample_id, trainingsample_ver =ts3.trainingsample_ver, trainingsample_location = location3, collector=researcherName3, description= otherDetails3, date_started = datetime.strptime(trainingstart3, '%Y-%m-%d'), date_finished= datetime.strptime(trainingend3, '%Y-%m-%d'))
-                    ts_collection3.save()
-                    
-                    currentSampleIdAndVer3 = [ts3.trainingsample_id, ts3.trainingsample_ver, ts3.samplefile_name]
-                    current_samples_id_and_version = request.session['current_samples_id_and_version']
-                    current_samples_id_and_version.append(currentSampleIdAndVer3)
-                    request.session['current_samples_id_and_version'] = current_samples_id_and_version
-                                  
-                    create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'split', concept1 = conceptToSplit, concept2 = firstConceptNameFromSplit, concept3 = secondConceptNameFromSplit, concept4 = thirdConceptNameFromSplit)
-                    create_tset_activity_ops.save(force_insert=True)
-                    category_split_details = [conceptToSplit, firstConceptNameFromSplit, secondConceptNameFromSplit, thirdConceptNameFromSplit]
-                else:
-                    create_tset_activity_ops = CreateTrainingsetActivityOperations(create_trainingset_activity_id = create_ts_activity_instance, operation = 'split', concept1 = conceptToSplit, concept2 = firstConceptNameFromSplit, concept3 = secondConceptNameFromSplit)
-                    create_tset_activity_ops.save(force_insert=True)
-                    category_split_details = [conceptToSplit, firstConceptNameFromSplit, secondConceptNameFromSplit]
-                    
-                
-                if 'categories_split_from_existing' in request.session:
-                    categories_split_from_existing = request.session['categories_split_from_existing']
-                    categories_split_from_existing.append(category_split_details)
-                    request.session['categories_split_from_existing'] = categories_split_from_existing
-                else:
-                    categories_split_from_existing = [category_split_details]
-                    request.session['categories_split_from_existing'] = categories_split_from_existing
-                
-            if data['IsFinalSample']=='true':
-                filename = data['TrainingsetName'];
-                current_samples_filenames = [sample_id_and_ver[2] for sample_id_and_ver in request.session['current_samples_id_and_version']]
-                
-                manageCsvData.combine_multiple_csv_files(current_samples_filenames, EXISTING_TRAINING_SAMPLES_LOCATION, EXISTING_TRAINING_DATA_LOCATION, filename)
-                manageCsvData.remove_no_data_value(filename, EXISTING_TRAINING_DATA_LOCATION, filename, '0')
-                request.session['current_training_file_name'] = filename
-    
-                latesttsid = int (Trainingset.objects.latest("trainingset_id").trainingset_id) + 1
-                tr = Trainingset(trainingset_id=latesttsid, trainingset_ver =1, trainingset_name=request.session['current_training_file_name'], date_expired=datetime(9999, 9, 12), filelocation=EXISTING_TRAINING_DATA_LOCATION)
-                tr.save(force_insert=True)
-                request.session['current_training_file_id'] = tr.trainingset_id
-                request.session['current_training_file_ver'] = tr.trainingset_ver
-                
-                create_ts_activity_instance.trainingset_id = request.session['current_training_file_id']
-                create_ts_activity_instance.trainingset_ver = request.session['current_training_file_ver']
+                create_ts_activity_instance.collector = researcherName
+                create_ts_activity_instance.data_collection_start_date=trainingstart
+                create_ts_activity_instance.data_collection_end_date = trainingend
+                create_ts_activity_instance.other_details = otherDetails
                 create_ts_activity_instance.save(force_update=True)
                 
-                for sample_id_and_ver in current_samples_id_and_version:
-                    trainingset_trainingsamples_instance = TrainingsetTrainingsamples(trainingset_id = request.session['current_training_file_id'], trainingset_ver = request.session['current_training_file_ver'], trainingsample_id = sample_id_and_ver[0], trainingsample_ver = sample_id_and_ver[1])
-                    trainingset_trainingsamples_instance.save(force_insert=True)
-                
                 exp_chain = ExplorationChain(id = request.session['exploration_chain_id'], step = request.session['exploration_chain_step'], activity = 'create trainingset', activity_instance = create_ts_activity_instance.id)
                 exp_chain.save(force_insert=True)
                 request.session['exploration_chain_step'] = request.session['exploration_chain_step']+1
                 
                 if 'currenteditoperations' in request.session:
                     del request.session['currenteditoperations']
-                    request.session.modified = True
                 
                 if 'current_model_id' in request.session:
                     del request.session['model_type']    
@@ -609,14 +436,13 @@ def trainingsampleprocessing(request):
                     del request.session['model_score']
                     del request.session['producer_accuracies']
                     del request.session['user_accuracies']
-                    request.session.modified = True
         
                 if 'current_predicted_file_name' in request.session:
                     del request.session['current_test_file_name']
                     del request.session['current_predicted_file_name']
                     del request.session['current_test_file_columns']
                     del request.session['current_test_file_rows']
-                    request.session.modified = True
+                request.session.modified = True
                 
                 trainingsetasArray = []
                 trs = TrainingSet(request.session['current_training_file_name'])
@@ -680,10 +506,6 @@ def trainingsampleprocessing(request):
                 else:
                     request.session['current_exploration_chain_viz'] = [current_step]
                
-                #print request.session['trainingset_version_and_categories_relationship']
-                print request.session['categories_split_from_existing']
-                print request.session['new_categories']
-                print request.session['existing_categories']
                 
                 if len(common_categories) != 0 and isinstance(common_categories[0], list)==False:
                     common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
@@ -691,8 +513,6 @@ def trainingsampleprocessing(request):
         
                 return JsonResponse({'trainingset': trainingsetasArray, 'classes': classes, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories})
 
-                
-            return HttpResponse("")
         else:
             trainingfilepkey = data['1']
             trid, ver = trainingfilepkey.split('+')
@@ -886,17 +706,40 @@ def trainingsampleprocessing(request):
 
 def edittrainingset(request):
     if request.method=='POST':
+        managedata = ManageRasterData()
         data = request.POST
         editoperation_no = data['1']
         editoperaiton_details = []
         editoperaiton_details.append(editoperation_no)
         if editoperation_no=='1':
-            nodata_value = data['2'];
-            editoperaiton_details.append(nodata_value)
+            new_concept_name = data['conceptname']
+            trainingsamples = request.FILES.getlist('samplesfornewconcept')
+            samplefilenamefortheconcept = new_concept_name + str(datetime.now()) + ".csv"
+            trainingSamplesFileList = []
+            for trainingSamples in trainingsamples:
+                trainingSamplesFileList.append(trainingSamples.name)
+            managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList, samplefilenamefortheconcept, EXISTING_TRAINING_SAMPLES_LOCATION, new_concept_name)
+            editoperaiton_details.append(new_concept_name)
+            editoperaiton_details.append(samplefilenamefortheconcept)
         elif editoperation_no=='2':
             concept_to_remove = data['2'];
             editoperaiton_details.append(concept_to_remove)
         elif editoperation_no=='3':
+            concept_to_rename = data['2']
+            new_name = data['3']
+            editoperaiton_details.append(concept_to_rename)
+            editoperaiton_details.append(new_name)
+        elif editoperation_no=='4':
+            concepttoedit = data['concepttoedit']
+            trainingsamples = request.FILES.getlist('newsamples')
+            samplefilenamefortheconcept = concepttoedit + str(datetime.now()) + ".csv"
+            trainingSamplesFileList = []
+            for trainingSamples in trainingsamples:
+                trainingSamplesFileList.append(trainingSamples.name)
+            managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList, samplefilenamefortheconcept, EXISTING_TRAINING_SAMPLES_LOCATION, concepttoedit)
+            editoperaiton_details.append(concepttoedit)
+            editoperaiton_details.append(samplefilenamefortheconcept)
+        elif editoperation_no=='5':
             conceptstomerge = []
             concept1tomerge = data['concept1tomerge']
             concept2tomerge = data['concept2tomerge']
@@ -908,6 +751,18 @@ def edittrainingset(request):
             mergedconceptname = data['mergedconceptname'];
             editoperaiton_details.append(conceptstomerge)
             editoperaiton_details.append(mergedconceptname)
+        elif editoperation_no=='6':
+            conceptstogroup = []
+            concept1togroup = data['concept1togroup']
+            concept2togroup = data['concept2togroup']
+            conceptstogroup.append(concept1togroup)
+            conceptstogroup.append(concept2togroup)
+            if 'concept3togroup' in data:
+                concept3togroup = data['concept3togroup']
+                conceptstogroup.append(concept3togroup)
+            groupedconceptname = data['groupedconceptname'];
+            editoperaiton_details.append(conceptstogroup)
+            editoperaiton_details.append(groupedconceptname)
         else:
             trainingsamplesforfirstconcept = request.FILES.getlist('filesforconcept1')
             trainingsamplesforsecondconcept = request.FILES.getlist('filesforconcept2')
@@ -925,7 +780,7 @@ def edittrainingset(request):
             for trainingSamples in trainingsamplesforsecondconcept:
                 trainingSamplesFileList2.append(trainingSamples.name)
                 
-            managedata = ManageRasterData()
+            
             managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList1, samplefilenameforfirstconcept, EXISTING_TRAINING_SAMPLES_LOCATION, concept1)
             managedata.combine_multiple_raster_files_to_csv_file(trainingSamplesFileList2, samplefilenameforsecondconcept, EXISTING_TRAINING_SAMPLES_LOCATION, concept2)
 
@@ -974,10 +829,10 @@ def applyeditoperations(request):
         if os.path.isfile(EXISTING_TRAINING_DATA_LOCATION + "temp.csv"):
             trainingfilename = fname
         if editoperation[0] == '1':
-            nodata_value = editoperation[1]
-            print type(nodata_value)
-            manageCsvData.remove_no_data_value(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", nodata_value)          
-            tr_activity_details = ChangeTrainingsetActivityDetails(activity_id = tr_activity, operation = 'remove no data')
+            new_concept_name = editoperation[1]
+            samplefile_for_new_concept = editoperation[2]
+            manageCsvData.add_new_concept(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", new_concept_name, samplefile_for_new_concept, EXISTING_TRAINING_SAMPLES_LOCATION)         
+            tr_activity_details = ChangeTrainingsetActivityDetails(activity_id = tr_activity, operation = 'add', concept1= new_concept_name)
             tr_activity_details.save(force_insert=True)
             
         elif editoperation[0] == '2':
@@ -987,31 +842,42 @@ def applyeditoperations(request):
             tr_activity_details.save(force_insert=True)
             
         elif editoperation[0] == '3':
+            concept_to_rename = editoperation[1]
+            new_name = editoperation[2]
+            manageCsvData.renameConcept(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", concept_to_rename, new_name)
+            tr_activity_details = ChangeTrainingsetActivityDetails(activity_id = tr_activity, operation = 'rename', concept1= concept_to_rename, concept2 = new_name)
+            tr_activity_details.save(force_insert=True)
+        
+        elif editoperation[0] == '4':
+            concepttoedit = editoperation[1]
+            samplefilenamefortheconcept = editoperation[2]
+            manageCsvData.removeConcept(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", concepttoedit)
+            manageCsvData.add_new_concept("temp.csv", EXISTING_TRAINING_DATA_LOCATION, "temp.csv", concepttoedit, samplefilenamefortheconcept, EXISTING_TRAINING_SAMPLES_LOCATION)
+            tr_activity_details = ChangeTrainingsetActivityDetails(activity_id = tr_activity, operation = 'edit', concept1= concepttoedit)
+            tr_activity_details.save(force_insert=True)
+            
+        elif editoperation[0] == '5':
+            
             mergedconceptname = editoperation[2]
             concepts_to_merge = editoperation[1]
-            merged_sample_details = manageCsvData.mergeConcepts(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", concepts_to_merge, mergedconceptname)
-            
-            trainingset_trainingsamples_instance = TrainingsetTrainingsamples(trainingset_id = tr.trainingset_id, trainingset_ver = tr.trainingset_ver, trainingsample_id = merged_sample_details[0], trainingsample_ver = merged_sample_details[1])
-            trainingset_trainingsamples_instance.save(force_insert=True)
-            
+            manageCsvData.mergeConcepts(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", concepts_to_merge, mergedconceptname)
+                        
             if (len(concepts_to_merge) ==2):
                 tr_activity_details = ChangeTrainingsetActivityDetails(activity_id = tr_activity, operation = 'merge', concept1= concepts_to_merge[0], concept2 = concepts_to_merge[1], concept3 = mergedconceptname)
             else:
                 tr_activity_details = ChangeTrainingsetActivityDetails(activity_id = tr_activity, operation = 'merge', concept1= concepts_to_merge[0], concept2 = concepts_to_merge[1], concept3 = concepts_to_merge[2], concept4 = mergedconceptname)
             tr_activity_details.save(force_insert=True)
-            
+        
+        elif editoperation[0] == '6':
+            conceptstogroup = editoperation[1]
+            groupedconceptname = editoperation[2]
         else:
             concepttosplit = editoperation[1];
             firstconcept = editoperation[2];
             samplefilenameforfirstconcept = editoperation[3];
             secondconcept = editoperation[4];
             samplefilenameforsecondconcept = editoperation[5];
-            new_concept_details = manageCsvData.splitconcept(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", concepttosplit, firstconcept, samplefilenameforfirstconcept, secondconcept, samplefilenameforsecondconcept, EXISTING_TRAINING_SAMPLES_LOCATION)
-
-            trainingset_trainingsamples_instance1 = TrainingsetTrainingsamples(trainingset_id = tr.trainingset_id, trainingset_ver = tr.trainingset_ver, trainingsample_id = new_concept_details[0], trainingsample_ver = new_concept_details[1])
-            trainingset_trainingsamples_instance1.save(force_insert=True)
-            trainingset_trainingsamples_instance2 = TrainingsetTrainingsamples(trainingset_id = tr.trainingset_id, trainingset_ver = tr.trainingset_ver, trainingsample_id = new_concept_details[2], trainingsample_ver = new_concept_details[3])
-            trainingset_trainingsamples_instance2.save(force_insert=True)
+            manageCsvData.splitconcept(trainingfilename, EXISTING_TRAINING_DATA_LOCATION, "temp.csv", concepttosplit, firstconcept, samplefilenameforfirstconcept, secondconcept, samplefilenameforsecondconcept, EXISTING_TRAINING_SAMPLES_LOCATION)
 
             tr_activity_details = ChangeTrainingsetActivityDetails(activity_id = tr_activity, operation = 'split', concept1= concepttosplit, concept2 = firstconcept, concept3 = secondconcept)
             tr_activity_details.save(force_insert=True)
@@ -1022,6 +888,8 @@ def applyeditoperations(request):
             categories_merged_from_existing = []
             categories_split_from_existing = []
             categories_merged_from_new_and_existing = []
+            grouped_categories = []
+            renamed_existing_categories = []
             if 'new_categories' in request.session:
                 new_categories_while_exploring_changes = request.session['new_categories']
             if 'existing_categories' in request.session:
@@ -1032,6 +900,10 @@ def applyeditoperations(request):
                 categories_split_from_existing = request.session['categories_split_from_existing']
             if 'categories_merged_from_new_and_existing' in request.session:
                 categories_merged_from_new_and_existing = request.session['categories_merged_from_new_and_existing']
+            if 'grouped_categories' in request.session:
+                grouped_categories = request.session['grouped_categories']
+            if 'renamed_existing_categories' in request.session:
+                renamed_existing_categories = request.session['renamed_existing_categories']
             
             #save the relationships of categories from trainingset, which is just versioned, with the categories from trainingset of existing taxonomy that we are trying to change
             old_version_and_categories_relationships = [trid, ver, [elem for elem in new_categories_while_exploring_changes], [elem for elem in existing_categories], [elem for elem in categories_merged_from_existing], [elem for elem in categories_split_from_existing], [elem for elem in categories_merged_from_new_and_existing]]
@@ -1043,14 +915,20 @@ def applyeditoperations(request):
             else:
                 request.session['trainingset_version_and_categories_relationship'] = [old_version_and_categories_relationships]
                 
-            #Update the relationship of concepts when remove a concept
-            if editoperation[0] == '2':
+            #Update the relationship of concepts when add a new concept
+            if editoperation[0] == '1':
+                new_categories_while_exploring_changes.append(new_concept_name)
+                request.session['new_categories'] = new_categories_while_exploring_changes
+            #Update the relationship of concepts when remove a concept          
+            elif editoperation[0] == '2':
                 if concept_to_remove in new_categories_while_exploring_changes:
                     new_categories_while_exploring_changes.remove(concept_to_remove)
                     request.session['new_categories'] = new_categories_while_exploring_changes
                 elif concept_to_remove in existing_categories:
                     existing_categories.remove(concept_to_remove)
                     request.session['existing_categories'] = existing_categories
+                elif len([True for x in renamed_existing_categories if concept_to_remove in x]) >0:
+                    request.session['renamed_existing_categories'] = [y for y in renamed_existing_categories if concept_to_remove not in y]
                 else:
                     found_the_category = False
                     if (len(categories_merged_from_existing) !=0):
@@ -1074,15 +952,93 @@ def applyeditoperations(request):
                             if concept_to_remove in each_set:
                                 x = each_set
                                 x.remove(concept_to_remove)
-                                x.append("sub-classes")
+                                #x.append("sub-classes")
                                 categories_split_from_existing.remove(each_set)
                                 categories_split_from_existing.append(x)
                                 request.session['categories_split_from_existing'] = categories_split_from_existing
                                 found_the_category = True
                                 break
-                    
-            #Update the relationship of concepts when merged concepts          
+                if (len(grouped_categories) !=0):
+                    for each_set in grouped_categories:
+                        if concept_to_remove in each_set:
+                            x = each_set
+                            x.remove(concept_to_remove)
+                            grouped_categories.remove(each_set)
+                            grouped_categories.append(x)
+                            request.session['grouped_categories'] = grouped_categories
+                            break
+                                
+            #Update the relationship of concepts when renamed a concept
             elif editoperation[0] == '3':
+                if concept_to_rename in new_categories_while_exploring_changes:
+                    new_categories_while_exploring_changes.remove(concept_to_rename)
+                    new_categories_while_exploring_changes.append(new_name)
+                    request.session['new_categories'] = new_categories_while_exploring_changes
+                elif concept_to_rename in existing_categories:
+                    existing_categories.remove(concept_to_rename)
+                    request.session['existing_categories'] = existing_categories
+                    renamed_existing_categories.append(new_name)
+                    request.session['renamed_existing_categories'] = renamed_existing_categories
+                elif len([True for x in renamed_existing_categories if concept_to_rename in x]) >0:
+                    for each_set in renamed_existing_categories:
+                        if concept_to_rename in each_set:
+                            x = each_set
+                            x.remove(concept_to_rename)
+                            x.append(new_name)
+                            renamed_existing_categories.remove(each_set)
+                            renamed_existing_categories.append(x)
+                            request.session['renamed_existing_categories'] = renamed_existing_categories
+                            break
+                else:
+                    found_the_category = False
+                    if (len(categories_merged_from_existing) !=0):
+                        for merged_category in categories_merged_from_existing:
+                            if merged_category[-1] == concept_to_rename:
+                                x = merged_category
+                                categories_merged_from_existing.remove(merged_category)
+                                x.pop()
+                                x.append(new_name)
+                                categories_merged_from_existing.append(x)
+                                request.session['categories_merged_from_existing'] = categories_merged_from_existing
+                                found_the_category = True
+                                break
+                    if found_the_category==False and (len(categories_merged_from_new_and_existing) !=0):
+                        for merged_category in categories_merged_from_new_and_existing:
+                            if merged_category[-1] == concept_to_rename:
+                                x = merged_category
+                                categories_merged_from_new_and_existing.remove(merged_category)
+                                x.pop()
+                                x.append(new_name)
+                                categories_merged_from_new_and_existing.append(x)
+                                request.session['categories_merged_from_new_and_existing'] = categories_merged_from_new_and_existing
+                                found_the_category = True
+                                break
+                    
+                    if found_the_category==False and (len(categories_split_from_existing) !=0):
+                        for each_set in categories_split_from_existing:
+                            if concept_to_rename in each_set:
+                                x = each_set
+                                categories_split_from_existing.remove(each_set)
+                                x.remove(concept_to_rename)
+                                x.append(new_name)
+                                categories_split_from_existing.append(x)
+                                request.session['categories_split_from_existing'] = categories_split_from_existing
+                                found_the_category = True
+                                break
+                if (len(grouped_categories) !=0):
+                    for each_set in grouped_categories:
+                        if concept_to_rename in each_set:
+                            x = each_set
+                            x.remove(concept_to_rename)
+                            x.insert(0, new_name)
+                            grouped_categories.remove(each_set)
+                            grouped_categories.append(x)
+                            request.session['grouped_categories'] = grouped_categories
+                            break
+              
+                            
+            #Update the relationship of concepts when merging concepts          
+            elif editoperation[0] == '5':
                 allconceptsfromnew = True
                 allconceptsfromexisting = True
                 conceptsinbothnewandexisting = []
@@ -1092,6 +1048,9 @@ def applyeditoperations(request):
                         allconceptsfromexisting = False
                     elif concept in existing_categories:
                         conceptsinbothnewandexisting.append([concept, 'existing'])
+                        allconceptsfromnew = False
+                    elif len([True for x in renamed_existing_categories if concept in x]) >0:
+                        conceptsinbothnewandexisting.append([concept, 'existing_renamed'])
                         allconceptsfromnew = False
                     else:
                         allconceptsfromexisting = False
@@ -1111,9 +1070,17 @@ def applyeditoperations(request):
                 elif allconceptsfromexisting == True:
                     new_concept_from_merging_existing_concepts = []
                     for concept in editoperation[1]:
-                        existing_categories.remove(concept)
-                        new_concept_from_merging_existing_concepts.append(concept)
-                    request.session['existing_categories'] = existing_categories
+                        if concept in existing_categories:
+                            existing_categories.remove(concept)
+                            request.session['existing_categories'] = existing_categories
+                            new_concept_from_merging_existing_concepts.append(concept)
+                        else:
+                            for a in renamed_existing_categories:
+                                if concept in a:
+                                    new_concept_from_merging_existing_concepts.append(a[0])
+                                    renamed_existing_categories.remove(a)
+                                    request.session['renamed_existing_categories'] = renamed_existing_categories
+                                    break
                     new_concept_from_merging_existing_concepts.append(mergedconceptname)
                     categories_merged_from_existing.append(new_concept_from_merging_existing_concepts)
                     request.session['categories_merged_from_existing'] = categories_merged_from_existing
@@ -1122,12 +1089,18 @@ def applyeditoperations(request):
                     for concept in conceptsinbothnewandexisting:
                         if concept[1] == 'new':
                             new_categories_while_exploring_changes.remove(concept[0])
+                            request.session['new_categories'] = new_categories_while_exploring_changes
+                            new_concept_from_merging_existing_and_new_concepts.append(concept[0])
+                        elif concept[1] == 'existing':
+                            existing_categories.remove(concept[0])
+                            request.session['existing_categories'] = existing_categories
                             new_concept_from_merging_existing_and_new_concepts.append(concept[0])
                         else:
-                            existing_categories.remove(concept[0])
-                            new_concept_from_merging_existing_and_new_concepts.append(concept[0])
-                    request.session['new_categories'] = new_categories_while_exploring_changes
-                    request.session['existing_categories'] = existing_categories
+                            a = [x for x in renamed_existing_categories if concept[0] in x][0]
+                            new_concept_from_merging_existing_and_new_concepts.append(a[0])
+                            renamed_existing_categories.remove(a)
+                            request.session['renamed_existing_categories'] = renamed_existing_categories
+                            
                     new_concept_from_merging_existing_and_new_concepts.append(mergedconceptname)
                     categories_merged_from_new_and_existing.append(new_concept_from_merging_existing_and_new_concepts)
                     request.session['categories_merged_from_new_and_existing'] = categories_merged_from_new_and_existing
@@ -1207,7 +1180,7 @@ def applyeditoperations(request):
                                     request.session['categories_split_from_existing'] = categories_split_from_existing
                                     
             #Update the relationship of concepts when splitting concepts - assuming a concept is split in two concepts only         
-            elif editoperation[0] == '4':
+            elif editoperation[0] == '7':
                 if concepttosplit in new_categories_while_exploring_changes:
                     new_categories_while_exploring_changes.remove(concepttosplit)
                     new_categories_while_exploring_changes.append(firstconcept)
@@ -1218,6 +1191,14 @@ def applyeditoperations(request):
                     request.session['existing_categories'] = existing_categories
                     categories_split_from_existing.append([concepttosplit, firstconcept, secondconcept])
                     request.session['categories_split_from_existing'] = categories_split_from_existing
+                elif len([True for x in renamed_existing_categories if concepttosplit in x]) >0:
+                    for each_set in renamed_existing_categories:
+                        if concepttosplit in each_set:
+                            categories_split_from_existing.append([each_set[0], firstconcept, secondconcept])
+                            renamed_existing_categories.remove(each_set)
+                            request.session['renamed_existing_categories'] = renamed_existing_categories
+                            request.session['categories_split_from_existing'] = categories_split_from_existing
+                            break
                 else:
                     FoundTheConcept = False
                     if (len(categories_merged_from_existing) !=0):
@@ -1271,15 +1252,21 @@ def applyeditoperations(request):
     if 'existing_categories' in request.session:  
         print "2"     
         print request.session['existing_categories']
-    if 'categories_merged_from_existing' in request.session:
+    if 'renamed_existing_categories' in request.session:
         print "3" 
+        print request.session['renamed_existing_categories']  
+    if 'categories_merged_from_existing' in request.session:
+        print "4" 
         print request.session['categories_merged_from_existing']
     if 'categories_merged_from_new_and_existing' in request.session:
-        print "4" 
+        print "5" 
         print request.session['categories_merged_from_new_and_existing']
     if 'categories_split_from_existing' in request.session:
-        print "5" 
+        print "6" 
         print request.session['categories_split_from_existing']
+    if 'categories_grouped' in request.session:
+        print "7" 
+        print request.session['categories_grouped']
     
     #adding details for current exploration details for visualization
     old_trainingset_name = request.session['current_training_file_name']
@@ -1288,16 +1275,27 @@ def applyeditoperations(request):
 
     for editoperation in currenteditoperations:
         if editoperation[0] == '1':
-            data_content = data_content + "Remove 'no data' values<br/>"
+            data_content = data_content + "Add new concept " + editoperation[1] + "<br/>"
         elif editoperation[0] == '2': 
-            data_content = data_content + "Remove concept" + editoperation[1]  + "<br/>"
+            data_content = data_content + "Remove concept " + editoperation[1]  + "<br/>"
         elif editoperation[0] == '3':
+            data_content = data_content + "Rename " + editoperation[1]  + " to " + editoperation[2] + "<br/>"
+        elif editoperation[0] == '4':
+            data_content = data_content + "Edit concept " + editoperation[1]  + "<br/>"
+        elif editoperation[0] == '5':
             mergedconceptname = editoperation[2]
             concepts_to_merge = editoperation[1]
             if len(concepts_to_merge) ==2:
                 data_content = data_content + "Merge " + concepts_to_merge[0] + " and " + concepts_to_merge[1] + " to create " + mergedconceptname + "<br/>"
             else:
                 data_content = data_content + "Merge " + concepts_to_merge[0] + ", " + concepts_to_merge[1] + " and " + concepts_to_merge[2] + " to create " + mergedconceptname + "<br/>"
+        elif editoperation[0] == '6':
+            groupedconceptname = editoperation[2]
+            concepts_to_group = editoperation[1]
+            if len(concepts_to_group) ==2:
+                data_content = data_content + "Group " + concepts_to_group[0] + " and " + concepts_to_group[1] + " to create " + groupedconceptname + "<br/>"
+            else:
+                data_content = data_content + "Group " + concepts_to_group[0] + ", " + concepts_to_group[1] + " and " + concepts_to_group[2] + " to create " + groupedconceptname + "<br/>"
         else:
             concepttosplit = editoperation[1];
             firstconcept = editoperation[2];
@@ -1340,9 +1338,10 @@ def applyeditoperations(request):
         new_training_sample = TrainingSet(request.session['current_training_file_name'])
         old_training_sample = TrainingSet(old_trainingset_name)
         common_categories, new_categories, deprecated_categories = new_training_sample.compare_training_samples(old_training_sample)
-        if isinstance(common_categories[0], list)==False:
-            common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
-            return JsonResponse({'trainingset': trainingsetasArray, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories, 'common_categories_message':common_categories_message})
+        if len(common_categories)!=0:
+            if isinstance(common_categories[0], list)==False:
+                common_categories_message = "The two training samples have different number of bands; so, we cannot compare common categories based on training samples"
+                return JsonResponse({'trainingset': trainingsetasArray, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories, 'common_categories_message':common_categories_message})
 
         return JsonResponse({'trainingset': trainingsetasArray, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'common_categories': common_categories, 'new_categories':new_categories, 'deprecated_categories': deprecated_categories})
 
@@ -1604,8 +1603,15 @@ def signaturefile(request):
                 
                 old_categories, old_mean_vectors, old_covariance_mat = find_all_active_categories_and_their_comp_int_for_a_legend_version(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
                 new_categories = list(numpy.unique(trainingfile.target))
-                common_categories = request.session['existing_categories']
+                common_categories = []
+                common_categories_with_different_names = []
+                if 'existing_categories' in request.session:
+                    common_categories = request.session['existing_categories']
+                if 'renamed_existing_categories' in request.session:
+                    common_categories_with_different_names = request.session['renamed_existing_categories']
+                    
                 common_categories_comparison = []
+                common_categories_with_different_names_comparison = []
                 if len(old_mean_vectors[0]) != len(mean_vectors[0][1]):
                     for common_category in common_categories:
                         single_category_comparison = []
@@ -1619,27 +1625,57 @@ def signaturefile(request):
                         single_category_comparison.append(userAccuracy)
                         old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category)
                         if len(old_category_details) == 1:
-                            single_category_comparison.append(old_category_details[0][2])
                             single_category_comparison.append(old_category_details[0][3])
+                            single_category_comparison.append(old_category_details[0][2])
                             single_category_comparison.append(old_category_details[0][0])
                             single_category_comparison.append(old_category_details[0][1])
                         else:
                             w1, x1, y1, z1 = str(old_category_details[0][2]), str(old_category_details[0][3]), str(old_category_details[0][0]), str(old_category_details[0][1])
                             for i in range(1, len(old_category_details)):
-                                w1 = w1 + ", " + str(old_category_details[i][2])
-                                x1 = x1 + ", " + str(old_category_details[i][3])
+                                w1 = w1 + ", " + str(old_category_details[i][3])
+                                x1 = x1 + ", " + str(old_category_details[i][2])
                                 y1 = y1 + ", " + str(old_category_details[i][0])
                                 z1 = z1 + ", " + str(old_category_details[i][1])
                             single_category_comparison.append(w1)
                             single_category_comparison.append(x1)
                             single_category_comparison.append(y1)
                             single_category_comparison.append(z1)
-                            
                         common_categories_comparison.append(single_category_comparison)
-                    return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': final_suggestion_list, 'common_categories_comparison': common_categories_comparison})
+                        
+                    for common_category in common_categories_with_different_names:
+                        single_category_comparison = []
+                        index_of_common_category_in_accuracy_list = new_categories.index(common_category[1])
+                        producerAccuracy = prodacc[index_of_common_category_in_accuracy_list]
+                        userAccuracy = useracc[index_of_common_category_in_accuracy_list]
+                        single_category_comparison.append(common_category[1])
+                        single_category_comparison.append("Naive bayes")
+                        single_category_comparison.append(validationtype)
+                        single_category_comparison.append(producerAccuracy)
+                        single_category_comparison.append(userAccuracy)
+                        old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category[0])
+                        single_category_comparison.append(common_category[0])
+                        if len(old_category_details) == 1:
+                            single_category_comparison.append(old_category_details[0][3])
+                            single_category_comparison.append(old_category_details[0][2])
+                            single_category_comparison.append(old_category_details[0][0])
+                            single_category_comparison.append(old_category_details[0][1])
+                        else:
+                            w1, x1, y1, z1 = str(old_category_details[0][2]), str(old_category_details[0][3]), str(old_category_details[0][0]), str(old_category_details[0][1])
+                            for i in range(1, len(old_category_details)):
+                                w1 = w1 + ", " + str(old_category_details[i][3])
+                                x1 = x1 + ", " + str(old_category_details[i][2])
+                                y1 = y1 + ", " + str(old_category_details[i][0])
+                                z1 = z1 + ", " + str(old_category_details[i][1])
+                            single_category_comparison.append(w1)
+                            single_category_comparison.append(x1)
+                            single_category_comparison.append(y1)
+                            single_category_comparison.append(z1)
+                        common_categories_with_different_names_comparison.append(single_category_comparison)
+                        
+                    return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': final_suggestion_list, 'common_categories_comparison': common_categories_comparison, 'common_categories_with_different_names_comparison': common_categories_with_different_names_comparison})
                 else:
-                    existing_categories_comparison_to_store = []
-
+                    existing_categories_computational_intension_comparison = []
+                                        
                     for common_category in common_categories:
                         single_category_comparison = []
                         index_of_common_category_in_accuracy_list = new_categories.index(common_category)
@@ -1652,15 +1688,15 @@ def signaturefile(request):
                         single_category_comparison.append(userAccuracy)
                         old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category)
                         if len(old_category_details) == 1:
-                            single_category_comparison.append(old_category_details[0][2])
                             single_category_comparison.append(old_category_details[0][3])
+                            single_category_comparison.append(old_category_details[0][2])
                             single_category_comparison.append(old_category_details[0][0])
                             single_category_comparison.append(old_category_details[0][1])
                         else:
                             w1, x1, y1, z1 = str(old_category_details[0][2]), str(old_category_details[0][3]), str(old_category_details[0][0]), str(old_category_details[0][1])
                             for i in range(1, len(old_category_details)):
-                                w1 = w1 + ", " + str(old_category_details[i][2])
-                                x1 = x1 + ", " + str(old_category_details[i][3])
+                                w1 = w1 + ", " + str(old_category_details[i][3])
+                                x1 = x1 + ", " + str(old_category_details[i][2])
                                 y1 = y1 + ", " + str(old_category_details[i][0])
                                 z1 = z1 + ", " + str(old_category_details[i][1])
                             single_category_comparison.append(w1)
@@ -1689,52 +1725,212 @@ def signaturefile(request):
                                 model = NormalDistributionIntensionalModel(old_mean_vectors[old_index][i], old_covariance_mat[old_index][i])
                                 jm = model1.jm_distance(model)
                                 jm_for_multiple_comp_vers = jm_for_multiple_comp_vers + jm + ", "
-                                jm_list.append(jm)
+                                jm_list.append([old_categories[old_index][3+i], jm])
                             single_category_comparison.append(jm_for_multiple_comp_vers)
                             a = [common_category, jm_list]
                         
-                        existing_categories_comparison_to_store.append(a)
+                        existing_categories_computational_intension_comparison.append(a)
                         common_categories_comparison.append(single_category_comparison)
-                    print common_categories_comparison
-                    if len(existing_categories_comparison_to_store) != 0:
-                        request.session['existing_categories_computational_intension_comparison'] = existing_categories_comparison_to_store
                     
-                                    
+                    if len(existing_categories_computational_intension_comparison) != 0:
+                        request.session['existing_categories_computational_intension_comparison'] = existing_categories_computational_intension_comparison
+                    
+                    
+                    renamed_existing_categories_computational_intension_comparison = [] 
+                    for common_category in common_categories_with_different_names:
+                        single_category_comparison = []
+                        index_of_common_category_in_accuracy_list = new_categories.index(common_category[1])
+                        producerAccuracy = prodacc[index_of_common_category_in_accuracy_list]
+                        userAccuracy = useracc[index_of_common_category_in_accuracy_list]
+                        single_category_comparison.append(common_category[1])
+                        single_category_comparison.append("Naive bayes")
+                        single_category_comparison.append(validationtype)
+                        single_category_comparison.append(producerAccuracy)
+                        single_category_comparison.append(userAccuracy)
+                        old_category_details = customQuery.get_accuracies_and_validation_method_of_a_category(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'], common_category[0])
+                        single_category_comparison.append(common_category[0])
+                        if len(old_category_details) == 1:
+                            single_category_comparison.append(old_category_details[0][3])
+                            single_category_comparison.append(old_category_details[0][2])
+                            single_category_comparison.append(old_category_details[0][0])
+                            single_category_comparison.append(old_category_details[0][1])
+                        else:
+                            w1, x1, y1, z1 = str(old_category_details[0][2]), str(old_category_details[0][3]), str(old_category_details[0][0]), str(old_category_details[0][1])
+                            for i in range(1, len(old_category_details)):
+                                w1 = w1 + ", " + str(old_category_details[i][3])
+                                x1 = x1 + ", " + str(old_category_details[i][2])
+                                y1 = y1 + ", " + str(old_category_details[i][0])
+                                z1 = z1 + ", " + str(old_category_details[i][1])
+                            single_category_comparison.append(w1)
+                            single_category_comparison.append(x1)
+                            single_category_comparison.append(y1)
+                            single_category_comparison.append(z1)
+                        
+                        new_index = [i for i, each_vector in enumerate(mean_vectors) if  each_vector[0] == common_category[1]][0]
+                        model1 = NormalDistributionIntensionalModel(mean_vectors[new_index][1], covariance_mat[new_index][1])
+                        num_of_comp_ver = 1
+                        for each_old_category in old_categories:
+                            if common_category[0] in each_old_category:
+                                num_of_comp_ver = len(each_old_category) -3
+                                old_index = old_categories.index(each_old_category)
+                                break
+                            
+                        if num_of_comp_ver==1:
+                            model2 = NormalDistributionIntensionalModel(old_mean_vectors[old_index], old_covariance_mat[old_index])
+                            jm = model1.jm_distance(model2)
+                            single_category_comparison.append(jm)
+                            a = [common_category[1], common_category[0], jm]
+                        else:
+                            jm_for_multiple_comp_vers = ""
+                            jm_list = []
+                            for i in range(num_of_comp_ver):
+                                model = NormalDistributionIntensionalModel(old_mean_vectors[old_index][i], old_covariance_mat[old_index][i])
+                                jm = model1.jm_distance(model)
+                                jm_for_multiple_comp_vers = jm_for_multiple_comp_vers + jm + ", "
+                                jm_list.append([old_categories[old_index][3+i], jm])
+                            single_category_comparison.append(jm_for_multiple_comp_vers)
+                            a = [common_category[1], common_category[0], jm_list]
+                            
+                        renamed_existing_categories_computational_intension_comparison.append(a)
+                        common_categories_with_different_names_comparison.append(single_category_comparison)
+                    
+                    if len(renamed_existing_categories_computational_intension_comparison) != 0:
+                        request.session['renamed_existing_categories_computational_intension_comparison'] = renamed_existing_categories_computational_intension_comparison
+                    
+                    
+                    
+                                
                     categories_split_from_existing = []
-                    categories_split_from_existing_comparison_to_store = []
+                    categories_split_from_existing_comparison = []
+                    split_categories_computational_intension_comparison = []
                     if 'categories_split_from_existing' in request.session:
                         categories_split_from_existing = request.session['categories_split_from_existing']
                     for split_categories in categories_split_from_existing:
                         existing_category_that_is_split = split_categories[0]
-                        for i in range(1, len(split_categories)-1):
-                            index_of_existing_category_that_is_split = [j for j, each_vector in enumerate(old_mean_vectors) if  each_vector[0] == existing_category_that_is_split][0]
+                        num_of_comp_ver = 1
+                        for each_old_category in old_categories:
+                            if existing_category_that_is_split in each_old_category:
+                                num_of_comp_ver = len(each_old_category) -3
+                                old_index = old_categories.index(each_old_category)
+                                break
+                        
+                        for i in range(1, len(split_categories)):
+                            single_category_comparison = []
                             index_of_new_category = [j for j, each_vector in enumerate(mean_vectors) if  each_vector[0] == split_categories[i]][0]
                             model1 = NormalDistributionIntensionalModel(mean_vectors[index_of_new_category][1], covariance_mat[index_of_new_category][1])
-                            model2 = NormalDistributionIntensionalModel(old_mean_vectors[index_of_existing_category_that_is_split][1], old_covariance_mat[index_of_existing_category_that_is_split][1])
-                            jm = model1.jm_distance(model2)
-                            categories_split_from_existing_comparison_to_store.append([split_categories[i], existing_category_that_is_split, jm])
-                    if len(categories_split_from_existing_comparison_to_store) !=0:
-                        request.session['split_categories_computational_intension_comparison'] = categories_split_from_existing_comparison_to_store
+                            
+                            if num_of_comp_ver==1:
+                                model2 = NormalDistributionIntensionalModel(old_mean_vectors[old_index], old_covariance_mat[old_index])
+                                jm = model1.jm_distance(model2)
+                                single_category_comparison = [split_categories[i], split_categories[0], jm]
+                                a = [split_categories[i], split_categories[0], jm]
+                            else:
+                                jm_for_multiple_comp_vers = ""
+                                jm_list = []
+                                for i in range(num_of_comp_ver):
+                                    model = NormalDistributionIntensionalModel(old_mean_vectors[old_index][i], old_covariance_mat[old_index][i])
+                                    jm = model1.jm_distance(model)
+                                    jm_for_multiple_comp_vers = jm_for_multiple_comp_vers + jm + ", "
+                                    jm_list.append([old_categories[old_index][3+i], jm])
+                                single_category_comparison = [split_categories[i], split_categories[0], jm_for_multiple_comp_vers]
+                                a = [split_categories[i], split_categories[0], jm_list]
+                                
+                            categories_split_from_existing_comparison.append(single_category_comparison)
+                            split_categories_computational_intension_comparison.append(a)
+                            
+                    if len(split_categories_computational_intension_comparison) !=0:
+                        request.session['split_categories_computational_intension_comparison'] = split_categories_computational_intension_comparison
                     
                                     
                     categories_merged_from_existing = []
-                    categories_merged_from_existing_comparison_to_store = []
+                    categories_merged_from_existing_comparison = []
+                    merged_categories_computational_intensional_comparison = []
                     if 'categories_merged_from_existing' in request.session:
                         categories_merged_from_existing = request.session['categories_merged_from_existing']      
                                 
                     for merged_categories in categories_merged_from_existing:
                         resulting_merged_category = merged_categories[-1]
                         for i in range(0, len(merged_categories)-1):
+                            single_category_comparison = []
+                            a = []
+                            for each_old_category in old_categories:
+                                if merged_categories[i] in each_old_category:
+                                    num_of_comp_ver = len(each_old_category) -3
+                                    old_index = old_categories.index(each_old_category)
+                                    break
                             index_of_resulting_merged_category = [j for j, each_vector in enumerate(mean_vectors) if  each_vector[0] == resulting_merged_category][0]
-                            index_of_merged_category = [j for j, each_vector in enumerate(old_mean_vectors) if  each_vector[0] == merged_categories[i]][0]
                             model1 = NormalDistributionIntensionalModel(mean_vectors[index_of_resulting_merged_category][1], covariance_mat[index_of_resulting_merged_category][1])
-                            model2 = NormalDistributionIntensionalModel(old_mean_vectors[index_of_merged_category][1], old_covariance_mat[index_of_merged_category][1])
-                            jm = model1.jm_distance(model2)
-                            categories_merged_from_existing_comparison_to_store.append([resulting_merged_category, merged_categories[i], jm])
-                    if len(categories_merged_from_existing_comparison_to_store) !=0:
-                        request.session['merged_categories_computational_intension_comparison'] = categories_merged_from_existing_comparison_to_store
+                            
+                            if num_of_comp_ver==1:
+                                model2 = NormalDistributionIntensionalModel(old_mean_vectors[old_index], old_covariance_mat[old_index])
+                                jm = model1.jm_distance(model2)
+                                single_category_comparison = [merged_categories[-1], merged_categories[i], jm]
+                                a = [merged_categories[-1], merged_categories[i], jm]
+                            else:
+                                jm_for_multiple_comp_vers = ""
+                                jm_list = []
+                                for i in range(num_of_comp_ver):
+                                    model = NormalDistributionIntensionalModel(old_mean_vectors[old_index][i], old_covariance_mat[old_index][i])
+                                    jm = model1.jm_distance(model)
+                                    jm_for_multiple_comp_vers = jm_for_multiple_comp_vers + jm + ", "
+                                    jm_list.append([old_categories[old_index][3+i], jm])
+                                    
+                                single_category_comparison = [merged_categories[-1], merged_categories[i], jm_for_multiple_comp_vers]
+                                a = [merged_categories[-1], merged_categories[i], jm_list]
+                            
+                            categories_merged_from_existing_comparison.append(single_category_comparison)
+                            merged_categories_computational_intensional_comparison.append(a)
+                    if len(merged_categories_computational_intensional_comparison) !=0:
+                        request.session['merged_categories_computational_intensional_comparison'] = merged_categories_computational_intensional_comparison
+                        
                     
-                    return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'],'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': final_suggestion_list, 'common_categories_comparison': common_categories_comparison, 'split_categories_comparison': categories_split_from_existing_comparison_to_store, 'merged_categories_comparison': categories_merged_from_existing_comparison_to_store})
+                    categories_merged_from_new_and_existing = []
+                    categories_merged_from_new_and_existing_comparison = []
+                    merged_categories_from_new_and_existing_computational_intension_comparison = []
+                    if 'categories_merged_from_new_and_existing' in request.session:
+                        categories_merged_from_new_and_existing = request.session['categories_merged_from_new_and_existing']
+                        
+                    for merged_categories in categories_merged_from_new_and_existing:
+                        resulting_merged_category = merged_categories[-1]
+                        
+                        for i in range(0, len(merged_categories)-1):
+                            single_category_comparison = []
+                            a = []
+                            is_existing_category = False
+                            for each_old_category in old_categories:
+                                if merged_categories[i] in each_old_category:
+                                    is_existing_category = True
+                                    num_of_comp_ver = len(each_old_category) -3
+                                    old_index = old_categories.index(each_old_category)
+                                    break
+                            if is_existing_category == True:
+                                index_of_resulting_merged_category = [j for j, each_vector in enumerate(mean_vectors) if  each_vector[0] == resulting_merged_category][0]
+                                model1 = NormalDistributionIntensionalModel(mean_vectors[index_of_resulting_merged_category][1], covariance_mat[index_of_resulting_merged_category][1])
+                                
+                                if num_of_comp_ver==1:
+                                    model2 = NormalDistributionIntensionalModel(old_mean_vectors[old_index], old_covariance_mat[old_index])
+                                    jm = model1.jm_distance(model2)
+                                    single_category_comparison = [merged_categories[-1], merged_categories[i], jm]
+                                    a = [merged_categories[-1], merged_categories[i], jm]
+                                else:
+                                    jm_for_multiple_comp_vers = ""
+                                    jm_list = []
+                                    for i in range(num_of_comp_ver):
+                                        model = NormalDistributionIntensionalModel(old_mean_vectors[old_index][i], old_covariance_mat[old_index][i])
+                                        jm = model1.jm_distance(model)
+                                        jm_for_multiple_comp_vers = jm_for_multiple_comp_vers + jm + ", "
+                                        jm_list.append([old_categories[old_index][3+i], jm])
+                                        
+                                    single_category_comparison = [merged_categories[-1], merged_categories[i], jm_for_multiple_comp_vers]
+                                    a = [merged_categories[-1], merged_categories[i], jm_list]
+                                
+                                categories_merged_from_new_and_existing_comparison.append(single_category_comparison)
+                                merged_categories_from_new_and_existing_computational_intension_comparison.append(a)
+                    if len(merged_categories_from_new_and_existing_computational_intension_comparison) !=0:
+                        request.session['merged_categories_from_new_and_existing_computational_intension_comparison'] = merged_categories_from_new_and_existing_computational_intension_comparison
+                        
+                    
+                    return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'],'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': final_suggestion_list, 'common_categories_comparison': common_categories_comparison, 'common_categories_with_different_names_comparison': common_categories_with_different_names_comparison, 'split_categories_comparison': categories_split_from_existing_comparison, 'merged_categories_comparison': categories_merged_from_existing_comparison, 'categories_merged_from_new_and_existing_comparison': categories_merged_from_new_and_existing_comparison})
                
             return JsonResponse({'attributes': features, 'user_name':user_name, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'jm_limit':request.session['jm_distance_limit'], 'acc_limit': request.session['accuracy_limit'], 'score': score, 'listofclasses': clf.classes_.tolist(), 'meanvectors':clf.theta_.tolist(), 'variance':clf.sigma_.tolist(), 'kappa':kp, 'cm': cmname, 'prodacc': prodacc, 'useracc': useracc, 'jmdistances': jmdistances_complete_list, 'suggestion_list': final_suggestion_list})
         
@@ -2035,6 +2231,8 @@ def unsupervised(request):
         
         clustering_method = KMeans(n_clusters = int(number_of_clusters))
         cluster_labels = clustering_method.fit_predict(samples_as_nparray)
+        
+        '''      
         if num_of_bands == 8:
             fig, axes = plt.subplots(10, 3, squeeze=False)
             fig.set_size_inches(35, 70)
@@ -2043,8 +2241,43 @@ def unsupervised(request):
             fig, axes = plt.subplots(1, 3, squeeze=False)
             fig.set_size_inches(15, 5)
             matplotlib.rcParams.update({'font.size':10})
+            '''
+        
+        fig = plt.figure()
+        gs = gridspec.GridSpec(2, 2)
+        ax1 = fig.add_subplot(gs[0, 0])
+        ax2 = fig.add_subplot(gs[0, 1])
+        ax3 = fig.add_subplot(gs[1, 0])
+        fig.set_size_inches(18, 14)
+        matplotlib.rcParams.update({'font.size':18})
         colors = cm.spectral(cluster_labels.astype(float) / int(number_of_clusters))
         
+       
+        ax1.scatter(samples_as_nparray[:, 0], samples_as_nparray[:, 3], marker = '.', s=30, lw=0, alpha = 0.7, c = colors)
+        ax1.set_xlabel("Band 1")
+        ax1.set_ylabel("Band 4")
+        centers = clustering_method.cluster_centers_
+        ax1.scatter(centers[:, 0], centers[:, 3], marker='o', c="yellow", alpha = 1, s= 200)
+        for i, c in enumerate(centers):
+            ax1.scatter(c[0], c[3], marker='$%d$' % i, alpha=1, s=50)
+        
+        ax2.scatter(samples_as_nparray[:, 0], samples_as_nparray[:, 4], marker = '.', s=30, lw=0, alpha = 0.7, c = colors)
+        ax2.set_xlabel("Band 1")
+        ax2.set_ylabel("Band 5")
+        centers = clustering_method.cluster_centers_
+        ax2.scatter(centers[:, 0], centers[:, 4], marker='o', c="yellow", alpha = 1, s= 200)
+        for i, c in enumerate(centers):
+            ax2.scatter(c[0], c[4], marker='$%d$' % i, alpha=1, s=50)
+            
+        ax3.scatter(samples_as_nparray[:, 3], samples_as_nparray[:, 4], marker = '.', s=30, lw=0, alpha = 0.7, c = colors)
+        ax3.set_xlabel("Band 4")
+        ax3.set_ylabel("Band 5")
+        centers = clustering_method.cluster_centers_
+        ax3.scatter(centers[:, 3], centers[:, 4], marker='o', c="yellow", alpha = 1, s= 200)
+        for i, c in enumerate(centers):
+            ax3.scatter(c[3], c[4], marker='$%d$' % i, alpha=1, s=50)
+        
+        '''     
         xband = 0
         yband = 1
         for row in axes:
@@ -2067,6 +2300,8 @@ def unsupervised(request):
                     break
             if xband>=num_of_bands-1:
                 break
+        '''
+        
         image_name = "cluster_scatter_plot_" + str(datetime.now()) + ".png"
         plt.savefig("%s/%s" % (IMAGE_LOCATION, image_name),  bbox_inches='tight')
         matplotlib.rcParams.update(matplotlib.rcParamsDefault)
@@ -2170,17 +2405,16 @@ def supervised(request):
                 request.session['current_exploration_chain_viz'] = [current_step]
             
             if 'existing_taxonomy_name' in request.session:
-                customQuery = CustomQueries()
-                old_trainingset = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
-                trs = TrainingSet(old_trainingset)
-                oldCategories = list(numpy.unique(trs.target))
-                change_matrix, J_Index_for_common_categories, extensional_containment_for_categories_split_from_existing, extensional_containment_for_category_merged_from_existing, extensional_containment_for_category_merged_from_new_and_existing = create_change_matrix(request, oldCategories, predictedValue, rows, columns)
+                old_categories, old_mean_vectors, old_covariance_mat = find_all_active_categories_and_their_comp_int_for_a_legend_version(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
+                oldCategories_name = [x[0] for x in old_categories]
+                change_matrix, J_Index_for_common_categories, J_Index_for_renamed_existing_categories, extensional_containment_for_categories_split_from_existing, extensional_containment_for_category_merged_from_existing, extensional_containment_for_category_merged_from_new_and_existing = create_change_matrix(request, old_categories, predictedValue, rows, columns)
                 request.session['J_Index_for_common_categories'] = J_Index_for_common_categories
+                request.session['J_Index_for_renamed_existing_categories'] = J_Index_for_renamed_existing_categories
                 request.session['extensional_containment_for_categories_split_from_existing'] = extensional_containment_for_categories_split_from_existing
                 request.session['extensional_containment_for_category_merged_from_existing'] = extensional_containment_for_category_merged_from_existing
                 request.session['extensional_containment_for_category_merged_from_new_and_existing'] = extensional_containment_for_category_merged_from_new_and_existing
                     
-                return  JsonResponse({'map': outputmapinJPG, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'categories': listofcategories, 'change_matrix':change_matrix, 'old_categories': oldCategories});
+                return  JsonResponse({'map': outputmapinJPG, 'new_taxonomy': 'False', 'current_exploration_chain': request.session['current_exploration_chain_viz'], 'categories': listofcategories, 'change_matrix':change_matrix, 'old_categories': oldCategories_name});
             
             return  JsonResponse({'map': outputmapinJPG, 'categories': listofcategories, 'new_taxonomy': 'True', 'current_exploration_chain': request.session['current_exploration_chain_viz']});
     
@@ -2260,8 +2494,38 @@ def create_change_matrix(request, oldCategories, newPredictedValues, rows, colum
     change_in_individual_matrix = [[0 for a in range(len(list_of_new_categories)+1)] for x in range(len(oldCategories)+1)]
     customQuery = CustomQueries()
     
-    for index, category in enumerate(oldCategories):
-        category_extension = customQuery.getExtension(category, request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])
+    total_competing_versions = 1
+    for category_details in oldCategories:
+        if len(category_details) <= (3+ total_competing_versions):
+            continue
+        else:
+            total_competing_versions = len(category_details) - 3
+    
+    total_change_matrices = []
+    for i in range(total_competing_versions):
+        change_in_individual_matrix = [[0 for a in range(len(list_of_new_categories)+1)] for x in range(len(oldCategories)+1)]
+        for index, category_details in enumerate(oldCategories):
+            if len(category_details) >= (4+i):
+                category_extension = customQuery.getExtension(category_details[1], category_details[2], category_details[3+i])
+            else:
+                category_extension = customQuery.getExtension(category_details[1], category_details[2], category_details[3])
+            for coordinates in category_extension: 
+                ind = coordinates[0]*columns + coordinates[1]
+                new_category = newPredictedValues[ind]
+                new_category_index = list_of_new_categories.index(new_category)
+                change_in_individual_matrix[index][new_category_index] += 1
+            change_in_individual_matrix[index][len(list_of_new_categories)] += len(category_extension)
+        
+        for ind, change in enumerate(change_in_individual_matrix):
+            if ind != len(oldCategories):
+                for inde, value in enumerate(change):
+                    change_in_individual_matrix[-1][inde] += value
+        
+        total_change_matrices.append(change_in_individual_matrix)
+        
+    '''    
+    for index, category_details in enumerate(oldCategories):
+        category_extension = customQuery.getExtension(category_details[1], category_details[2], category_details[3])
         for coordinates in category_extension:            
             ind = coordinates[0]*columns + coordinates[1] #coordinates[0]==row no
             new_category = newPredictedValues[ind]
@@ -2274,57 +2538,90 @@ def create_change_matrix(request, oldCategories, newPredictedValues, rows, colum
         if ind != len(oldCategories):
             for inde, value in enumerate(change):
                 change_in_individual_matrix[-1][inde] += value
-        
-            
-    print change_in_individual_matrix            
+    '''
+              
     
     J_Index_for_common_categories = []
-    print oldCategories
-    print list_of_new_categories
-    for index, category in enumerate(oldCategories):
-        if category.lower() in [item.lower() for item in list_of_new_categories]:
-            new_category_index = [item.lower() for item in list_of_new_categories].index(category.lower())
-            common_elements = change_in_individual_matrix[index][new_category_index]
-            old_elements = float(change_in_individual_matrix[index][-1])
-            new_elements = float(change_in_individual_matrix[-1][new_category_index])
+    common_categories = []
+    if 'existing_categories' in request.session:
+        common_categories = request.session['existing_categories']
+    
+    for category in common_categories:
+        new_category_index = [item for item in list_of_new_categories].index(category)
+        old_category_index = [item[0] for item in oldCategories].index(category)
+        number_of_comp_versions = len(oldCategories[old_category_index])-3
+        j_index_list= []
+        for i in range(number_of_comp_versions):
+            common_elements = float(total_change_matrices[i][old_category_index][new_category_index])
+            old_elements = float(total_change_matrices[i][index][-1])
+            new_elements = float(total_change_matrices[i][-1][new_category_index])
             
             union_of_elements = old_elements + new_elements - common_elements
             j_index = "{0:.2f}".format(float(common_elements/union_of_elements))
-            J_Index_for_common_categories.append([category, j_index])
+            j_index_list.append(j_index)
+        J_Index_for_common_categories.append([category, j_index_list])
             
     print J_Index_for_common_categories
+    
+    J_Index_for_renamed_existing_categories = []
+    renamed_existing_categories = []
+    if 'renamed_existing_categories' in request.session:
+        renamed_existing_categories = request.session['renamed_existing_categories']
+        
+    for category_details in renamed_existing_categories:
+        new_category_index = [item for item in list_of_new_categories].index(category_details[1])
+        old_category_index = [item[0] for item in oldCategories].index(category_details[0])
+        number_of_comp_versions = len(oldCategories[old_category_index])-3
+        j_index_list= []
+        for i in range(number_of_comp_versions):
+            common_elements = float(total_change_matrices[i][old_category_index][new_category_index])
+            old_elements = float(total_change_matrices[i][index][-1])
+            new_elements = float(total_change_matrices[i][-1][new_category_index])
+            
+            union_of_elements = old_elements + new_elements - common_elements
+            j_index = "{0:.2f}".format(float(common_elements/union_of_elements))
+            j_index_list.append(j_index)
+        J_Index_for_renamed_existing_categories.append([category_details[1], category_details[0], j_index_list])   
+    
     
     extensional_containment_for_categories_split_from_existing = []
     if 'categories_split_from_existing' in request.session:
         for index, category in enumerate(list_of_new_categories):
             for split_categories in request.session['categories_split_from_existing']:
                 if category in split_categories:
-                    index_of_category_split_from = oldCategories.index(split_categories[0])
-                    total_extension_of_category = float(change_in_individual_matrix[-1][index])
-                    common_extension_of_catgeory_as_category_it_split_from = float(change_in_individual_matrix[index_of_category_split_from][index])
-                    containment = "{0:.2f}".format(float(common_extension_of_catgeory_as_category_it_split_from/total_extension_of_category))
-                    extensional_containment_for_categories_split_from_existing.append([category, containment])
+                    index_of_category_split_from = [item[0] for item in oldCategories].index(split_categories[0])
+                    number_of_comp_versions = len(oldCategories[index_of_category_split_from])-3
+                    j_index_list= []
+                    for i in range(number_of_comp_versions):
+                        total_extension_of_category = float(total_change_matrices[i][-1][index])
+                        common_extension_of_catgeory_as_category_it_split_from = float(total_change_matrices[i][index_of_category_split_from][index])
+                        containment = "{0:.2f}".format(float(common_extension_of_catgeory_as_category_it_split_from/total_extension_of_category))
+                        j_index_list.append(containment)
+                    extensional_containment_for_categories_split_from_existing.append([category, split_categories[0], j_index_list])
                     break
     print extensional_containment_for_categories_split_from_existing
                         
     
     extensional_containment_for_category_merged_from_existing = []
     if 'categories_merged_from_existing' in request.session:
-        print request.session['categories_merged_from_existing']
         for index, category in enumerate(list_of_new_categories):
             containment_details = []
             for merge_categories in request.session['categories_merged_from_existing']:
                 if category in merge_categories:
                     containment_details.append(category)
                     for i in range(len(merge_categories)-1):
-                        index_of_category_merged = oldCategories.index(merge_categories[i])
-                        total_extension_of_category_merged = float(change_in_individual_matrix[index_of_category_merged][-1])
-                        common_extension = float(change_in_individual_matrix[index_of_category_merged][index])
-                        containment = "{0:.2f}".format(float(common_extension/total_extension_of_category_merged))
-                        containment_details.append(containment)
+                        index_of_category_merged = [item[0] for item in oldCategories].index(merge_categories[i])
+                        number_of_comp_versions = len(oldCategories[index_of_category_merged])-3
+                        j_index_list= []
+                        for j in range(number_of_comp_versions):
+                            total_extension_of_category_merged = float(total_change_matrices[j][index_of_category_merged][-1])
+                            common_extension = float(total_change_matrices[j][index_of_category_merged][index])
+                            containment = "{0:.2f}".format(float(common_extension/total_extension_of_category_merged))
+                            j_index_list.append(containment)
+                        containment_details.append([merge_categories[i], j_index_list])
+                    extensional_containment_for_category_merged_from_existing.append(containment_details)
                     break
-            if len(containment_details) != 0:
-                extensional_containment_for_category_merged_from_existing.append(containment_details)
+    print extensional_containment_for_category_merged_from_existing
                     
 
     extensional_containment_for_category_merged_from_new_and_existing = []
@@ -2335,20 +2632,24 @@ def create_change_matrix(request, oldCategories, newPredictedValues, rows, colum
                 if category in merge_categories:
                     containment_details.append(category)
                     for i in range(len(merge_categories)-1):
-                        if merge_categories[i] in oldCategories:
-                            containment_details.append(merge_categories[i])
-                            index1 = oldCategories.index(merge_categories[i])
-                            total_extension_of_existing_category_that_is_merged = float(change_in_individual_matrix[index1][-1])
-                            common_extension = float(change_in_individual_matrix[index1][index])
-                            containment = "{0:.2f}".format(float(common_extension/total_extension_of_existing_category_that_is_merged))
-                            containment_details.append(containment)
+                        if merge_categories[i] in [item[0] for item in oldCategories]:
+                            index1 = [item[0] for item in oldCategories].index(merge_categories[i])
+                            number_of_comp_versions = len(oldCategories[index1])-3
+                            j_index_list= []
+                            for j in range(number_of_comp_versions):
+                                total_extension_of_existing_category_that_is_merged = float(total_change_matrices[j][index1][-1])
+                                common_extension = float(total_change_matrices[j][index1][index])
+                                containment = "{0:.2f}".format(float(common_extension/total_extension_of_existing_category_that_is_merged))
+                                j_index_list.append(containment)
+                            containment_details.append([merge_categories[i], j_index_list])
+                    extensional_containment_for_category_merged_from_new_and_existing.append(containment_details)
                     break
-            if len(containment_details) != 0:
-                extensional_containment_for_category_merged_from_new_and_existing.append(containment_details)
+
     print extensional_containment_for_category_merged_from_new_and_existing                            
         
             
-    return change_in_individual_matrix, J_Index_for_common_categories, extensional_containment_for_categories_split_from_existing, extensional_containment_for_category_merged_from_existing, extensional_containment_for_category_merged_from_new_and_existing
+    return change_in_individual_matrix[0], J_Index_for_common_categories, J_Index_for_renamed_existing_categories, extensional_containment_for_categories_split_from_existing, extensional_containment_for_category_merged_from_existing, extensional_containment_for_category_merged_from_new_and_existing
+
     
 
 @login_required
@@ -3028,6 +3329,23 @@ def applyChangeOperations(request):
                 ext_relation = ["includes", "includes", "includes"]
                 
                 change_event_queries.add_concept_resulted_from_merging_existing_concept_to_new_version_of_legend(new_category, merged_categories, mean_vectors[index][1], covariance_mat[index][1], extension[index], producer_accuracies[index], user_accuracies[index], intensional_similarity, extensional_containment, int_relation, ext_relation)
+        
+        if 'categories_merged_from_new_and_existing' in request.session:
+            categories_merged_from_new_and_existing = request.session['categories_merged_from_new_and_existing']
+            print categories_merged_from_new_and_existing
+            extensional_containment_for_category_merged_from_new_and_existing = request.session['extensional_containment_for_category_merged_from_new_and_existing']
+            print extensional_containment_for_category_merged_from_new_and_existing
+            for new_category_resulted_from_merging_existing_categories in categories_merged_from_new_and_existing:
+                new_category = new_category_resulted_from_merging_existing_categories[-1]
+                index = concepts_in_current_taxonomy.index(new_category)
+                extensional_containment = []
+                merged_categories = new_category_resulted_from_merging_existing_categories
+                merged_categories.pop()
+                for each_set in extensional_containment_for_category_merged_from_new_and_existing:
+                    if new_category in each_set:
+                        
+                        change_event_queries.add_concept()
+                
         
         del request.session['existing_taxonomy_name']
         del request.session['existing_taxonomy_id']

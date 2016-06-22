@@ -23,7 +23,7 @@
 					{% for concept  in concepts %}
 					{% with forloop.counter|cut:" " as index %}			
 					<label style="margin-left: 15px; margin-bottom:15px; font-weight: normal" >{{concept}}:</label>
-					<input id= {{concept}} type="text" class="jscolor {position:'right', valueElement:null, value:'{{diverging_colors|slice:index|last}}'}" style="display: inline; margin-right: 900px; float: right; width:70px" required/>
+					<input type="text" class="jscolor {position:'right', valueElement:null, value:'{{diverging_colors|slice:index|last}}'}" style="display: inline; margin-right: 900px; float: right; width:70px" id= "{{concept}}" required/>
 					<br />
 					{% endwith %}
 					{% endfor %}

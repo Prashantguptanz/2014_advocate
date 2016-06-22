@@ -35,161 +35,80 @@
 			<div class="form-group" id="newconceptsanddetails" style="display:none; border-style: solid; border-width: 1px; border-color: #E5E5E5">
 				<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">New trainingset</legend>
 	
-				<div class="form-group" id="categoriesandsamples" style="margin-left: 10px; margin-right: 10px">
+				<form class="form-group" id="categoriesandsamples" style="margin-left: 10px; margin-right: 10px">
 					
-					<p style="margin-top: 20px; margin-bottom: 40px">Add the name of the concepts to be modelled. Click 'Add another concept' button if you wish to add more concepts.</p>
+					<p style="margin-top: 20px; margin-bottom: 40px">Add name of the concepts to be modelled. Click 'Add another concept' button if you wish to add more concepts.</p>
+
+					<label for="concept1" style ="font-weight:normal">Concept 1:</label>
+					<input id="concept1" style="margin-left: 30px" type="text" placeholder="Enter concept name"  required />
+					<br /><br />
+					<label for="concept2" style ="font-weight:normal">Concept 2:</label>
+					<input id="concept2" style="margin-left: 30px" type="text" placeholder="Enter concept name"  required />
+					<br /><br />
 					
-					<form id="concept1details" enctype="multipart/form-data" action="#" >
-	
-						<div class="form-group" >
-							<span><label for="conceptName" style ="font-weight:normal">Concept name</label></span>
-							<span style = "margin-left: 100px">
-							<input id="conceptName" type="text" size="20" placeholder="Enter concept name"  required /></span>
-							<span style = "margin-left: 50px">
-							<label for="trainingfile1" style ="font-weight:normal">Upload training samples</label></span>
-							<span style = "margin-right: 250px; float:right">					
-						  	<input type="file" id="trainingfile1" name="trainingfile1" accept=".csv,.xls,.tif,.png,.adf" multiple required/></span>
-					  	</div>
-					  	<div class="form-group">
-							<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
-							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName" size="20" id="FieldResearcherName" placeholder="Enter Name" required/></span>
-							<span style = "margin-left: 50px">
-							<label for="Location" style ="font-weight:normal">Training Location</label></span>
-							<span style = "margin-right: 350px; float:right">
-							<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location" required/></span>
+					
+					<div class="form-group" id="addmorecategoriesorsubmit" style = "margin-bottom:15px">
+						<br />
+						<div  id="trainingsetanddetails" style="display:none" class="form-group" >
+							<legend style="width: 400px; font-size: 14px; background-color: gainsboro" align="left"> &nbsp; Training file and data collection details</legend>
+							<label for="trainingfilefornewtaxonomy" style ="font-weight:normal">Upload training set:</label>					
+						  	<input style = "margin-left: 30px; display: inline" type="file" id="trainingfilefornewtaxonomy" name="trainingfilefornewtaxonomy" accept=".csv,.xls,.tif,.png,.adf" multiple required/>
+							<br /><br />
+							
+							<label for="trainingsetfilename" style ="font-weight:normal">Save trainingset as:</label>
+							<input style = "margin-left: 63px; display: inline; height: 25px" type="text" name="trainingsetfilename" value="" id="trainingsetfilename" placeholder="Enter file name"/>
+							<label for="FieldResearcherName" style ="font-weight:normal; display: inline; margin-left: 130px">Field researcher's name:</label>
+							<input style = "margin-left: 33px; display: inline; height: 25px" type="text" name="FieldResearcherName" id="FieldResearcherName" placeholder="Enter name" required/>
+							<br /><br />
+							
+							<label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date:</label>
+							<input style = "width:166px; height:25px; margin-left: 69px; display: inline" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate" required/>
+							<label for="TrainingTimePeriodEndDate" style ="font-weight:normal; display: inline; margin-left: 129px">Training end date:</label>
+							<input style = "width:166px; height:25px; margin-left: 75px; display: inline" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate" required/>
+							<br /><br />
+														
+							<label for="Description" style ="font-weight:normal">Other details:</label>
+							<textarea style = "margin-left: 102px; display: inline" name="OtherDetails" rows="1" cols="81" id="Description" placeholder="Enter any more relevant details" required></textarea>
+							
 						</div>
-						<div class="form-group">
-							<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
-							<span style = "margin-left: 80px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate" required/></span>
-							<span style = "margin-left: 50px">
-							<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
-							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate" required/></span>
-						</div>
-						
-						<div class="form-group">
-							<span><label for="Description" style ="font-weight:normal">Other details</label></span>
-							<span style = "margin-left: 112px">
-							<textarea name="OtherDetails" rows="1" cols="71" id="Description" placeholder="Enter any more relevant details" required></textarea></span>
-						</div>
-					</form>
-						<div class="form-group" id="addmorecategoriesorsubmit" style = "margin-bottom:15px">
-							<div id="trainingsetname" style="display:none" class="form-group" >
-								<label for="trainingsetfilename" >Combine training samples and save trainingset as:</label>
-								<span style = "margin-left: 50px">
-								<input type="text" name="trainingsetfilename" value="" id="trainingsetfilename" placeholder="Enter file name"/></span>							  
-							</div>
-							<input type="submit" id="addmorecategories" value="Add another concept" class="btn btn-default" style="float: left"/>
-							<span >
-						  		<button id="submittrainingsamples" class="btn btn-default"style="margin-left: 70px" >Submit</button>
-						  	</span>
-							<span>
-						  		<button id="savetrainingset" class="btn btn-default" style="display:none">Save trainingset</button>
-						  	</span>
-						  	<span style="margin-right: 500px; float:right">
-						  		<p id="missingfields" style= "color: red; display:none"> <em>Error: one or more fields are missing</em> </p>
-						  	</span>
-						</div>
+						<input type="submit" id="addmorecategories" value="Add concept" class="btn btn-default" style="float: left"/>
+						<span >
+					  		<button id="submittrainingsamples" class="btn btn-default"style="margin-left: 50px" >Submit</button>
+					  	</span>
+						<span>
+					  		<button id="savetrainingset" class="btn btn-default" style="display:none">Save trainingset</button>
+					  	</span>
+					  	<span style="margin-right: 500px; float:right">
+					  		<p id="missingfields" style= "color: red; display:none"> <em>Error: one or more fields are missing</em> </p>
+					  	</span>
 					</div>
-				</div>
+				</form>
+			</div>
 
 			{% endif %}
 			
 			{% if existing_taxonomy %}
 			<div  id="newconceptsanddetails" style="display:none; border-style: solid; border-width: 1px; border-color: #E5E5E5">
-				<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">Concepts in the new trainingset</legend>
+				<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">New trainingset</legend>
 				
 				
 				<!-- Form for adding a new concept.. this is just for copying-->
 				<form id="newconceptdetails" enctype="multipart/form-data" action="#" style="display: none">
 					<legend style="width: 400px; font-size: 14px; background-color: gainsboro" align="left"> &nbsp; New concept</legend>
-					<div class="form-group" >
-						<span><label for="conceptName" style ="font-weight:normal">Concept name</label></span>
-						<span style = "margin-left: 100px">
-						<input id="conceptName" type="text" size="20" placeholder="Enter concept name"  required /></span>
-						<span style = "margin-left: 50px">
-						<label for="trainingfile1" style ="font-weight:normal">Upload training samples</label></span>
-						<span style = "margin-right: 250px; float:right">					
-					  	<input type="file" id="trainingfile1" name="trainingfile1" accept=".csv,.xls,.tif,.png,.adf" multiple required/></span>
-				  	</div>
-				  	<div class="form-group">
-						<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
-						<span style = "margin-left: 43px">
-						<input type="text" name="FieldResearcherName" size="20" id="FieldResearcherName" placeholder="Enter Name" required/></span>
-						<span style = "margin-left: 50px">
-						<label for="Location" style ="font-weight:normal">Training Location</label></span>
-						<span style = "margin-right: 350px; float:right">
-						<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location" required/></span>
-					</div>
-					<div class="form-group">
-						<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
-						<span style = "margin-left: 80px">
-						<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate" required/></span>
-						<span style = "margin-left: 50px">
-						<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
-						<span style = "margin-right: 349px; float:right">
-						<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate" required/></span>
-					</div>
-					
-					<div class="form-group">
-						<span><label for="Description" style ="font-weight:normal">Other details</label></span>
-						<span style = "margin-left: 112px">
-						<textarea name="OtherDetails" rows="1" cols="68" id="Description" placeholder="Enter any more relevant details" required></textarea></span>
-					</div>
+						<label for="conceptName" style ="font-weight:normal">Concept name</label>
+						<input style = "display: inline; margin-left: 102px" id="conceptName" type="text" size="20" placeholder="Enter concept name"  required />
 				</form>
 				
 				<!-- Form for adding an existing concept.. this is just for copying-->
 				<form id="existingconceptdetails" enctype="multipart/form-data" action="#" style="display:none">
 					<legend style="width: 400px; font-size: 14px; background-color: gainsboro" align="left">&nbsp; Existing concept</legend>
-					<div class="form-group" >
-						<span><label for="existingconceptName" style ="font-weight:normal">Choose a concept</label></span>
-						<span style = "margin-left: 80px">
-							<select name="existingconceptName" id="existingconceptName" required >
-								<option>Existing concept</option>
-								{% for concept in concept_list %}
-								<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
-								{% endfor %}
-							</select>
-						</span>
-					</div>
-					
-					<div id="existingornewsamples" class="form-group radio" style="" >
-						<input type="radio" name="existingornewsample" value="option1" id="existingsamplechosen"/>Use existing samples
-						<br /><br />
-						<input type="radio" name="existingornewsample" value="option2" id="newsamplechosen" class="newsamples"/>Upload new samples
-						<span style = "margin-right: 634px; float:right">					
-				  			<input type="file" id="newtrainingsamplesforanexistingconcept" class="uploadfile" accept=".csv,.xls,.tif,.png,.adf" multiple disabled required/>
-				  		</span>
-				  	</div>
-				  	
-				  	<div id="detailsfornewtrainingsamplesforanexistingconcept" style="margin-top: 25px; display:none">
-					  	<div class="form-group">
-							<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
-							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName" size="20" id="FieldResearcherName" placeholder="Enter Name" required/></span>
-							<span style = "margin-left: 50px">
-							<label for="Location" style ="font-weight:normal">Training Location</label></span>
-							<span style = "margin-right: 350px; float:right">
-							<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location" required/></span>
-						</div>
-						<div class="form-group">
-							<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
-							<span style = "margin-left: 80px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate" required/></span>
-							<span style = "margin-left: 50px">
-							<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
-							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate" required/></span>
-						</div>
-						
-						<div class="form-group">
-							<span><label for="Description" style ="font-weight:normal">Other details</label></span>
-							<span style = "margin-left: 112px">
-							<textarea name="OtherDetails" rows="1" cols="68" id="Description" placeholder="Enter any more relevant details" required></textarea></span>
-						</div>
-					</div>
+					<label for="existingconceptName" style ="font-weight:normal">Choose a concept</label>
+					<select  style = "margin-left: 80px; display: inline" name="existingconceptName" id="existingconceptName" required >
+						<option>Existing concept</option>
+						{% for concept in concept_list %}
+						<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
+						{% endfor %}
+					</select>
 				</form>
 				
 				
@@ -197,203 +116,82 @@
 				<form id="mergingconceptdetails" enctype="multipart/form-data" action="#" style="display:none">
 					<legend style="width: 400px; font-size: 14px; background-color: gainsboro" align="left">&nbsp; Merge existing concepts</legend>
 					
-					<div class="form-group" >
-						<span><label for="firstconcepttomerge" style ="font-weight:normal">First concept to merge:</label></span>
-						<span style = "margin-left: 45px">
-							<select name="firstconcepttomerge" id="firstconcepttomerge"  required>
-								<option>Existing concept</option>
-								{% for concept in concept_list %}
-								<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
-								{% endfor %}
-							</select>
-						</span>
-						<span style = "margin-left: 95px">
-						<label for="secondconcepttomerge" style ="font-weight:normal">Second concept to merge:</label></span>				
-					  	<span style = "margin-left: 40px">
-							<select name="secondconcepttomerge" id="secondconcepttomerge"  required>
-								<option>Existing concept</option>
-								{% for concept in concept_list %}
-								<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
-								{% endfor %}
-							</select>
-						</span>
-					</div>
+					<label for="firstconcepttomerge" style ="font-weight:normal">First concept to merge:</label>
+					<select style = "margin-left: 50px; display:inline" name="firstconcepttomerge" id="firstconcepttomerge"  required>
+						<option>Existing concept</option>
+						{% for concept in concept_list %}
+						<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
+						{% endfor %}
+					</select>
 					
-					<div class="form-group" >
-						<label for="Mergedconceptname" style ="font-weight:normal">Merged concept name:</label>
-						<span style = "margin-left: 45px">
-							<input type="text" name="Mergedconceptname" value="" id="Mergedconceptname" placeholder="Enter name of concept" required/>
-						</span>
-					</div>
+					<label style = "margin-left: 80px; display: inline; font-weight:normal" for="secondconcepttomerge" >Second concept to merge:</label>
+					<select style = "margin-left: 50px; display: inline" name="secondconcepttomerge" id="secondconcepttomerge"  required>
+						<option>Existing concept</option>
+						{% for concept in concept_list %}
+						<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
+						{% endfor %}
+					</select>
 					
-					<div class="form-group radio" >
-						<input type="radio" name="existingornewsampleformergedconcept" value="option1" id="existingsamplechosenformergedconcept"/>Use existing samples
-						<br /><br />
-						<input type="radio" name="existingornewsampleformergedconcept" value="option2" class= "newsamples" id="newsamplechosenformergedconcept"/>Upload new samples
-						<span style = "margin-right: 675px; float:right">					
-				  			<input type="file" id="newtrainingsamplesformergedconcept" class="uploadfile" accept=".csv,.xls,.tif,.png,.adf" multiple disabled/>
-				  		</span>
-				  	</div>
-				  	
-				  	<div id="detailsfornewtrainingsamplesformergedconcept" style="margin-top: 20px; display:none" >
-					  	<div class="form-group">
-							<span><label for="FieldResearcherName" style ="font-weight:normal">Field researcher's name</label></span>
-							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName" value="" id="FieldResearcherName" placeholder="Enter Name" required/></span>
-							<span style = "margin-left: 50px">
-							<label for="Location" style ="font-weight:normal">Training Location</label></span>
-							<span style = "margin-right: 351px; float:right">
-							<input type="text" name="TrainingLocation" value="" id="Location" placeholder="Enter Training Location" required/></span>
-						</div>
-						<div class="form-group">
-							<span><label for="TrainingTimePeriodStartDate" style ="font-weight:normal">Training start date</label></span>
-							<span style = "margin-left: 78px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate" value="" id="TrainingTimePeriodStartDate" required/></span>
-							<span style = "margin-left: 50px">
-							<label for="TrainingTimePeriodEndDate" style ="font-weight:normal">Training end date</label></span>
-							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate" value="" id="TrainingTimePeriodEndDate" required /></span>
-						</div>
-						
-						<div class="form-group">
-							<span><label for="Description" style ="font-weight:normal">Other details</label></span>
-							<span style = "margin-left: 110px">
-							<textarea name="OtherDetails" rows="1" cols="68" id="Description" placeholder="Enter any more relevant details" required></textarea></span>
-						</div>
-					</div>
+					<br /><br />
+					
+					<label for="Mergedconceptname" style ="font-weight:normal">Merged concept name:</label>
+					<input style = "margin-left: 50px; display: inline" type="text" name="Mergedconceptname" value="" id="Mergedconceptname" placeholder="Enter name of concept" required/>
+
 				</form>
 				
 				<!-- Form for splitting an existing concept.. this is just for copying-->
 				<form id="splittingconceptdetails" enctype="multipart/form-data" action="#" style="display:none">
 					<legend style="width: 400px; font-size: 14px; background-color: gainsboro" align="left">&nbsp; Split an existing concept</legend>
 					
-					<div class="form-group" >
-						<span><label for="concepttosplit" style ="font-weight:normal">Choose a concept to split:</label></span>
-						<span style = "margin-left: 102px">
-							<select name="concepttosplit" id="concepttosplit" required >
-								<option>Existing concept</option>
-								{% for concept in concept_list %}
-								<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
-								{% endfor %}
-							</select>
-						</span>
-					</div>
+					<label for="concepttosplit" style ="font-weight:normal">Choose a concept to split:</label>
+					<select style = "margin-left: 30px; display: inline" name="concepttosplit" id="concepttosplit" required >
+						<option>Existing concept</option>
+						{% for concept in concept_list %}
+						<option id="concept{{ forloop.counter }}" value="{{ concept }}">{{ concept }}</option>
+						{% endfor %}
+					</select>
+					<br /><br />
 					
-					<div class="form-group" >
-						<span><label style ="font-weight:normal">Split the concept into:</label></span>
-						<span style = "margin-left: 129px">
-							<input type="text" name="conceptstosplitinto" value="" id="conceptstosplitinto" placeholder="Enter the concepts name separated by comma" style="width: 350px" required />
-						</span>
-						<span style = "margin-left: 50px">
-							<button id="uploadsamplesforsplitconcepts" class="btn btn-default" >Upload samples</button>
-						</span>
-					</div>
-					
-					<div class="form-group" id ="divforuploadsplitsamples">						
-					</div>
-					
-					
-					<div id="detailsfornewtrainingsamplesforfirstsplitconcept" style="margin-top: 20px; display:none">
-						<legend style="width: 200px; font-size: 14px; background-color: gainsboro" align="center">Details for first concept</legend>
-						<div class="form-group">
-							<span><label for="FieldResearcherName1" style ="font-weight:normal">Field researcher's name</label></span>
-							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName1" size="20" id="FieldResearcherName1" placeholder="Enter Name" required /></span>
-							<span style = "margin-left: 50px">
-							<label for="Location1" style ="font-weight:normal">Training Location</label></span>
-							<span style = "margin-right: 350px; float:right">
-							<input type="text" name="TrainingLocation1" value="" id="Location1" placeholder="Enter Training Location" required/></span>
-						</div>
-						<div class="form-group">
-							<span><label for="TrainingTimePeriodStartDate1" style ="font-weight:normal">Training start date</label></span>
-							<span style = "margin-left: 80px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate1" value="" id="TrainingTimePeriodStartDate1" required/></span>
-							<span style = "margin-left: 50px">
-							<label for="TrainingTimePeriodEndDate1" style ="font-weight:normal">Training end date</label></span>
-							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate1" value="" id="TrainingTimePeriodEndDate1" required/></span>
-						</div>
-						
-						<div class="form-group">
-							<span><label for="Description1" style ="font-weight:normal">Other details</label></span>
-							<span style = "margin-left: 112px">
-							<textarea name="OtherDetails1" rows="1" cols="68" id="Description1" placeholder="Enter any more relevant details" required></textarea></span>
-						</div>
-
-					</div>
-					
-					<div id="detailsfornewtrainingsamplesforsecondsplitconcept" style="margin-top: 20px; display:none">
-						<legend style="width: 200px; font-size: 14px; background-color: gainsboro" align="center">Details for second concept</legend>
-						<div class="form-group">
-							<span><label for="FieldResearcherName2" style ="font-weight:normal">Field researcher's name</label></span>
-							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName2" size="20" id="FieldResearcherName2" placeholder="Enter Name" required /></span>
-							<span style = "margin-left: 50px">
-							<label for="Location2" style ="font-weight:normal">Training Location</label></span>
-							<span style = "margin-right: 350px; float:right">
-							<input type="text" name="TrainingLocation2" value="" id="Location2" placeholder="Enter Training Location" required/></span>
-						</div>
-						<div class="form-group">
-							<span><label for="TrainingTimePeriodStartDate2" style ="font-weight:normal">Training start date</label></span>
-							<span style = "margin-left: 80px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate2" value="" id="TrainingTimePeriodStartDate2" required /></span>
-							<span style = "margin-left: 50px">
-							<label for="TrainingTimePeriodEndDate2" style ="font-weight:normal">Training end date</label></span>
-							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate2" value="" id="TrainingTimePeriodEndDate2" required/></span>
-						</div>
-						
-						<div class="form-group">
-							<span><label for="Description2" style ="font-weight:normal">Other details</label></span>
-							<span style = "margin-left: 112px">
-							<textarea name="OtherDetails2" rows="1" cols="68" id="Description2" placeholder="Enter any more relevant details" required></textarea></span>
-						</div>
-					</div>
-					
-					<div id="detailsfornewtrainingsamplesforthirdsplitconcept" style="margin-top: 20px; display:none">
-						<legend style="width: 200px; font-size: 14px; background-color: gainsboro" align="center">Details for third concept</legend>
-						<div class="form-group">
-							<span><label for="FieldResearcherName3" style ="font-weight:normal">Field researcher's name</label></span>
-							<span style = "margin-left: 43px">
-							<input type="text" name="FieldResearcherName3" size="20" id="FieldResearcherName3" placeholder="Enter Name" required/></span>
-							<span style = "margin-left: 50px">
-							<label for="Location3" style ="font-weight:normal">Training Location</label></span>
-							<span style = "margin-right: 350px; float:right">
-							<input type="text" name="TrainingLocation3" value="" id="Location3" placeholder="Enter Training Location" required/></span>
-						</div>
-						<div class="form-group">
-							<span><label for="TrainingTimePeriodStartDate3" style ="font-weight:normal">Training start date</label></span>
-							<span style = "margin-left: 80px">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodStartDate3" value="" id="TrainingTimePeriodStartDate3" required/></span>
-							<span style = "margin-left: 50px">
-							<label for="TrainingTimePeriodEndDate3" style ="font-weight:normal">Training end date</label></span>
-							<span style = "margin-right: 349px; float:right">
-							<input style = "width:166px; height:25px" type="date" name="TrainingTimePeriodEndDate3" value="" id="TrainingTimePeriodEndDate3" required/></span>
-						</div>
-						
-						<div class="form-group">
-							<span><label for="Description3" style ="font-weight:normal">Other details</label></span>
-							<span style = "margin-left: 112px">
-							<textarea name="OtherDetails3" rows="1" cols="68" id="Description3" placeholder="Enter any more relevant details" required></textarea></span>
-						</div>
-					</div>
-					
+					<label style ="font-weight:normal">Split the concept into:</label>
+					<input type="text" name="conceptstosplitinto" value="" id="conceptstosplitinto" placeholder="Enter the concepts name separated by comma" style="width: 300px; margin-left: 56px; display:inline" required />
 					
 				</form>
 				
 				
 				<div class="form-group" id="createnewtrainingset_changeexistingtaxonomy" style = "padding: 10px 10px 10px 10px;">
+					<p style="margin-top: 10px; margin-bottom: 25px; margin-left: 10px; margin-right: 20px;">The existing taxonomy <em>'{{existing_taxonomy}}'</em> contains the following concepts:
+						{% for concept in concept_list %}
+						<em>{{ concept }}</em>, 
+						{% endfor %}
+						. Use the below options to add concepts to be modelled in reference to the concepts in '{{existing_taxonomy}}'.</p>
 					
 					<div class="form-group" id="categoriesandsamples_changeexistingtaxonomy" style="margin-left: 10px; margin-right: 10px; margin-bottom: 30px">
 						
 					</div>
-
 					
-					<div id="trainingsetname1" style="display:none" class="form-group" >
-						<label for="trainingsetfilename1" >Combine training samples and save trainingset as</label>
-						<span style = "margin-left: 50px">
-						<input type="text" name="trainingsetfilename1" value="" id="trainingsetfilename1" placeholder="Enter file name"/></span>							  
+					<div  id="trainingsetanddetails1" style="display:none" class="form-group" >
+						<legend style="width: 400px; font-size: 14px; background-color: gainsboro" align="left"> &nbsp; Training file and details</legend>
+						<label for="trainingfiletochangeexistingtaxonomy" style ="font-weight:normal">Upload training set:</label>					
+					  	<input style = "margin-left: 30px; display: inline" type="file" id="trainingfiletochangeexistingtaxonomy" name="trainingfiletochangeexistingtaxonomy" accept=".csv,.xls,.tif,.png,.adf" multiple required/>
+						<br /><br />
+						
+						<label for="trainingsetfilename1" style ="font-weight:normal">Save trainingset as:</label>
+						<input style = "margin-left: 63px; display: inline; height: 25px" type="text" name="trainingsetfilename1" value="" id="trainingsetfilename1" placeholder="Enter file name"/>
+						<label for="FieldResearcherName1" style ="font-weight:normal; display: inline; margin-left: 130px">Field researcher's name:</label>
+						<input style = "margin-left: 33px; display: inline; height: 25px" type="text" name="FieldResearcherName1" id="FieldResearcherName1" placeholder="Enter name" required/>
+						<br /><br />
+						
+						<label for="TrainingTimePeriodStartDate1" style ="font-weight:normal">Training start date:</label>
+						<input style = "width:166px; height:25px; margin-left: 69px; display: inline" type="date" name="TrainingTimePeriodStartDate1" value="" id="TrainingTimePeriodStartDate1" required/>
+						<label for="TrainingTimePeriodEndDate1" style ="font-weight:normal; display: inline; margin-left: 129px">Training end date:</label>
+						<input style = "width:166px; height:25px; margin-left: 75px; display: inline" type="date" name="TrainingTimePeriodEndDate1" value="" id="TrainingTimePeriodEndDate1" required/>
+						<br /><br />
+													
+						<label for="Description1" style ="font-weight:normal">Other details:</label>
+						<textarea style = "margin-left: 102px; display: inline" name="OtherDetails" rows="1" cols="81" id="Description1" placeholder="Enter any more relevant details" required></textarea>
+						
 					</div>
+
 					<div id="buttonsforcreatingtrainingsample" >
 						<button id="addnewcategory" class="btn btn-default" style = "float: left" >Add new concept</button>
 						<span style="margin-left: 50px">
@@ -443,11 +241,17 @@
 					</legend>
 					
 					<div id= "editingoperations" class="form-group radio" style="margin-left: 10px">
-						<input type="radio" name="chooseeditoperation" value="option1" id="removenodatavalue"/>Remove 'No data' values
-						<span  style = "margin-left: 25px"> 
-							<label id = "labelfornodatavalue" style="font-weight: normal; display:none"> Enter 'No data' value:</label>
-							<input id="nodatavalue" style="display:none; margin-left: 10px" type="text" size="10" required />	
-						</span>
+						<input type="radio" name="chooseeditoperation" value="option1" id="addconcept"/>Add a concept
+						<div id="addconceptdetails" style="display: none">
+							<br />
+							<label style="font-weight: normal; float: left"> Concept name:</label>
+							<span style = "margin-left: 25px"> 
+								<input id="conceptname" type="text" size="10" required />	
+							</span>
+							<span style="float: right">
+								<input type="file" id="samplesfornewconcept" name="samplesfornewconcept" accept=".csv,.xls,.tif,.png,.adf" multiple />
+							</span>
+						</div>
 						
 						<br /><br />
 						
@@ -459,7 +263,28 @@
 		
 						<br /><br />
 						
-						<input type="radio" name="chooseeditoperation" value="option3" id="mergetwoconcepts"/>Merge concepts
+						<input type="radio" name="chooseeditoperation" value="option3" id="renameconcept"/>Rename a concept
+							<span style = "margin-left: 20px">
+								<select name="concepttorename" id="concepttorename" style="display:none">
+								</select>
+								<input style="float: right; margin-right: 40px; display:none" type="text" id="newname" size="15" placeholder="Rename it to" required />
+							</span>
+						<br /><br />
+						
+						<input type="radio" name="chooseeditoperation" value="option4" id="editconcept"/>Edit a concept (change trainingsamples)
+						<div id="editconceptdetails" style="display: none">
+							<br />
+							<span style = "margin-left: 0px">
+								<select name="concepttoedit" id="concepttoedit" style="">
+								</select>
+							</span>
+							<span style="float: right; margin-right: 40px">
+								<input type="file" id="samplesforexistingconcept" name="samplesforexistingconcept" accept=".csv,.xls,.tif,.png,.adf" multiple />
+							</span>
+						</div>
+						<br /><br />
+						
+						<input type="radio" name="chooseeditoperation" value="option5" id="mergetwoconcepts"/>Merge concepts
 						<div id="mergetwoconceptdetails" style="display: none">
 							<label style="font-weight: normal; margin-left: 0px"> Choose concepts to merge:</label>
 							<span style = "margin-left: 20px">
@@ -474,7 +299,22 @@
 						</div>
 						<br /><br />
 						
-						<input type="radio" name="chooseeditoperation" value="option4" id="splitaconcept"/>Split a concept
+						<input type="radio" name="chooseeditoperation" value="option6" id="groupconcepts"/>Group concepts
+						<div id="groupconceptsdetails" style="display: none">
+							<label style="font-weight: normal; margin-left: 0px"> Choose concepts to group:</label>
+							<span style = "margin-left: 20px">
+								<select name="conceptstogroup" id="conceptstogroup" multiple="multiple" style="height: 55px; width:170px">
+								</select>
+							</span>
+							<br /><br />
+							<label style="font-weight: normal; margin-left: 0px"> Grouped concept name:</label>
+							<span style = "margin-left: 48px"> 
+								<input id="groupedconceptname" type="text" size="20" required />	
+							</span>
+						</div>
+						<br /><br />
+						
+						<input type="radio" name="chooseeditoperation" value="option7" id="splitaconcept"/>Split a concept
 						<div id="splitaconceptdetails" style="display: none">
 							<br />
 							<label style="font-weight: normal; float: left"> concept to split:</label>
