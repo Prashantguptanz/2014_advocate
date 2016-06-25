@@ -283,10 +283,13 @@ class ChangeTrainingsetActivity(models.Model):
 
 class ChangeTrainingsetActivityDetails(models.Model):
     edit_trainingset_activity_type = (
+        ('add', 'add'),
         ('remove', 'remove'),
-        ('remove no data', 'remove no data'),
+        ('rename', 'rename'),
+        ('edit', 'edit'),
         ('split', 'split'),
-        ('merge', 'merge')
+        ('merge', 'merge'),
+        ('group', 'group')
     )
     
     
@@ -501,46 +504,6 @@ class Trainingset(models.Model):
         managed = False
         db_table = 'trainingset'
 
-class TrainingsampleForCategory(models.Model):
-    trainingsample_id = models.IntegerField(primary_key=True)
-    trainingsample_ver = models.IntegerField(primary_key=True)
-    date_first_used = models.DateTimeField(default=datetime.now)
-    date_expired = models.DateTimeField()
-    samplefile_name = models.CharField(max_length=256)
-    filelocation = models.CharField(max_length=256)
-    concept_name = models.CharField(max_length=256)
-
-    class Meta:
-        managed = False
-        db_table = 'trainingsample_for_category'
-
-class TrainingsetTrainingsamples(models.Model):
-    trainingset_id = models.IntegerField()
-    trainingset_ver = models.IntegerField()
-    trainingsample_id = models.IntegerField()
-    trainingsample_ver = models.IntegerField()
-
-    class Meta:
-        managed = False
-        db_table = 'trainingset_trainingsamples'
-        unique_together = ("trainingset_id", "trainingset_ver")
-        unique_together = ("trainingsample_id", "trainingsample_ver")
-
-class TrainingsampleCollection(models.Model):
-    trainingsample_id = models.IntegerField()
-    trainingsample_ver = models.IntegerField()
-    trainingsample_location = models.CharField(max_length=256)
-    collector = models.CharField(max_length=256)
-    description = models.TextField(blank=True)
-    date_started = models.DateField()
-    date_finished = models.DateField()
-
-    class Meta:
-        managed = False
-        db_table = 'trainingsample_collection'
-        unique_together = ("trainingsample_id", "trainingsample_ver")
-
-
 class CreateTrainingsetActivity(models.Model):
 
     trainingset_id = models.IntegerField(blank=True, null=True)
@@ -548,6 +511,10 @@ class CreateTrainingsetActivity(models.Model):
     reference_trainingset_id = models.IntegerField(blank=True, null=True)
     reference_trainingset_ver = models.IntegerField(blank=True, null=True)
     creator_id = models.ForeignKey(AuthUser, db_column='creator_id')
+    collector = models.CharField(max_length=256, blank=True)
+    data_collection_start_date = models.DateField(blank=True, null=True)
+    data_collection_end_date = models.DateField(blank=True, null=True)
+    other_details = models.CharField(max_length=256, blank=True)
 
 
     class Meta:
@@ -611,7 +578,10 @@ class ChangeEventOperations(models.Model):
         ('Add_Taxonomy_Version', 'Add_Taxonomy_Version'),
         ('Add_Existing_Concept_To_New_Version_Of_Legend', 'Add_Existing_Concept_To_New_Version_Of_Legend'),
         ('Add_Concept_Split_From_Existing_To_New_Version_Of_Legend', 'Add_Concept_Split_From_Existing_To_New_Version_Of_Legend'),
-        ('Add_Merged_Concept_To_New_Version_Of_Legend', 'Add_Merged_Concept_To_New_Version_Of_Legend')
+        ('Add_Merged_Concept_To_New_Version_Of_Legend', 'Add_Merged_Concept_To_New_Version_Of_Legend'),
+        ('Add_Generalized_Concept_To_New_Version_Of_Legend', 'Add_Generalized_Concept_To_New_Version_Of_Legend'),
+        ('Add_Evolutionary_Version', 'Add_Evolutionary_Version'),
+        ('Add_Competing_Version', 'Add_Competing_Version')
         
     )
     change_event_id = models.ForeignKey(ChangeEvent, db_column='change_event_id', primary_key=True)
@@ -674,7 +644,6 @@ class AddExistingConceptToNewVersion(models.Model):
     concept_id = models.ForeignKey(Concept, db_column='concept_id')
     legend_concept_comb_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_comb_id')
     hierarchical_relationship_id = models.ForeignKey(HierarchicalRelationship, db_column = 'hierarchical_relationship_id')
-    horizontal_relationship_id = models.ForeignKey(HorizontalRelationship, db_column = 'horizontal_relationship_id')
     category_instantiation_op_id = models.ForeignKey(CategoryInstantiationOperation, db_column = 'category_instantiation_op_id')
 
     class Meta:
@@ -686,7 +655,6 @@ class AddConSplitFrmExistToNewVer(models.Model):
     existing_split_concept_id = models.IntegerField()
     legend_concept_comb_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_comb_id')
     hierarchical_relationship_id = models.ForeignKey(HierarchicalRelationship, db_column = 'hierarchical_relationship_id')
-    horizontal_relationship_id = models.ForeignKey(HorizontalRelationship, db_column = 'horizontal_relationship_id')
     category_instantiation_op_id = models.ForeignKey(CategoryInstantiationOperation, db_column = 'category_instantiation_op_id')
 
     class Meta:
@@ -698,13 +666,37 @@ class AddMergedConToNewVerOp(models.Model):
     existing_concept_id1 = models.IntegerField()
     existing_concept_id2 = models.IntegerField()
     existing_concept_id3 = models.IntegerField(blank=True, null=True)
-    legend_concept_comb = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_comb_id')
-    hierarchical_relationship = models.ForeignKey(HierarchicalRelationship, db_column = 'hierarchical_relationship_id')
-    horizontal_relationship_id1 = models.ForeignKey(HorizontalRelationship, related_name='horizontal_relationship_id1')
-    horizontal_relationship_id2 = models.ForeignKey(HorizontalRelationship, related_name='horizontal_relationship_id2')
-    horizontal_relationship_id3 = models.ForeignKey(HorizontalRelationship, related_name='horizontal_relationship_id3', blank=True, null=True)
-    category_instantiation_op = models.ForeignKey(CategoryInstantiationOperation, db_column = 'category_instantiation_op_id')
+    legend_concept_comb_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_comb_id')
+    hierarchical_relationship_id = models.ForeignKey(HierarchicalRelationship, db_column = 'hierarchical_relationship_id')
+    category_instantiation_op_id = models.ForeignKey(CategoryInstantiationOperation, db_column = 'category_instantiation_op_id')
 
     class Meta:
         managed = False
         db_table = 'Add_Merged_Concept_To_New_Legend_Ver_operation'
+        
+
+class AddCompetingCategoryOperation(models.Model):
+    category_instantiation_op_id = models.ForeignKey(CategoryInstantiationOperation, db_column='category_instantiation_op_id')
+
+    class Meta:
+        managed = False
+        db_table = 'Add_Competing_Category_Operation'
+        
+class AddEvolutionaryCategoryOperation(models.Model):
+    category_instantiation_op_id = models.ForeignKey(CategoryInstantiationOperation, db_column='category_instantiation_op_id')
+
+    class Meta:
+        managed = False
+        db_table = 'Add_Evolutionary_Category_Operation'
+        
+class AddGenConToNewVerOp(models.Model):
+    concept_id = models.ForeignKey(Concept, db_column='concept_id')
+    existing_concept_id1 = models.IntegerField()
+    existing_concept_id2 = models.IntegerField()
+    legend_concept_comb_id = models.ForeignKey(LegendConceptCombination, db_column='legend_concept_comb_id')
+    hierarchical_relationship_id = models.ForeignKey(HierarchicalRelationship, db_column = 'hierarchical_relationship_id')
+    category_instantiation_op_id = models.ForeignKey(CategoryInstantiationOperation, db_column = 'category_instantiation_op_id')
+
+    class Meta:
+        managed = False
+        db_table = 'Add_Generalized_Concept_To_New_Legend_Ver_operation'

@@ -147,7 +147,7 @@
 					<th>User accuracy (existing)</th>
 					<th>Producer accuracy (existing)</th>
 					<th>
-						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Change trainingset activity" data-content="The extensional similarity is calculated using Jaccard index. The value represents the similarity between two finite sample sets. <br/> The J-index is defined as:<br/> <MATH>J(A,B) = (A &#8745; B) &#8260; (A &#8746; B) </MATH><br/> where A and B are finite sample sets.">
+						<a href="javascript://" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Change trainingset activity" data-content="The extensional similarity is calculated using Jaccard index. The value represents the similarity between two finite sample sets. <br/> The J-index is defined as:<br/> <MATH>J(A,B) = (A &#8745; B) &#8260; (A &#8746; B) </MATH><br/> where A and B are finite sample sets.">
 						Extensional similarity</a>
 					</th>
 					<th>J M Distance</th>	 		
@@ -182,22 +182,28 @@
 					<th>New merged concept</th>
 					<th>User accuracy</th>
 					<th>Producer accuracy</th>
-					<th>Existing concept 1</th>
+					<th>Existing concept </th>
 					<th>
-						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Extensional containment" data-content="The extensional containment tells how much extension of the new concept is contained within the extension of the concept it split from.">
+						<a href="javascript://" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Extensional containment" data-content="The extensional containment tells how much extension of the new concept is contained within the extension of the concept it split from.">
 						Extensional containment</a>
 					</th>
-					<th>Existing concept 2</th>
-					<th>Extensional containment</th>
-					<th>Existing concept 3</th>
-					<th>Extensional containment</th>	
+					<th>J-M distance</th>	
 				</tr>
 				{% for concept in categories_merged_from_existing_details %}
-				<tr>
-					{% for data in concept %}
-					<td>{{data}}</td>
-					{% endfor %}
-				</tr>
+					{% if concept|length|get_digit:"-1" == 6 %}
+					<tr>
+						{% for data in concept %}
+						<td>{{data}}</td>
+						{% endfor %}
+					</tr>
+					{% else %}
+					<tr>
+						{% for data in concept %}
+						<td>{{data}}</td>
+						{% endfor %}
+						<td>N/A</td>
+					</tr>
+					{% endif %}
 			 	{% endfor %}
 			 </table>
 			 <br /><br />
@@ -215,16 +221,26 @@
 					<th>Producer accuracy</th>
 					<th>Existing concept</th>
 					<th>
-						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Extensional containment" data-content="The extensional containment tells how much extension of the new concept is contained within the extension of the concept it split from.">
+						<a href="javascript://" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Extensional containment" data-content="The extensional containment tells how much extension of the new concept is contained within the extension of the concept it split from.">
 						Extensional containment</a>
-					</th>	
+					</th>
+					<th>J-M distance</th>
 				</tr>
 				{% for concept in categories_merged_from_new_and_existing_details %}
-				<tr>
-					{% for data in concept %}
-					<td>{{data}}</td>
-					{% endfor %}
-				</tr>
+					{% if concept|length|get_digit:"-1" == 6 %}
+					<tr>
+						{% for data in concept %}
+						<td>{{data}}</td>
+						{% endfor %}
+					</tr>
+					{% else %}
+					<tr>
+						{% for data in concept %}
+						<td>{{data}}</td>
+						{% endfor %}
+						<td>N/A</td>
+					</tr>
+					{% endif %}
 			 	{% endfor %}
 			 </table>
 			 <br /><br />
@@ -239,20 +255,51 @@
 				<caption style="margin-bottom: 7px"><strong>Details of the categories corresponding to the concepts resulted from splitting an existing concept: </strong></caption>
 				<tr>
 					<th>New concept</th>
-					<th>Split from</th>
 					<th>User accuracy</th>
-					<th>Producer accuracy</th>		
+					<th>Producer accuracy</th>
+					<th>Split from</th>	
 					<th>
-						<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Extensional containment" data-content="The extensional containment tells how much extension of the existing concept is contained within the extension of the new merged concept.">
+						<a href="javascript://" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Extensional containment" data-content="The extensional containment tells how much extension of the existing concept is contained within the extension of the new merged concept.">
 						Extensional containment</a>
 					</th>
+					<th>J-M distance</th>
 				</tr>
 				{% for concept in categories_split_from_existing_details %}
+					{% if concept|length|get_digit:"-1" == 6 %}
+					<tr>
+						{% for data in concept %}
+						<td>{{data}}</td>
+						{% endfor %}
+					</tr>
+					{% else %}
+					<tr>
+						{% for data in concept %}
+						<td>{{data}}</td>
+						{% endfor %}
+						<td>N/A</td>
+					</tr>
+					{% endif %}
+			 	{% endfor %}
+			 </table>
+			 <br /><br />
+			
+			{% endif %}
+			
+			{% if grouped_categories_details|length|get_digit:"-1" > 0 %}
+			
+			<br />	 
+			<table class=" table table-bordered" style=" width:70%; margin: 0 auto">
+				<caption style="margin-bottom: 7px"><strong> Grouped concepts: </strong></caption>
 				<tr>
-					{% for data in concept %}
-					<td>{{data}}</td>
-					{% endfor %}
+					<th>Parent concept</th>
+					<th>Concepts that are grouped</th>
 				</tr>
+				{% for concept in grouped_categories_details %}
+					<tr>
+						{% for data in concept %}
+						<td>{{data}}</td>
+						{% endfor %}
+					</tr>
 			 	{% endfor %}
 			 </table>
 			 <br /><br />
@@ -274,9 +321,9 @@
 			 <div id="thresholdlimitforchange" style="display:none; margin-left: 20px; margin-bottom: 15px; margin-right: 20px" >
 			 	<p> 
 			 		AdvoCate provides an optional feature -
-			 		<a href="#" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Threshold limit of change" data-content="The threshold limit of change (&#955;<sub>int</sub>, &#955;<sub>ext</sub>) allows AdvoCate to determine the type of change. If Change in extension > &#955;<sub>ext</sub> for a category, then AdvoCate advises to create a new evolutionary version of the category, otherwise a user may create a new competing version of the category dependeing on the chenge in computational intension.">
+			 		<a href="javascript://" data-toggle="popover" data-placement="top" data-html="true" data-container="body"  title="Threshold limit of change" data-content="The threshold limits of change - (&#955;<sub>int</sub>)<sub>min</sub>, (&#955;<sub>int</sub>)<sub>max</sub>, (&#955;<sub>ext</sub>)<sub>min</sub>, (&#955;<sub>ext</sub>)<sub>max</sub> - in computational intension and extension allow AdvoCate to determine the type of change. If Change in extension > &#955;<sub>ext</sub> for a category, then AdvoCate advises to create a new evolutionary version of the category, otherwise a user may create a new competing version of the category dependeing on the chenge in computational intension.">
 						Threshold limit of change</a>
-					- to quantify the extent of change in the intension and extension of a concept and find its relation to the concept's identity. 
+					- to compare the extent of change in the computational intension and extension of a category and suggests whether to create a competing or evolutionary version of the category.
 			 	</p>
 			 	<label style="font-weight: normal" for="" >Do you wish to use the threshold limit feature: </label>&nbsp; &nbsp;
 				 <button id="yesforthresholdlimit" class="btn btn-default"> Yes</button>&nbsp; &nbsp;
@@ -300,28 +347,37 @@
 		</legend>
 		<div id="collapse15" class="collapse in">
 			<div id="thresholdlimitforchangedetails" style="display:none; margin-left:20px; margin-bottom:20px">
+				<p style="margin-top: 15px"> You may either use the default values of threshold limits and check what AdvoCate suggests, or you may change them by clicking on 'Change' button. </p>
 			 	<br /><br />
-			 	<label style = "font-weight: normal ">(Default values)</label>
-			 	<span>
-			 	<label style = "font-weight: normal; margin-left: 15px ">&#955;<sub>ext</sub> : </label>
+			 	
+			 	<label style = "font-weight: normal">Threshold limits of computational intension (&#955;<sub>int</sub>):</label>
+				<label style = "font-weight: normal; margin-left: 25px ">min:</label>
+				<input style="margin-left: 15px" id="int_change_limit_min" name = "ext_change_limit" disabled="disabled" type="text" size="10" value="{{cint_min_limit}}" required />
+				<label style = "font-weight: normal; margin-left: 25px ">max:</label>
+				<input style="margin-left: 15px" id="int_change_limit_max" name = "ext_change_limit" disabled="disabled" type="text" size="10" value="{{cint_max_limit}}" required />
 				
-					<input style="margin-left: 15px" id="ext_change_limit" name = "ext_change_limit" disabled="disabled" type="text" size="10" value="0.50" required />
-				</span>
+				<br /><br />
+				<label style = "font-weight: normal ">Threshold limits of extension (&#955;<sub>ext</sub>): </label>
+				<label style = "font-weight: normal; margin-left: 111px ">min:</label>
+				<input style="margin-left: 15px" id="ext_change_limit_min" name = "ext_change_limit" disabled="disabled" type="text" size="10" value="{{ext_min_limit}}" required />
+				<label style = "font-weight: normal; margin-left: 25px ">max:</label>
+				<input style="margin-left: 15px" id="ext_change_limit_max" name = "ext_change_limit" disabled="disabled" type="text" size="10" value="{{ext_max_limit}}" required />
 				
-				<label style = "margin-left: 40px; font-weight: normal ">&#955;<sub>int</sub> : </label>
-				<span>
-					<input style="margin-left: 15px" id="int_change_limit" name = "int_change_limit" disabled="disabled" type="text" size="10" value="0.50" required />
-				</span>
-				<span>
-				<button style="margin-left: 50px" id="changethresholdvalues" class="btn btn-default"> Change</button>&nbsp; &nbsp;
-			 	<button id="submitthresholdvalues" class="btn btn-default" style="display:none">  Submit</button>
-			 	</span>
+				<br /><br />
+				<button  id="changethresholdvalues" class="btn btn-default"> Change</button>
+			 	<button id="submitthresholdvalues" class="btn btn-default" style="display:none; margin-left:20px">  Submit</button>
+			 	<button style="margin-left:20px" id = "displaychangesuggestions" class="btn btn-default">Display change suggestions</button>
+			 	
 			 </div>
 			 
 			 <div id = "userinput" style=" margin-left:20px; margin-bottom:20px">
 			 	
 			 </div>
-			
+			<div id = "suggestionbasedonthresholdlimit" style=" margin-left:20px; margin-bottom:20px">
+			 	
+			 </div>
+			 
+			 <button id="createchangeevent" class="btn btn-default" style=" margin-left:20px; margin-bottom: 20px; display:none">Create change event</button>
 		</div>
 	</div>
 	

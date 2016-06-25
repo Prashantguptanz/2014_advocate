@@ -1579,7 +1579,7 @@ $(function() {
 											a = a + "<td>" + response['common_categories_comparison'][i][3] + "</td>";
 											a = a + "<td>" + response['common_categories_comparison'][i][4] + "</td></tr>";
 										}
-										if (response['common_categories_with_different_names_comparison'] && response['common_categories_with_different_names_comparison'][0].length==10){
+										if (response['common_categories_with_different_names_comparison'] && response['common_categories_with_different_names_comparison'].length>0){
 											for (var j=0; j< response['common_categories_with_different_names_comparison'].length; j++){
 												a = a + "<tr><td>" + response['common_categories_with_different_names_comparison'][j][0] + "/" + response['common_categories_with_different_names_comparison'][j][5] + "</td>";
 												a = a + "<td>" + response['common_categories_with_different_names_comparison'][j][6] + "</td>";
@@ -1610,7 +1610,7 @@ $(function() {
 											a = a + "<td>" + response['common_categories_comparison'][i][4] + "</td>";
 											a = a + "<td>" + response['common_categories_comparison'][i][9] + "</td></tr>";
 										}
-										if (response['common_categories_with_different_names_comparison'] && response['common_categories_with_different_names_comparison'][0].length==11){
+										if (response['common_categories_with_different_names_comparison'] && response['common_categories_with_different_names_comparison'].length>0){
 											for (var j=0; j< response['common_categories_with_different_names_comparison'].length; j++){
 												a = a + "<tr><td>" + response['common_categories_with_different_names_comparison'][j][0] + "/" + response['common_categories_with_different_names_comparison'][j][5] + "</td>";
 												a = a + "<td>" + response['common_categories_with_different_names_comparison'][j][6] + "</td>";
@@ -1633,8 +1633,8 @@ $(function() {
 										"<th>JM distance</th></tr>";
 										for (var i=0; i< response['split_categories_comparison'].length; i++){
 											a = a + "<tr><td>" + response['split_categories_comparison'][i][0] + "</td>";
-											a = a + "<td>" + response['common_categories_comparison'][i][1] + "</td>";
-											a = a + "<td>" + response['common_categories_comparison'][i][2] + "</td></tr>";
+											a = a + "<td>" + response['split_categories_comparison'][i][1] + "</td>";
+											a = a + "<td>" + response['split_categories_comparison'][i][2] + "</td></tr>";
 										}
 										a = a + "</table>";
 									}
@@ -2181,6 +2181,91 @@ $(function() {
 			$('#thresholdlimitforchangedetails').show();
 		});
 		
+		$('#changethresholdvalues').on('click', function(e) {
+			e.preventDefault();
+			$('#changethresholdvalues').attr('disabled', 'disabled');
+			$('#submitthresholdvalues').show();
+			$('#int_change_limit_min').removeAttr('disabled');
+			$('#int_change_limit_max').removeAttr('disabled');
+			$('#ext_change_limit_min').removeAttr('disabled');
+			$('#ext_change_limit_max').removeAttr('disabled');
+		});
+		
+		$('#submitthresholdvalues').on('click', function(e) {
+			e.preventDefault();
+			data = {};
+			data['1'] = $('#int_change_limit_min').val();
+			data['2'] = $('#int_change_limit_max').val();
+			data['3'] = $('#ext_change_limit_min').val();
+			data['4'] = $('#ext_change_limit_max').val();
+			
+			$.post("http://127.0.0.1:8000/AdvoCate/changeintandextThresholdLimits/", data, function(data) {
+				$('#int_change_limit_min').attr('disabled', 'disabled');
+				$('#int_change_limit_max').attr('disabled', 'disabled');
+				$('#ext_change_limit_min').attr('disabled', 'disabled');
+				$('#ext_change_limit_max').attr('disabled', 'disabled');
+				$('#submitthresholdvalues').hide();
+				$('#changethresholdvalues').removeAttr('disabled');
+			});
+		});
+		
+		$('#displaychangesuggestions').on('click', function(e) {
+			e.preventDefault();
+			$.get("http://127.0.0.1:8000/AdvoCate/getChangeSuggestionsBasedOnThresholdLimits/", function(response){
+				var a = "<br /> <br />";
+				if (response['evolutionary_versions'].length ==0 & response['competing_versions'].length ==0){
+					a = a + "<p> None of the categories for the existing concepts cross the threshold limits of computational intension or extension. So, the categories corresponding to the common" +
+						"concepts remain same.</p>";
+				}
+				else{
+					if (response['evolutionary_versions'].length >0){
+						a  = a + "<p> For the following concepts, evolutionary versions of their corresponding categories will be created:</p>";
+						for (var i = 0; i < response['evolutionary_versions'].length; i++){
+							a = a + "<label style =\" font-weight: normal\">" + (i+1) + ": " + response['evolutionary_versions'][i] + "</label><br />";
+						}
+						a = a + "<br />";
+					}
+					
+					if (response['competing_versions'].length >0){
+						a  = a + "<p> For the following concepts, competing versions of their corresponding categories will be created:</p>";
+						for (var i = 0; i < response['competing_versions'].length; i++){
+							a = a + "<label style =\" font-weight: normal\">" + (i+1) + ": " + response['competing_versions'][i] + "</label><br />";
+						}
+						a = a + "<br />";
+					}
+					
+				}
+				
+				$('#suggestionbasedonthresholdlimit').html(a);
+				$('#createchangeevent').show();
+			});
+			
+		});
+		
+		$('#createchangeevent').on('click', function(e) {
+			e.preventDefault();
+			$.get("http://127.0.0.1:8000/AdvoCate/createChangeEventForExistingTaxonomy/", function(response) {
+				$('#listofchangeoperations').show();
+				x = "";
+				for (var i = 0; i < response['listOfOperations'].length; i++) {
+					a = i + 1;
+					id = "operation_" + i;
+					x = x + "<dt style=\"cursor:pointer; font-weight:normal; line-height: 2.5em; background:#e4e4e4; border-bottom: 1px solid #c4c4c4; border-top: 1px solid white\"> &nbsp;&nbsp;" + a + ". &nbsp;&nbsp;&nbsp;" + response['listOfOperations'][i][0] + "</dt>";
+					for (var j = 0; j < response['listOfOperations'][i][1].length; j++){
+						b = j+1;
+						x = x + "<dd style=\" margin-left:10px; padding: 0.5em 0; border-bottom: 1px solid #c4c4c4; display: none\"> &nbsp;&nbsp;" + b + ". &nbsp; &nbsp; &nbsp;" + response['listOfOperations'][i][1][j] + "</dd>";
+					}
+					
+				}
+				x = x + "</dl>";
+				$('#changeevent').show();
+				$('#compositechangeoperations').html(x);
+				$('#commit').show();
+				$('#collapse15').removeClass("collapse in").addClass("collapse");
+				
+			});
+		});
+		
 		$('#noforthresholdlimit').on('click', function(e) {
 			e.preventDefault();
 			$('#yesforthresholdlimit').attr('disabled', 'disabled');
@@ -2202,24 +2287,6 @@ $(function() {
 					}
 					a = a + "</table><br /><br />";
 										
-				}
-				
-				if (response['categories_merged_from_existing'].length >0){
-					a = a + "<label style=\"font-size: 15px\"> User input for merged catgeories:</label>";
-					a = a +	"<table class=\"table\" style=\" margin: 20px; width: 50%\" id=\"merged_categories_change_table\">";
-					for (var i = 0; i < response['categories_merged_from_existing'].length; i++){
-						var x = response['categories_merged_from_existing'][i][response['categories_merged_from_existing'][i].length-1];
-						a = a + "<tr><td>" + x + "</td><td> " +
-							"<div class=\"radiox\" style=\"margin:0; display:inline\">" + "<input type=\"radio\" name=\"" + x + "\" value=\"1\" class=\"mergeorgroup\"/>&nbsp;" +
-							"<a href=\"javascript://\" data-toggle=\"popover\" data-placement=\"top\" data-html=\"true\" data-container=\"body\"  title=\"Group operation\" data-content=\"The " +
-							"group operation creates the  merged category and add it as the parent of the existig category.\">Group</a>" + 
-							"<input type=\"radio\" name=\"" + x + "\" value=\"2\" class=\"mergeorgroup\" style=\"margin-left:20px\"/>&nbsp;" +
-							"<a href=\"javascript://\" data-toggle=\"popover\" data-placement=\"top\" data-html=\"true\" data-container=\"body\"  title=\"Merge operation\" data-content=\"The " +
-							"merge operation retires the existing categories that are merged and add the new merged category as a child to the parent category of retired categories.\">Merge</a>" +
-							"</div></td></tr>" ;
-					}
-					a = a + "</table>";
-					
 				}
 				
 				a = a + "<input type=\"submit\" id=\"submituserinput\" value=\"Submit\" class=\"btn btn-default\" style=\"margin:20px\"/></form>";
@@ -2264,18 +2331,6 @@ $(function() {
 					else{
 						i = i + 3;
 					}
-				}
-				else{
-					if ($($this[0][i]).is(':checked')){
-						x = $($this[0][i]).attr('name');
-						data[a] = x + " group";
-					}
-					else{
-						x = $($this[0][i]).attr('name');
-						data[a] = x + " merge";
-					}
-					a = a + 1;
-					i = i + 1;
 				}
 				
 			}
