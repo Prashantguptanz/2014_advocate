@@ -216,28 +216,25 @@ class ManageCSVData:
             trainingset_file.close()
     
     def remove_no_data_value(self, file_name, file_location, targetfile_name, nodata_value):
-        reader = csv.reader(open('%s%s' %(file_location, file_name), 'rU'), delimiter = ',')
-        targetfile = targetfile_name
-        if file_name == targetfile_name:
-            targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
+        reader8 = csv.reader(open('%s%s' %(file_location, file_name), 'rU'), delimiter = ',')
+        targetfile =  targetfile_name.split('.', 1)[0] + '2.csv'
             
         f = csv.writer(open('%s%s' %(file_location, targetfile), "wb"))
         
-        features = next(reader)
+        features = next(reader8)
         if features[0] == 'band1':
             f.writerow(features)
         
         if len(features) == 4 or len(features)==3:
-            for line in reader:
+            for line in reader8:
                 if line[0] != nodata_value or line[1] != nodata_value or line[2] != nodata_value:
                     f.writerow(line)
         else:
-            for line in reader:
+            for line in reader8:
                 if line[0] != nodata_value or line[1] != nodata_value or line[2] != nodata_value or line[3] != nodata_value or line[4] != nodata_value or line[5] != nodata_value or line[6] != nodata_value or line[7] != nodata_value:
                     f.writerow(line)
-        if file_name == targetfile_name:
-            os.remove(file_location + file_name)
-            os.rename(file_location + targetfile, file_location + file_name) 
+        os.remove(file_location + file_name)
+        os.rename(file_location + targetfile, file_location + file_name) 
     
     def add_new_concept(self, file_name, file_location, targetfile_name, concept_name, samplefile, sample_files_location):
         
@@ -264,7 +261,38 @@ class ManageCSVData:
         
         self.remove_no_data_value(targetfile_name, file_location, targetfile_name, '0')
         
-    
+    def splitconcept(self, file_name, file_location, targetfile_name, concepttosplit, concept1, samplefile1, concept2, samplefile2, sample_files_location):
+        files_list = []
+        files_list.append(samplefile1)
+        files_list.append(samplefile2)
+        targetfile = targetfile_name
+        if file_name == targetfile_name:
+            targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
+            
+            
+        reader0 = csv.reader(open('%s%s' %(file_location, file_name), "rU"), delimiter = ',')
+        f = open('%s%s' %(file_location, targetfile), "wb")
+        writer = csv.writer(f)
+        
+        for line in reader0:
+            if line[-1] != concepttosplit:
+                writer.writerow(line)
+                
+        reader1 = csv.reader(open('%s%s' %(sample_files_location, samplefile1), "rU"), delimiter = ',')
+        reader2 = csv.reader(open('%s%s' %(sample_files_location, samplefile2), "rU"), delimiter = ',')
+        reader1.next()
+        reader2.next()
+        for line in reader1:
+            writer.writerow(line)
+        for line in reader2:
+            writer.writerow(line)
+        
+        f.close()
+       
+        if file_name == targetfile_name:
+            os.remove(file_location + file_name)
+        os.rename(file_location + targetfile, file_location + targetfile_name)
+        self.remove_no_data_value(targetfile_name, file_location, targetfile_name, '0')    
     
     def removeConcept(self, file_name, file_location, targetfile_name, concept_to_remove):
         reader = csv.reader(open('%s%s' %(file_location, file_name), "rU"), delimiter = ',')
@@ -321,38 +349,12 @@ class ManageCSVData:
         if file_name == targetfile_name:
             os.remove(file_location + file_name)
             os.rename(file_location + targetfile, file_location + file_name)
-        
-        #self.remove_no_data_value(targetfile_name, file_location, targetfile_name, '0')
+
         
         
         
     
-    def splitconcept(self, file_name, file_location, targetfile_name, concepttosplit, concept1, samplefile1, concept2, samplefile2, sample_files_location):
-        files_list = []
-        files_list.append(samplefile1)
-        files_list.append(samplefile2)
-        targetfile = targetfile_name
-        if file_name == targetfile_name:
-            targetfile =  targetfile_name.split('.', 1)[0] + '1.csv'
-        with open('%s%s' % (file_location, targetfile), 'wb') as trainingset_file:
-            with open('%s%s' % (file_location, file_name), 'rU') as sample1:
-                for eachSample in sample1:
-                    if concepttosplit not in eachSample:
-                        trainingset_file.write(eachSample)
-            sample1.close()
-            for file in files_list:
-                with open('%s%s' % (sample_files_location, file), 'rU') as sample:
-                    sample.next()
-                    for eachSample in sample:
-                        trainingset_file.write(eachSample)
-                sample.close()
-        trainingset_file.close()         
-       
-        if file_name == targetfile_name:
-            os.remove(file_location + file_name)
-        os.rename(file_location + targetfile, file_location + targetfile_name)
-        
-        self.remove_no_data_value(targetfile_name, file_location, targetfile_name, '0')
+
         
 
 #b= ManageRasterData("final3b.tif")

@@ -533,11 +533,13 @@ class CustomQueries:
     def get_trainingset_name_for_current_version_of_legend(self, legendId, legendVer):
         cursor = connection.cursor()
         
-        cursor.execute("select t.trainingset_id, t.trainingset_ver, t.trainingset_name from trainingset t, category c, legend_concept_combination lcc \
-                        where c.trainingset_id = t.trainingset_id and c.trainingset_ver = t.trainingset_ver and c.legend_concept_combination_id = lcc.id and \
-                        lcc.id = (select lcc1.id from legend_concept_combination lcc1 where lcc1.legend_id = %s and lcc1.legend_ver= %s order by lcc1.id DESC limit 1)", [legendId, legendVer])
+        cursor.execute("select t1.trainingset_id, t1.trainingset_ver, t1.trainingset_name from trainingset t1 where (t1.trainingset_id, t1.trainingset_ver) = ( \
+                        select max(t.trainingset_id), max(t.trainingset_ver) from trainingset t, category c, legend_concept_combination lcc where c.trainingset_id = t.trainingset_id and \
+                        c.trainingset_ver = t.trainingset_ver and c.legend_concept_combination_id = lcc.id and lcc.id in ( select lcc1.id from legend_concept_combination lcc1 \
+                        where lcc1.legend_id = %s and lcc1.legend_ver = %s and lcc1.id not in (select distinct concept1_id from hierarchical_relationship)))", [legendId, legendVer])
         
         row = cursor.fetchone()
+        print row
         return row
         
     def get_trainingsample_id_and_ver_for_concept_in_reference_taxonomy(self, tid, ver, concept):

@@ -3,77 +3,218 @@
 {% csrf_token %}
 
 <div class="container">
-	<div class="form-group" style="width: 32%; float: left; border-style: solid; border-width: 1px; border-color: #E5E5E5">
-		<legend style="font-size: 18px; background-color: gainsboro" align="center">Visualize taxonomies and/or concepts</legend>
+	<div class="form-group" style=" border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:0px">
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">
+			<a role="button" data-toggle="collapse" href="#collapse71" aria-expanded="false" aria-controls="collapse71" style="color: #333; vertical-align:middle">
+					Visualize taxonomies and/or concepts</a>
+		</legend>
 		
-		
-		<div class="form-group radio" style="margin-left: 5px; margin-right: 5px">					
-			<input type="radio" name="choosetaxonomyorconcepttovisualize" value="option1" id="choosetaxonomy"/>Taxonomy
-			<br /><br />			
-			<input type="radio" name="choosetaxonomyorconcepttovisualize" value="option2" id="chooseconcept"/>Concept			
-			<br /><br />
-		</div>
-		
-		<div class="form-group" id = "chooseoptionsfortaxonomy" style="margin-left: 5px; margin-right: 5px; overflow: hidden; display:none">
-			<div >
-				<label for="ChooseLegend" style="font-weight:normal; float: left">Choose a taxonomy</label>
-				<span><select id="ChooseLegend" name="ChooseLegend" style="float: right">
-					<option value=""> Existing taxonomies</option>
-					{% for legend in legend_list %}
-					<option id="legend{{ forloop.counter }}" value="{{ legend.legend_id }}+{{legend.legend_ver}}">{{ legend.legend_name }}</option>
-					{% endfor %}
-				</select></span>
+		<div id="collapse71" class="collapse in" style="margin-left:20px; margin-bottom: 20px">
+			<div class="form-group radio" style=" margin-right: 10px">					
+				<input type="radio" name="choosetaxonomyorconcepttovisualize" value="option1" id="choosetaxonomy"/>Taxonomy
+				<br /><br />			
+				<input type="radio" name="choosetaxonomyorconcepttovisualize" value="option2" id="chooseconcept"/>Concept			
+				<br /><br />
 			</div>
-			<br /><br />
-			<div >
-				<label for="Chooseconcept" style="font-weight:normal; float: left">Choose a concept</label>
-				<span><select id="Chooseconcept" name="Chooseconcept" style="float: right" disabled>
-				</select></span>
 			
+			<div class="form-group" id = "chooseoptionsfortaxonomy" style="margin-left: 5px; margin-right: 5px; overflow: hidden; display:none">
+				<div >
+					<label for="ChooseLegend" style="font-weight:normal; float: left">Choose a taxonomy</label>
+					<span><select id="ChooseLegend" name="ChooseLegend" style="float: right">
+						<option value=""> Existing taxonomies</option>
+						{% for legend in legend_list %}
+						<option id="legend{{ forloop.counter }}" value="{{ legend.legend_id }}+{{legend.legend_ver}}">{{ legend.legend_name }}</option>
+						{% endfor %}
+					</select></span>
+				</div>
+				<br /><br />
+				<div >
+					<label for="Chooseconcept" style="font-weight:normal; float: left">Choose a concept</label>
+					<span><select id="Chooseconcept" name="Chooseconcept" style="float: right" disabled>
+					</select></span>
+				
+				</div>
 			</div>
+			<br />
+			<button id = "creategraph" type="submit" class="btn btn-default" >
+				Submit
+			</button>
 		</div>
-	
-		<div class="form-group" style="width: 98%; overflow: hidden">
-			<div style="float: left; margin-left: 1%; font-size:14px; font-family:Calibri">
-				<label for="WhichLegend" style="font-weight:normal">Select a legend</label>
-			</div>
-			<div style="float: right; margin-left: 1%; font-size:12px; font-family:Calibri">
-				<select class ="form-control" id="WhichLegend" name="WhichLegend" required >
-					<option value="">Select a legend</option>
-					<option value="1">New Zealand land cover</option>
-				</select>
-			</div>
-		</div>
-	
-		<div class="form-group" style="width: 98%; overflow: hidden">
-			<div style="float: left; margin-left: 1%; font-size:14px; font-family:Calibri">
-				<label for="" style="font-weight:normal">Select a category</label>
-			</div>
-			<div style="float: right; margin-left: 1%; font-size:12px; font-family:Calibri">
-				<select class ="form-control" id="WhichCategory" name="WhichCategory" required >
-					<option value="">Select a category</option>
-					<option value="1">Built Space</option>
-				</select>
-			</div>
-		</div>
-		<br />
-		<button id = "creategraph" type="submit" class="btn btn-default" >
-			Submit
-		</button>
-		<br />
 	</div>
 	
 	
-	<div style="float: right; width: 66%; border-style: solid; border-width: 1px; border-color: #E5E5E5">
-	<legend style="font-size: 18px; background-color: gainsboro" align="center">Visualization</legend>
-	
-		<div class="form-group" id="taxonomy_details" style="display:none; overflow: auto">
-			<div id="taxonomy_viz" style="width: 98%; text-align: center; vertical-align: middle">
-			  
-			</div>
-			<br />
-			<div id="model_details" style="width: 98%; margin-left:5px; margin-right:5px">
-			  
+	<div style="border-style: solid; border-width: 1px; border-color: #E5E5E5; margin-bottom:50px">
+		<legend style="font-size: 16px; background-color: gainsboro; line-height: 30px; margin-bottom:10px" align="center">
+			<a role="button" data-toggle="collapse" href="#collapse72" aria-expanded="false" aria-controls="collapse72" style="color: #333; vertical-align:middle">
+					Visualization</a>
+		</legend>
+		
+		<div id="collapse72" class="collapse in" style="margin: 20px">
+			<div class="form-group" id="taxonomy_details" style="display:none; overflow: auto; font-size: 14px">
+				<p id = "model_details"> </p>
+				<br /> <br />
+				<div class="form-group" id="viz" >
+					<div id="taxonomy_viz" style="width: 45%; height:350px; float: left; display:table-cell; vertical-align:middle; text-align:center; border-style: solid; border-width: 1px; border-color: rgb(166, 166, 166)">
+					  
+					</div>
+					<div id="map_viz" style="width: 55%; height:350px; float: right; display:table-cell; vertical-align:middle; text-align:center; border-style: solid; border-width: 1px; border-color: rgb(166, 166, 166)">
+					  
+					</div>
+				</div>
+				<br /><br />
+				<div id="exp_path_viz" style = "margin-top: 296px; margin-bottom: 20px; height: 400px; border-style: solid; border-width: 1px; border-color: rgb(166, 166, 166)">
+					
+					<div id="exp_path" style="width: 75%; float: left; display:table-cell; vertical-align:middle; text-align:center; margin-left: 25px; margin-top: 50px">
+						<label style="">Exploration path</label>
+						<br /><br /><br /><br />
+						<div style = "width:100px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin:0px; float:left">
+							<span>Start</span>
+						</div>
+						
+						<div style="width:70px; margin:0px; float:left; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/right_connector.png" />
+						</div>
+						  
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #fbb4ae; margin: 0px; float:left">
+							<span>A1</span>
+						</div>
+						
+						<div style="width:70px; margin:0px; float:left; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/right_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #ccebc5; margin: 0px; float:left">
+							<span>A3</span>
+						</div>
+						
+						<div style="width:70px; margin:0px; float:left; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/right_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #b3cde3; margin: 0px; float:left">
+							<span>A2</span>
+						</div>
+						
+						<div style="width:70px; margin:0px; float:left; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/right_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #ccebc5; margin: 0px; float:left">
+							<span>A3</span>
+						</div>
+						
+						<div style="width:70px; margin:0px; float:left; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/right_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #fed9a6; margin: 0px; float:left">
+							<span>A5</span>
+						</div>
+						
+						<div style="width:55px; margin-right: 145px; float:right; height: 70px">
+							<img style="height:100%" src="/static/images/down_left_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #b3cde3; margin-top: 50px; float:right">
+							<span>A2</span>
+						</div>
+						
+						<div style="width:70px; margin-top: 50px; float:right; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/left_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #ccebc5; margin-top: 50px; float:right">
+							<span>A3</span>
+						</div>
+						
+						<div style="width:70px; margin-top: 50px; float:right; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/left_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #ffffcc; margin-top: 50px; float:right">
+							<span>A6</span>
+						</div>
+						
+						<div style="width:70px; margin-top: 50px; float:right; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/left_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #ccebc5; margin-top: 50px; float:right">
+							<span>A3</span>
+						</div>
+						
+						<div style="width:70px; margin-top: 50px; float:right; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/left_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #b3cde3; margin-top: 50px; float:right">
+							<span>
+								<a style= "color: #000" href="javascript://" rel="popover" title="Edit training set" data-html="true" data-toggle="popover" data-content="Merge Estuarine Open Water <br /> and Water" data-placement = "left"> 
+								A2
+							</span>
+						</div>
+						
+						<div style="width:55px; margin-left: 115px; float:left; height: 70px">
+							<img style="height:100%" src="/static/images/down_right_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #ccebc5; margin-top: 50px; float:left">
+							<span>A3</span>
+						</div>
+						
+						<div style="width:70px; margin-top:50px; float:left; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/right_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: #decbe4; margin-top: 50px; float:left">
+							<span>A4</span>
+						</div>
+						
+						<div style="width:70px; margin-top:50px; float:left; height: 35px">
+							<img style="width:100%; vertical-align: -webkit-baseline-middle; margin-top: 5px" src="/static/images/right_connector.png" />
+						</div>
+						
+						<div style="width:50px; height:35px; line-height:35px; border: 1px solid rgba(0, 0, 0, .2); border-radius:5px; background: gainsboro; color:#000; margin-top: 50px; float:left">
+							<span>End</span>
+						</div>
+						
+					</div>
+					<div id="exp_path_legend" style="width: 20%; float: right; display:table-cell; vertical-align:middle; text-align:center; margin-top: 50px; margin-right:10px">
+						<label>Legend</label>
+						<br /><br />
+						<table style="width:100%" class=" table table-bordered">
+							<tbody>
+								<tr>
+									<td><div style="width:35px; height:25px; line-height:25px; border: 1px solid rgba(0, 0, 0, .2);  border-radius:5px;  background:#fbb4ae"><span style="font-size: 12px">A1</span></div></td>
+									<td>Create training set</td>
+								</tr>
+								<tr>
+									<td><div style="width:35px; height:25px; line-height:25px; border: 1px solid rgba(0, 0, 0, .2);  border-radius:5px;  background:#b3cde3"><span style="font-size: 12px">A2</span></div></td>
+									<td>Edit training set</td>
+								</tr>
+								<tr>
+									<td><div style="width:35px; height:25px; line-height:25px; border: 1px solid rgba(0, 0, 0, .2);  border-radius:5px;  background:#ccebc5"><span style="font-size: 12px">A3</span></div></td>
+									<td>Learning activity</td>
+								</tr>
+								<tr>
+									<td><div style="width:35px; height:25px; line-height:25px; border: 1px solid rgba(0, 0, 0, .2);  border-radius:5px;  background:#decbe4"><span style="font-size: 12px">A4</span></div></td>
+									<td>Classification activity</td>
+								</tr>
+								<tr>
+									<td><div style="width:35px; height:25px; line-height:25px; border: 1px solid rgba(0, 0, 0, .2);  border-radius:5px;  background:#fed9a6"><span style="font-size: 12px">A5</span></div></td>
+									<td>Clustering activity</td>
+								</tr>
+								<tr>
+									<td><div style="width:35px; height:25px; line-height:25px; border: 1px solid rgba(0, 0, 0, .2);  border-radius:5px;  background:#ffffcc"><span style="font-size: 12px">A6</span></div></td>
+									<td>Change threshold limits</td>
+								</tr>
+							</tbody>
+						</table>
+						
+					  
+					</div>
+				  
+				</div>
 			</div>
 		</div>
 		

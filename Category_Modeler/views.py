@@ -27,7 +27,23 @@ from Category_Modeler.models import  CreateTrainingsetActivityOperations, Satell
 from Category_Modeler.measuring_categories import TrainingSet, NormalDistributionIntensionalModel, DecisionTreeIntensionalModel, StatisticalMethods, ClassifiedFile
 from Category_Modeler.data_processing import ManageRasterData, ManageCSVData
 from Category_Modeler.database_transactions import UpdateDatabase, CustomQueries
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.datasets import load_iris
+from sklearn.cross_validation import StratifiedShuffleSplit
+from sklearn.grid_search import GridSearchCV
+from matplotlib.colors import Normalize
 
+
+class MidpointNormalize(Normalize):
+
+    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+        self.midpoint = midpoint
+        Normalize.__init__(self, vmin, vmax, clip)
+
+    def __call__(self, value, clip=None):
+        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+        return numpy.ma.masked_array(numpy.interp(value, x, y))
 
 #Different Files Locations
 TRAINING_SAMPLES_IMAGES_LOCATION = 'Category_Modeler/static/data/'
@@ -100,6 +116,7 @@ def index(request):
         
         if Legend.objects.exists(): # @UndefinedVariable
             legend_list = customQuery.get_latest_versions_of_all_legends()  # @UndefinedVariable
+            print legend_list
             return render(request, 'home.html', {'user_name': user_name, 'legend_list':legend_list})
         return render(request, 'home.html', {'user_name': user_name})
     form = UserCreationForm()
@@ -689,9 +706,11 @@ def trainingsampleprocessing(request):
     else:
         if 'new_taxonomy_name' not in request.session:
             existing_taxonomy = request.session['existing_taxonomy_name']
+            print existing_taxonomy
             if Trainingset.objects.exists(): # @UndefinedVariable
                 training_set_list = Trainingset.objects.all()  # @UndefinedVariable
-                
+            print request.session['existing_taxonomy_id']
+            print request.session['existing_taxonomy_ver']
             customQuery = CustomQueries()
             old_trainingset_name = customQuery.get_trainingset_name_for_current_version_of_legend(request.session['existing_taxonomy_id'], request.session['existing_taxonomy_ver'])[2]
             old_training_sample = TrainingSet(old_trainingset_name)
@@ -1424,12 +1443,41 @@ def signaturefile(request):
         else:
             folds = data['fold']
             validationtype = "cross validation"
+            '''
+            X = trainingfile.samples
+            Y = trainingfile.target
+            C_range = numpy.linspace(18, 24, 14)
+            gamma_range = numpy.logspace(-3, -1, 14)
+            param_grid = dict(gamma=gamma_range, C=C_range)
+            cv = StratifiedShuffleSplit(Y, n_iter=5, test_size=0.2, random_state=42)
+            grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv)
+            grid.fit(X, Y)
+            print grid.best_params_
+            print grid.best_score_
+            scores = [x[1] for x in grid.grid_scores_]
+            scores = numpy.array(scores).reshape(len(C_range), len(gamma_range))
+            
+            plt.figure(figsize=(8, 6))
+            plt.subplots_adjust(left=.2, right=0.95, bottom=0.15, top=0.95)
+            plt.imshow(scores, interpolation='nearest', cmap=plt.cm.hot, norm=MidpointNormalize(vmin=0.2, midpoint=0.92))
+            plt.xlabel('gamma')
+            plt.ylabel('C')
+            plt.colorbar()
+            plt.xticks(numpy.arange(len(gamma_range)), numpy.around(gamma_range, 6), rotation=45)
+            plt.yticks(numpy.arange(len(C_range)), numpy.around(C_range, 4))
+            plt.title('Validation accuracy')
+            plt.savefig("%s/%s" % (IMAGE_LOCATION, "test.png"),  bbox_inches='tight')
+            '''
             skf = cross_validation.StratifiedKFold(trainingfile.target, n_folds=int(folds))
             cm=[]
             count =0
+                        
             for train_index, test_index in skf:
                 X_train, X_test = trainingfile.samples[train_index], trainingfile.samples[test_index]
                 y_train, y_test = trainingfile.target[train_index], trainingfile.target[test_index]
+                #scaler = StandardScaler()
+                #X_train = scaler.fit_transform(X_train)
+                #X_test = scaler.fit_transform(X_test)
                 clf=classifier.fit(X_train, y_train)
                 y_pred = clf.predict(X_test)
                 individual_cm = metrics.confusion_matrix(y_test, y_pred)
@@ -1438,11 +1486,11 @@ def signaturefile(request):
                     cm = individual_cm
                 else:
                     cm += individual_cm
-    
+            
             scores=cross_validation.cross_val_score(clf, trainingfile.samples, trainingfile.target, cv=int(folds))
             score = "{0:.2f}".format(scores.mean())
             kp = "{0:.2f}".format(statistical_methods.calculateKappa(cm))
-
+            
         
         prodacc, useracc = statistical_methods.calculateAccuracies(cm)
         request.session['model_score'] = score
@@ -1705,10 +1753,10 @@ def signaturefile(request):
                             single_category_comparison.append(old_category_details[0][0])
                             single_category_comparison.append(old_category_details[0][1])
                         else:
-                            w1, x1, y1, z1 = str(old_category_details[0][2]), str(old_category_details[0][3]), str(old_category_details[0][0]), str(old_category_details[0][1])
+                            w1, x1, y1, z1 = str(old_category_details[0][3]), str(old_category_details[0][2]), str(old_category_details[0][0]), str(old_category_details[0][1])
                             for i in range(1, len(old_category_details)):
-                                w1 = w1 + ", " + str(old_category_details[i][3])
-                                x1 = x1 + ", " + str(old_category_details[i][2])
+                                #w1 = w1 + ", " + str(old_category_details[i][3])
+                                #x1 = x1 + ", " + str(old_category_details[i][2])
                                 y1 = y1 + ", " + str(old_category_details[i][0])
                                 z1 = z1 + ", " + str(old_category_details[i][1])
                             single_category_comparison.append(w1)
@@ -1738,6 +1786,7 @@ def signaturefile(request):
                                 jm = model1.jm_distance(model)
                                 jm_for_multiple_comp_vers = jm_for_multiple_comp_vers + jm + ", "
                                 jm_list.append([old_categories[old_index][3+i], jm])
+                            jm_for_multiple_comp_vers = jm_for_multiple_comp_vers[:-2]
                             single_category_comparison.append(jm_for_multiple_comp_vers)
                             a = [common_category, jm_list]
                         
@@ -1769,8 +1818,8 @@ def signaturefile(request):
                         else:
                             w1, x1, y1, z1 = str(old_category_details[0][2]), str(old_category_details[0][3]), str(old_category_details[0][0]), str(old_category_details[0][1])
                             for i in range(1, len(old_category_details)):
-                                w1 = w1 + ", " + str(old_category_details[i][3])
-                                x1 = x1 + ", " + str(old_category_details[i][2])
+                                #w1 = w1 + ", " + str(old_category_details[i][3])
+                                #x1 = x1 + ", " + str(old_category_details[i][2])
                                 y1 = y1 + ", " + str(old_category_details[i][0])
                                 z1 = z1 + ", " + str(old_category_details[i][1])
                             single_category_comparison.append(w1)
@@ -1800,6 +1849,7 @@ def signaturefile(request):
                                 jm = model1.jm_distance(model)
                                 jm_for_multiple_comp_vers = jm_for_multiple_comp_vers + jm + ", "
                                 jm_list.append([old_categories[old_index][3+i], jm])
+                            jm_for_multiple_comp_vers = jm_for_multiple_comp_vers[:-2]
                             single_category_comparison.append(jm_for_multiple_comp_vers)
                             a = [common_category[1], common_category[0], jm_list]
                             
@@ -2194,7 +2244,16 @@ def chooseClassifier(classifiername):
     elif classifiername=='Decision Tree':
         clf=tree.DecisionTreeClassifier()
     else:
-        clf = svm.SVC()
+        clf = svm.SVC(kernel='rbf', C = 20, gamma = 0.0043287612810830574) #69.123823, 0.001953  21.544346900318832, 'gamma': 0.00046415888336127822} 5.4555947811685188, 'gamma': 0.0012742749857031334}
+    #{'C': 21.544346900318832, 'gamma': 0.0059948425031894088}
+    #{'C': 4.6415888336127793, 'gamma': 0.0016681005372000592}
+    #{'C': 4.3287612810830574, 'gamma': 0.0015199110829529332}
+    #{'C': 4.3287612810830574, 'gamma': 0.0015199110829529332}
+    #{'C': 15.199110829529332, 'gamma': 0.0043287612810830574}
+    #{'C': 12.32846739442066, 'gamma': 0.0043287612810830574}
+    # best so far C = 20, gamma = 0.0043287612810830574
+    #{'C': 22.615384615384617, 'gamma': 0.0041246263829013523}
+    print clf
     return clf
 
 def plot_confusion_matrix(cm, targetValueArray, title='Confusion matrix', cmap=plt.cm.Blues):
@@ -2458,8 +2517,10 @@ def supervised(request):
             diverging_colors = ['#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4']
         elif (len(concepts_in_current_taxonomy)==10):
             diverging_colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
-        else:
+        elif (len(concepts_in_current_taxonomy)==11):
             diverging_colors = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
+        else:
+            diverging_colors = ['#ffffff', '#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
             
         if 'current_exploration_chain_viz' in request.session:
             if 'existing_taxonomy_name' in request.session:
@@ -3634,26 +3695,33 @@ def getconceptdetails(request):
         concept_details = customqueries.get_concept_details(conceptlegendpkey)
 
 def create_taxonomy_visualization():
-    test_taxonomy = "((Sea water, inland water, Estuarine open water)Water_bodies, ((Urban, Suburban)Built space, Open space)artificial_surface, cloud, shadow, forest, grassland)Root;"
+    #test_taxonomy = "((Sea water, inland water, Estuarine open water)Water_bodies, ((Urban, Suburban)Built space, Open space)artificial_surface, cloud, shadow, forest, grassland)Root;"
+    #test_taxonomy = "(Shadow, Cloud, Pasture, Woody Vegetation, (Suburban, Urban)Built_up_Area, (Inland Water, Water)Water Bodies)Root;"
+    test_taxonomy = "(Shadow, Cloud, ((Indigenous Forest, Mangrove)Forest, Grassland, Scrub)Vegetation, ((Urban, Suburban)Built-up Area, Open Space)Artificial Surface, (Inland Water, Estuarine Open Water, Sea Water)Water Bodies)Root;"
     t1 = Tree(test_taxonomy, format=8)   # @UndefinedVariable
-    t1.add_face(TextFace("Root "), column=0, position = "branch-top")
+    t1.add_face(TextFace("Root"), column=0, position = "branch-top")
     ts = TreeStyle()
     ts.show_leaf_name = True
     ts.show_scale = False
     ts.branch_vertical_margin = 20
     ts.scale = 25
-    ts.title.add_face(TextFace("Auckland LCDB - Ver1", fsize=10), column=0)
-    ts.rotation = 90
+    ts.title.add_face(TextFace("AKL LCDB - Version 3", fsize=10), column=0)
+    #ts.rotation = 90
+    
     for node in t1.traverse():
-        if node.name == "Water_bodies":
-            node.add_face(TextFace(" Water bodies "), column=0, position = "branch-top")
-        elif node.name == " Built space ":
-            node.add_face(TextFace("Built space"), column=0, position = "branch-top")
-        elif node.name == "artificial_surface":
-            node.add_face(TextFace(" Artificial Surface "), column=0, position = "branch-top")
+        if node.name == "Water Bodies":
+            node.add_face(TextFace("  Water Bodies  "), column=0, position = "branch-top")
+        elif node.name == "Built-up Area":
+            node.add_face(TextFace("  Built-up Area  "), column=0, position = "branch-top")
+        elif node.name == "Artificial Surface":
+            node.add_face(TextFace("  Artificial Surface  "), column=0, position = "branch-top")
+        elif node.name == "Forest":
+            node.add_face(TextFace("  Forest     "), column=0, position = "branch-top")
+        elif node.name == "Vegetation":
+            node.add_face(TextFace("  Vegetation  "), column=0, position = "branch-top")
     
     
     taxonomy_image_name = "tree.png"
-    t1.render("%s%s" %(TAXONOMY_IMAGE_LOCATION, "tree.png"), tree_style=ts, dpi=150)
+    t1.render("%s%s" %(TAXONOMY_IMAGE_LOCATION, "tree3.png"), tree_style=ts, dpi=300, h=2.5, units="in")
 
     return taxonomy_image_name

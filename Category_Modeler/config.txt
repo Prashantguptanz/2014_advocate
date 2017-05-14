@@ -1,2 +1,2 @@
-Woody Vegetation;Inland Water;Open Space;Grassland;Suburban;Mangrove;Shadow;Water;Urban;Cloud;
-255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;255,255,255;
+Estuarine Open Water;Inland Water;Open Space;Sea Water;Grassland;Suburban;Shadow;Forest;Urban;Scrub;Cloud;
+215,48,39;254,224,144;255,255,191;171,217,233;253,174,97;69,117,180;116,173,209;244,109,67;49,54,149;224,243,248;165,0,38;
